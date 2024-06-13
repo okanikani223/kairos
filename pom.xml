@@ -4,4 +4,10 @@
     <groupId>com.github.okanikani223</groupId>
     <artifactId>kairos</artifactId>
     <version>0.1.0</version>
+
+    <properties>
+        <jdk.version>22</jdk.version>
+        <maven.compiler.source>${jdk.version}</maven.compiler.source>
+        <maven.compiler.target>${jdk.version}</maven.compiler.target>
+    </properties>
 </project>
