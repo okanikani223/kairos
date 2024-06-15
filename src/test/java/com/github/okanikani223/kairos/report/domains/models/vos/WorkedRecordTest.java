@@ -39,6 +39,7 @@ class WorkedRecordTest {
     @Test
     void build_RequiredParamSet_CreateNewInstance() {
         var record = WorkedRecord.builder()
+                .workRegulations(new WorkRegulations(7.5 * 60 * 60, 1.0 * 60 * 60))
                 .workStartDateTime(OffsetDateTime.of(LocalDate.of(2024, 2, 1), LocalTime.of(9, 0), ZoneOffset.ofHours(9)))
                 .workEndDateTime(OffsetDateTime.of(LocalDate.of(2024, 2, 1), LocalTime.of(18, 0), ZoneOffset.ofHours(9)))
                 .build();
@@ -74,5 +75,17 @@ class WorkedRecordTest {
         );
 
         assertEquals("Work end time is required.", actual.getMessage());
+    }
+
+    @Test
+    void build_CalculateWorkRecordNotSetWorkRegulations_ThrownIllegalStateException() {
+        var actual = assertThrows(IllegalStateException.class,
+                () -> WorkedRecord.builder()
+                        .workStartDateTime(OffsetDateTime.of(LocalDate.of(2024, 2, 1), LocalTime.of(18, 0), ZoneOffset.ofHours(9)))
+                        .workEndDateTime(OffsetDateTime.of(LocalDate.of(2024, 2, 1), LocalTime.of(18, 0), ZoneOffset.ofHours(9)))
+                        .build()
+        );
+
+        assertEquals("No work rules have been set.", actual.getMessage());
     }
 }

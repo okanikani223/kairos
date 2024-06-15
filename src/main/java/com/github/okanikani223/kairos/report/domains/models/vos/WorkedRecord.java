@@ -27,6 +27,7 @@ public class WorkedRecord {
     }
 
     public static class WorkedRecordBuilder {
+        private WorkRegulations workRegulations;
         private LocalDate workedDate;
         private boolean holiday;
         private LeaveCategories leaveCategory;
@@ -35,6 +36,11 @@ public class WorkedRecord {
         private Double workedSeconds;
         private Double overSeconds;
         private String memo;
+
+        public WorkedRecordBuilder workRegulations(WorkRegulations workRegulations) {
+            this.workRegulations = workRegulations;
+            return this;
+        }
 
         public WorkedRecordBuilder workedDate(LocalDate workedDate) {
             this.workedDate = workedDate;
@@ -103,14 +109,14 @@ public class WorkedRecord {
         }
 
         private Double calcOverSeconds(Double workedSeconds) {
-            // TODO: The stipulated work time will be taken from a different domain and calculated
-            var overSeconds = workedSeconds - (7.5 * 60 * 60);
+            if (Objects.isNull(workRegulations)) throw new IllegalStateException("No work rules have been set.");
+            var overSeconds = workedSeconds - workRegulations.regulatedWorkingSeconds();
             return Math.max(overSeconds, 0.0);
         }
 
         private Double calcWorkedSeconds(OffsetDateTime workStartDateTime, OffsetDateTime workEndDateTime) {
-            // TODO: The stipulated break time will be taken from a different domain and calculated
-            return ChronoUnit.SECONDS.between(workStartDateTime, workEndDateTime) - (1.0 * 60 * 60);
+            if (Objects.isNull(workRegulations)) throw new IllegalStateException("No work rules have been set.");
+            return (ChronoUnit.SECONDS.between(workStartDateTime, workEndDateTime) - workRegulations.regulatedRestTime());
         }
     }
 }

@@ -1,5 +1,8 @@
 package com.github.okanikani223.kairos.report.domains.models.constants;
 
+import lombok.Getter;
+
+@Getter
 public enum LeaveCategories {
     LEAVE(1.0),
     LEAVE_AM(0.5),
@@ -14,4 +17,5 @@ public enum LeaveCategories {
     LeaveCategories(double consumedDays) {
         this.consumedDays = consumedDays;
     }
+
 }
