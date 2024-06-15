@@ -7,7 +7,8 @@ public enum LeaveCategories {
     COMPENSATION(1.0),
     COMPENSATION_AM(0.5),
     COMPENSATION_PM(0.5),
-    SPECIAL(1.0);
+    SPECIAL(1.0),
+    NONE(0.0);
 
     private final double consumedDays;
     LeaveCategories(double consumedDays) {

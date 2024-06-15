@@ -35,4 +35,44 @@ class WorkedRecordTest {
         assertEquals(0.0, record.getOverSeconds());
         assertEquals("test", record.getMemo());
     }
+
+    @Test
+    void build_RequiredParamSet_CreateNewInstance() {
+        var record = WorkedRecord.builder()
+                .workStartDateTime(OffsetDateTime.of(LocalDate.of(2024, 2, 1), LocalTime.of(9, 0), ZoneOffset.ofHours(9)))
+                .workEndDateTime(OffsetDateTime.of(LocalDate.of(2024, 2, 1), LocalTime.of(18, 0), ZoneOffset.ofHours(9)))
+                .build();
+
+        assertNotNull(record);
+        assertEquals(LocalDate.of(2024, 2, 1), record.getWorkedDate());
+        assertFalse(record.isHoliday());
+        assertEquals(LeaveCategories.NONE, record.getLeaveCategory());
+        assertEquals(OffsetDateTime.of(LocalDate.of(2024, 2, 1), LocalTime.of(9, 0), ZoneOffset.ofHours(9)), record.getWorkStartDateTime());
+        assertEquals(OffsetDateTime.of(LocalDate.of(2024, 2, 1), LocalTime.of(18, 0), ZoneOffset.ofHours(9)), record.getWorkEndDateTime());
+        assertEquals(8.0 * 60 * 60, record.getWorkedSeconds());
+        assertEquals(0.5 * 60 * 60, record.getOverSeconds());
+        assertNull(record.getMemo());
+    }
+
+    @Test
+    void build_NotSetWorkStartDateTime_ThrownIllegalStateException() {
+        var actual = assertThrows(IllegalStateException.class,
+                () -> WorkedRecord.builder()
+                        .workEndDateTime(OffsetDateTime.of(LocalDate.of(2024, 2, 1), LocalTime.of(18, 0), ZoneOffset.ofHours(9)))
+                        .build()
+        );
+
+        assertEquals("Work start time is required.", actual.getMessage());
+    }
+
+    @Test
+    void build_NotSetWorkEndDateTime_ThrownIllegalStateException() {
+        var actual = assertThrows(IllegalStateException.class,
+                () -> WorkedRecord.builder()
+                        .workStartDateTime(OffsetDateTime.of(LocalDate.of(2024, 2, 1), LocalTime.of(18, 0), ZoneOffset.ofHours(9)))
+                        .build()
+        );
+
+        assertEquals("Work end time is required.", actual.getMessage());
+    }
 }

@@ -88,6 +88,7 @@ public class WorkedRecord {
             var workedDate = Objects.isNull(this.workedDate) ? workStartDateTime.toLocalDate() : this.workedDate;
             var workedSeconds = Objects.isNull(this.workedSeconds) ? calcWorkedSeconds(workStartDateTime, workEndDateTime) : this.workedSeconds;
             var overSeconds = Objects.isNull(this.overSeconds) ? calcOverSeconds(workedSeconds) : this.overSeconds;
+            var leaveCategory = Objects.isNull(this.leaveCategory) ? LeaveCategories.NONE : this.leaveCategory;
 
             return new WorkedRecord(
                     workedDate,
