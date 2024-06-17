@@ -26,6 +26,18 @@ public class WorkedRecord {
         return new WorkedRecordBuilder();
     }
 
+    public boolean isLeave() {
+        return LeaveCategories.LEAVES.contains(leaveCategory);
+    }
+
+    public boolean isCompensation() {
+        return LeaveCategories.COMPENSATIONS.contains(leaveCategory);
+    }
+
+    public boolean isSpecial() {
+        return Objects.equals(LeaveCategories.SPECIAL, leaveCategory);
+    }
+
     public static class WorkedRecordBuilder {
         private WorkRegulations workRegulations;
         private LocalDate workedDate;
@@ -116,6 +128,9 @@ public class WorkedRecord {
 
         private Double calcWorkedSeconds(OffsetDateTime workStartDateTime, OffsetDateTime workEndDateTime) {
             if (Objects.isNull(workRegulations)) throw new IllegalStateException("No work rules have been set.");
+            if (workStartDateTime.isEqual(workEndDateTime)) return 0.0;
+            if (!workRegulations.hasDoneRest(workStartDateTime, workEndDateTime)) return (double) ChronoUnit.SECONDS.between(workStartDateTime, workEndDateTime);
+
             return (ChronoUnit.SECONDS.between(workStartDateTime, workEndDateTime) - workRegulations.regulatedRestTime());
         }
     }

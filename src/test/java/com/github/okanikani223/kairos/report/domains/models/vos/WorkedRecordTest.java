@@ -3,15 +3,19 @@ package com.github.okanikani223.kairos.report.domains.models.vos;
 import com.github.okanikani223.kairos.report.domains.models.constants.LeaveCategories;
 import org.junit.jupiter.api.Test;
 
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
+import java.time.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class WorkedRecordTest {
-
+    private static final WorkRegulations WORK_REGULATIONS = new WorkRegulations(
+            OffsetTime.of(9, 0, 0, 0, ZoneOffset.ofHours(9)),
+            OffsetTime.of(17, 45, 0, 0, ZoneOffset.ofHours(9)),
+            7.5 * 60 * 60,
+            OffsetTime.of(12, 0, 0, 0, ZoneOffset.ofHours(9)),
+            OffsetTime.of(13, 0, 0, 0, ZoneOffset.ofHours(9)),
+            1.0 * 60 * 60
+    );
     @Test
     void build_AllParameterSet_CreateNewInstance() {
         var record = WorkedRecord.builder()
@@ -39,7 +43,7 @@ class WorkedRecordTest {
     @Test
     void build_RequiredParamSet_CreateNewInstance() {
         var record = WorkedRecord.builder()
-                .workRegulations(new WorkRegulations(7.5 * 60 * 60, 1.0 * 60 * 60))
+                .workRegulations(WORK_REGULATIONS)
                 .workStartDateTime(OffsetDateTime.of(LocalDate.of(2024, 2, 1), LocalTime.of(9, 0), ZoneOffset.ofHours(9)))
                 .workEndDateTime(OffsetDateTime.of(LocalDate.of(2024, 2, 1), LocalTime.of(18, 0), ZoneOffset.ofHours(9)))
                 .build();
@@ -87,5 +91,89 @@ class WorkedRecordTest {
         );
 
         assertEquals("No work rules have been set.", actual.getMessage());
+    }
+
+    @Test
+    void isLeave_LeaveIsNotSet_ReturnFalse() {
+        var record = WorkedRecord.builder()
+                .workRegulations(WORK_REGULATIONS)
+                .leaveCategory(LeaveCategories.NONE)
+                .workStartDateTime(OffsetDateTime.of(LocalDate.of(2024, 2, 1), LocalTime.of(9, 0), ZoneOffset.ofHours(9)))
+                .workEndDateTime(OffsetDateTime.of(LocalDate.of(2024, 2, 1), LocalTime.of(18, 0), ZoneOffset.ofHours(9)))
+                .build();
+
+        assertFalse(record.isLeave());
+    }
+
+    @Test
+    void isLeave_LeaveIsSet_ReturnTrue() {
+        var record = WorkedRecord.builder()
+                .workRegulations(WORK_REGULATIONS)
+                .leaveCategory(LeaveCategories.LEAVE)
+                .workStartDateTime(OffsetDateTime.of(LocalDate.of(2024, 2, 1), LocalTime.of(9, 0), ZoneOffset.ofHours(9)))
+                .workEndDateTime(OffsetDateTime.of(LocalDate.of(2024, 2, 1), LocalTime.of(18, 0), ZoneOffset.ofHours(9)))
+                .build();
+
+        assertTrue(record.isLeave());
+
+        record = WorkedRecord.builder()
+                .workRegulations(WORK_REGULATIONS)
+                .leaveCategory(LeaveCategories.LEAVE_AM)
+                .workStartDateTime(OffsetDateTime.of(LocalDate.of(2024, 2, 1), LocalTime.of(9, 0), ZoneOffset.ofHours(9)))
+                .workEndDateTime(OffsetDateTime.of(LocalDate.of(2024, 2, 1), LocalTime.of(18, 0), ZoneOffset.ofHours(9)))
+                .build();
+
+        assertTrue(record.isLeave());
+
+        record = WorkedRecord.builder()
+                .workRegulations(WORK_REGULATIONS)
+                .leaveCategory(LeaveCategories.LEAVE_PM)
+                .workStartDateTime(OffsetDateTime.of(LocalDate.of(2024, 2, 1), LocalTime.of(9, 0), ZoneOffset.ofHours(9)))
+                .workEndDateTime(OffsetDateTime.of(LocalDate.of(2024, 2, 1), LocalTime.of(18, 0), ZoneOffset.ofHours(9)))
+                .build();
+
+        assertTrue(record.isLeave());
+    }
+
+    @Test
+    void isCompensation_CompensationIsNotSet_ReturnFalse() {
+        var record = WorkedRecord.builder()
+                .workRegulations(WORK_REGULATIONS)
+                .leaveCategory(LeaveCategories.NONE)
+                .workStartDateTime(OffsetDateTime.of(LocalDate.of(2024, 2, 1), LocalTime.of(9, 0), ZoneOffset.ofHours(9)))
+                .workEndDateTime(OffsetDateTime.of(LocalDate.of(2024, 2, 1), LocalTime.of(18, 0), ZoneOffset.ofHours(9)))
+                .build();
+
+        assertFalse(record.isLeave());
+    }
+
+    @Test
+    void isCompensation_CompensationIsSet_ReturnTrue() {
+        var record = WorkedRecord.builder()
+                .workRegulations(WORK_REGULATIONS)
+                .leaveCategory(LeaveCategories.COMPENSATION)
+                .workStartDateTime(OffsetDateTime.of(LocalDate.of(2024, 2, 1), LocalTime.of(9, 0), ZoneOffset.ofHours(9)))
+                .workEndDateTime(OffsetDateTime.of(LocalDate.of(2024, 2, 1), LocalTime.of(18, 0), ZoneOffset.ofHours(9)))
+                .build();
+
+        assertTrue(record.isCompensation());
+
+        record = WorkedRecord.builder()
+                .workRegulations(WORK_REGULATIONS)
+                .leaveCategory(LeaveCategories.COMPENSATION_AM)
+                .workStartDateTime(OffsetDateTime.of(LocalDate.of(2024, 2, 1), LocalTime.of(9, 0), ZoneOffset.ofHours(9)))
+                .workEndDateTime(OffsetDateTime.of(LocalDate.of(2024, 2, 1), LocalTime.of(18, 0), ZoneOffset.ofHours(9)))
+                .build();
+
+        assertTrue(record.isCompensation());
+
+        record = WorkedRecord.builder()
+                .workRegulations(WORK_REGULATIONS)
+                .leaveCategory(LeaveCategories.COMPENSATION_PM)
+                .workStartDateTime(OffsetDateTime.of(LocalDate.of(2024, 2, 1), LocalTime.of(9, 0), ZoneOffset.ofHours(9)))
+                .workEndDateTime(OffsetDateTime.of(LocalDate.of(2024, 2, 1), LocalTime.of(18, 0), ZoneOffset.ofHours(9)))
+                .build();
+
+        assertTrue(record.isCompensation());
     }
 }
