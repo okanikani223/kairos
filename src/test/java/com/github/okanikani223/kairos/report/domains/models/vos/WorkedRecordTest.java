@@ -8,14 +8,13 @@ import java.time.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 class WorkedRecordTest {
-    private static final WorkRegulations WORK_REGULATIONS = new WorkRegulations(
-            OffsetTime.of(9, 0, 0, 0, ZoneOffset.ofHours(9)),
-            OffsetTime.of(17, 45, 0, 0, ZoneOffset.ofHours(9)),
-            7.5 * 60 * 60,
-            OffsetTime.of(12, 0, 0, 0, ZoneOffset.ofHours(9)),
-            OffsetTime.of(13, 0, 0, 0, ZoneOffset.ofHours(9)),
-            1.0 * 60 * 60
-    );
+    private static final WorkRegulations WORK_REGULATIONS = WorkRegulations.builder()
+            .regulatedWorkStartTime(OffsetTime.of(9, 0, 0, 0, ZoneOffset.ofHours(9)))
+            .regulatedWorkEndTime(OffsetTime.of(17, 45, 0, 0, ZoneOffset.ofHours(9)))
+            .regulatedRestStartTime(OffsetTime.of(12, 0, 0, 0, ZoneOffset.ofHours(9)))
+            .regulatedRestEndTime(OffsetTime.of(13, 0, 0, 0, ZoneOffset.ofHours(9)))
+            .build();
+
     @Test
     void build_AllParameterSet_CreateNewInstance() {
         var record = WorkedRecord.builder()

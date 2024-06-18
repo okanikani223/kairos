@@ -12,14 +12,12 @@ class WorkRegulationsTest {
 
     @Test
     void hasDoneRest_WeekDayWork_ReturnTrue() {
-        var regulations = new WorkRegulations(
-                OffsetTime.of(9, 0, 0, 0, ZoneOffset.ofHours(9)),
-                OffsetTime.of(17, 45, 0, 0, ZoneOffset.ofHours(9)),
-                7.5 * 60 * 60,
-                OffsetTime.of(12, 0, 0, 0, ZoneOffset.ofHours(9)),
-                OffsetTime.of(13, 0, 0, 0, ZoneOffset.ofHours(9)),
-                1.0 * 60 * 60
-        );
+        var regulations = WorkRegulations.builder()
+                .regulatedWorkStartTime(OffsetTime.of(9, 0, 0, 0, ZoneOffset.ofHours(9)))
+                .regulatedWorkEndTime(OffsetTime.of(17, 45, 0, 0, ZoneOffset.ofHours(9)))
+                .regulatedRestStartTime(OffsetTime.of(12, 0, 0, 0, ZoneOffset.ofHours(9)))
+                .regulatedRestEndTime(OffsetTime.of(13, 0, 0, 0, ZoneOffset.ofHours(9)))
+                .build();
 
         assertTrue(regulations.hasDoneRest(
                 OffsetDateTime.of(2024, 2, 1, 9, 0, 0, 0, ZoneOffset.ofHours(9)),
@@ -29,14 +27,12 @@ class WorkRegulationsTest {
 
     @Test
     void hasDoneRest_AMOff_ReturnFalse() {
-        var regulations = new WorkRegulations(
-                OffsetTime.of(9, 0, 0, 0, ZoneOffset.ofHours(9)),
-                OffsetTime.of(17, 45, 0, 0, ZoneOffset.ofHours(9)),
-                7.5 * 60 * 60,
-                OffsetTime.of(12, 0, 0, 0, ZoneOffset.ofHours(9)),
-                OffsetTime.of(13, 0, 0, 0, ZoneOffset.ofHours(9)),
-                1.0 * 60 * 60
-        );
+        var regulations = WorkRegulations.builder()
+                .regulatedWorkStartTime(OffsetTime.of(9, 0, 0, 0, ZoneOffset.ofHours(9)))
+                .regulatedWorkEndTime(OffsetTime.of(17, 45, 0, 0, ZoneOffset.ofHours(9)))
+                .regulatedRestStartTime(OffsetTime.of(12, 0, 0, 0, ZoneOffset.ofHours(9)))
+                .regulatedRestEndTime(OffsetTime.of(13, 0, 0, 0, ZoneOffset.ofHours(9)))
+                .build();
 
         assertFalse(regulations.hasDoneRest(
                 OffsetDateTime.of(2024, 2, 1, 13, 0, 0, 0, ZoneOffset.ofHours(9)),
@@ -46,14 +42,12 @@ class WorkRegulationsTest {
 
     @Test
     void hasDoneRest_PMOff_ReturnFalse() {
-        var regulations = new WorkRegulations(
-                OffsetTime.of(9, 0, 0, 0, ZoneOffset.ofHours(9)),
-                OffsetTime.of(17, 45, 0, 0, ZoneOffset.ofHours(9)),
-                7.5 * 60 * 60,
-                OffsetTime.of(12, 0, 0, 0, ZoneOffset.ofHours(9)),
-                OffsetTime.of(13, 0, 0, 0, ZoneOffset.ofHours(9)),
-                1.0 * 60 * 60
-        );
+        var regulations = WorkRegulations.builder()
+                .regulatedWorkStartTime(OffsetTime.of(9, 0, 0, 0, ZoneOffset.ofHours(9)))
+                .regulatedWorkEndTime(OffsetTime.of(17, 45, 0, 0, ZoneOffset.ofHours(9)))
+                .regulatedRestStartTime(OffsetTime.of(12, 0, 0, 0, ZoneOffset.ofHours(9)))
+                .regulatedRestEndTime(OffsetTime.of(13, 0, 0, 0, ZoneOffset.ofHours(9)))
+                .build();
 
         assertFalse(regulations.hasDoneRest(
                 OffsetDateTime.of(2024, 2, 1, 9, 0, 0, 0, ZoneOffset.ofHours(9)),

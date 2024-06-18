@@ -13,14 +13,12 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
 class WorkedSummaryTest {
-    private static final WorkRegulations WORK_REGULATIONS = new WorkRegulations(
-            OffsetTime.of(9, 0, 0, 0, ZoneOffset.ofHours(9)),
-            OffsetTime.of(17, 45, 0, 0, ZoneOffset.ofHours(9)),
-            7.75 * 60 * 60,
-            OffsetTime.of(12, 0, 0, 0, ZoneOffset.ofHours(9)),
-            OffsetTime.of(13, 0, 0, 0, ZoneOffset.ofHours(9)),
-            1.0 * 60 * 60
-    );
+    private static final WorkRegulations WORK_REGULATIONS = WorkRegulations.builder()
+            .regulatedWorkStartTime(OffsetTime.of(9, 0, 0, 0, ZoneOffset.ofHours(9)))
+            .regulatedWorkEndTime(OffsetTime.of(17, 45, 0, 0, ZoneOffset.ofHours(9)))
+            .regulatedRestStartTime(OffsetTime.of(12, 0, 0, 0, ZoneOffset.ofHours(9)))
+            .regulatedRestEndTime(OffsetTime.of(13, 0, 0, 0, ZoneOffset.ofHours(9)))
+            .build();
     private static final List<WorkedRecord> defaultWorkedRecords = Arrays.asList(
             WorkedRecord.builder()
                     .workStartDateTime(OffsetDateTime.of(2024, 5, 16, 9, 0, 0, 0, ZoneOffset.ofHours(9)))
