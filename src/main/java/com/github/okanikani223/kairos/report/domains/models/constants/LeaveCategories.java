@@ -21,6 +21,6 @@ public enum LeaveCategories {
         this.consumedDays = consumedDays;
     }
 
-    public static List<LeaveCategories> LEAVES = Arrays.asList(LEAVE, LEAVE_AM, LEAVE_PM);
-    public static List<LeaveCategories> COMPENSATIONS = Arrays.asList(COMPENSATION, COMPENSATION_AM, COMPENSATION_PM);
+    public static final List<LeaveCategories> LEAVES = Arrays.asList(LEAVE, LEAVE_AM, LEAVE_PM);
+    public static final List<LeaveCategories> COMPENSATIONS = Arrays.asList(COMPENSATION, COMPENSATION_AM, COMPENSATION_PM);
 }

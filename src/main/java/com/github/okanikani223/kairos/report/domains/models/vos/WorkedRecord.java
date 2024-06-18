@@ -122,8 +122,8 @@ public class WorkedRecord {
 
         private Double calcOverSeconds(Double workedSeconds) {
             if (Objects.isNull(workRegulations)) throw new IllegalStateException("No work rules have been set.");
-            var overSeconds = workedSeconds - workRegulations.regulatedWorkingSeconds();
-            return Math.max(overSeconds, 0.0);
+
+            return Math.max(workedSeconds - workRegulations.regulatedWorkingSeconds(), 0.0);
         }
 
         private Double calcWorkedSeconds(OffsetDateTime workStartDateTime, OffsetDateTime workEndDateTime) {
