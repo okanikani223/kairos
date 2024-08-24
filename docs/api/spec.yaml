@@ -1,0 +1,80 @@
+openapi: '3.0.3'
+info:
+  title: Kairos API
+  description: API to manage attendance information
+  version: '1.0'
+servers:
+  - url: https://api.kairos.kazutaka.home.jp/v1
+    description: production server
+  - url: https://api.staging.kairos.kazutaka.home.jp/v1
+    description: staging server for testiong
+paths:
+  /reports:
+    get:
+      summary: Returns a list of attendance reports
+      responses:
+        '200':
+          description: OK
+  /reports/{year}/{month}:
+    get:
+      summary: Returns attendance reports for specified years and months
+      responses:
+        '200':
+          description: OK
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+  schemas:
+    WorkedDay:
+      type: object
+      properties:
+        workedDate:
+          type: string
+          format: date
+        workStartDateTime:
+          type: string
+          format: date-time
+        workEndDateTime:
+          type: string
+          format: date-time
+        restHour:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 24
+        workedHour:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 24
+        overHour:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 24
+        note:
+          type: string
+          minLength: 0
+          maxLength: 200
+    ReportHeader:
+      type: object
+      properties:
+        owner:
+          type: string
+        yearMonth:
+          type: string
+          format: date
+          pattern: '[0-9]{4}-(0[1-9]|1[0-2])'
+        status:
+          type: string
+          enum:
+            - registered
+            - submitted
+            - approval
+          description: >
+            ReportApplicationFlowStatus:
+              * `registered` - Report registration is complete, no application has been submitted. Editable
+              * `submitted` - Report application already requested, editable
+              * `approval` - The report applied for was approved. Not editable
