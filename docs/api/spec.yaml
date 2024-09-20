@@ -1,22 +1,26 @@
 openapi: '3.0.3'
 info:
   title: Kairos API
-  description: API to manage attendance information
+  description: API to manage attendance info
   version: '1.0'
 servers:
   - url: https://api.kairos.kazutaka.home.jp/v1
-    description: production server
+    description: production server(local - private)
   - url: https://api.staging.kairos.kazutaka.home.jp/v1
-    description: staging server for testiong
+    description: staging server for testiong(local - private)
 paths:
   /reports:
     get:
+      tags:
+        - report
       summary: Returns a list of attendance reports
       responses:
         '200':
           description: OK
   /reports/{year}/{month}:
     get:
+      tags:
+        - report
       summary: Returns attendance reports for specified years and months
       responses:
         '200':
@@ -39,6 +43,9 @@ components:
         workEndDateTime:
           type: string
           format: date-time
+          example:
+            - "2023-09-20T12:34:56+09:00"
+            - "2023-09-21T26:34:56+09:00"
         restHour:
           type: number
           format: float
@@ -58,6 +65,10 @@ components:
           type: string
           minLength: 0
           maxLength: 200
+      required:
+        - workStartDateTime
+        - workEndDateTime
+        - restHour
     ReportHeader:
       type: object
       properties:
@@ -78,3 +89,72 @@ components:
               * `registered` - Report registration is complete, no application has been submitted. Editable
               * `submitted` - Report application already requested, editable
               * `approval` - The report applied for was approved. Not editable
+      required:
+        - owner
+        - yearMonth
+        - status
+    ReportSummary:
+      type: object
+      properties:
+        workDays:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 31
+        paidLeaveDays:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 31
+        compensationLeaveDays:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 31
+        specialLeaveDays:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 31
+        totalWorkedHours:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 744
+        totalOverHours:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 744
+        totalHolodayWorkedHours:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 744
+    Location:
+      type: object
+      properties:
+        userId:
+          type: string
+          description: The unique identifier of the user.
+        latitude:
+          type: number
+          format: float
+          description: The latitude of the location.
+          example: 35.6895
+        longitude:
+          type: number
+          format: float
+          description: The longitude of the location.
+          example: 139.6917
+        timestamp:
+          type: string
+          format: date-time
+          description: The date and time when the location was recorded.
+          example: "2023-09-20T12:34:56+09:00"
+      required:
+        - userId
+        - latitude
+        - longitude
+        - timestamp
+      description: A schema representing the geographical location of a user at a specific time.
