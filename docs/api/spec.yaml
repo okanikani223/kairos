@@ -7,7 +7,7 @@ servers:
   - url: https://api.kairos.kazutaka.home.jp/v1
     description: production server(local - private)
   - url: https://api.staging.kairos.kazutaka.home.jp/v1
-    description: staging server for testiong(local - private)
+    description: staging server for testing(local - private)
 paths:
   /reports:
     post:
