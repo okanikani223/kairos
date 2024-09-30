@@ -10,6 +10,13 @@ servers:
     description: staging server for testiong(local - private)
 paths:
   /reports:
+    post:
+      tags:
+        - report
+      summary:  Register Attendance Report
+      responses:
+        '200':
+          description:  OK
     get:
       tags:
         - report
