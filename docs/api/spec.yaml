@@ -63,24 +63,22 @@ components:
         workEndDateTime:
           type: string
           format: date-time
-          example:
-            - "2023-09-20T12:34:56+09:00"
-            - "2023-09-21T26:34:56+09:00"
+          example: "2023-09-21T26:34:56+09:00"
         restHour:
           type: number
           format: float
-          minimum: 0
-          maximum: 24
+          minimum: 0.00
+          maximum: 24.00
         workedHour:
           type: number
           format: float
-          minimum: 0
-          maximum: 24
+          minimum: 0.00
+          maximum: 24.00
         overHour:
           type: number
           format: float
-          minimum: 0
-          maximum: 24
+          minimum: 0.00
+          maximum: 24.00
         note:
           type: string
           minLength: 0
