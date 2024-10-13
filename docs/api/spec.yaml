@@ -14,6 +14,11 @@ paths:
       tags:
         - report
       summary:  Register Attendance Report
+      requestBody:
+        content:
+          'application/json':
+            schema:
+              $ref: '#/components/schemas/Report'
       responses:
         '200':
           description:  OK
@@ -24,6 +29,10 @@ paths:
       responses:
         '200':
           description: OK
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/Report'
   /reports/{year}/{month}:
     get:
       tags:
@@ -32,6 +41,10 @@ paths:
       responses:
         '200':
           description: OK
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/Report'
 components:
   securitySchemes:
     BearerAuth:
@@ -138,6 +151,21 @@ components:
           format: float
           minimum: 0
           maximum: 744
+    Report:
+      type: object
+      properties:
+          header:
+            $ref: '#/components/schemas/ReportHeader'
+          workedDays:
+            type:  array
+            items:
+              $ref: '#/components/schemas/WorkedDay'
+          summary:
+            $ref: '#/components/schemas/ReportSummary'
+      required:
+        - header
+        - workedDays
+        - summary
     Location:
       type: object
       properties:
