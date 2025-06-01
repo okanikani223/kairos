@@ -60,10 +60,11 @@
 - 位置情報(Location)：
   - 属性：
     - id: UUID
+    - userId: UUID (位置情報を登録したユーザーID)
     - latitude: String (緯度)
     - longitude: String (経度)
+    - accuracy: Number (精度、メートル単位、任意)
     - at: DateTime (登録日時)
-    - companyId: UUID (関連する提出先ID)
 
 - 勤怠情報(Attendance)：
   - 属性：
