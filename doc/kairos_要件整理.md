@@ -46,6 +46,19 @@
 
 ## 4. データモデル
 ```
+- ユーザー(User)：
+  - 属性：
+    - id: UUID
+    - username: String (ユーザー名)
+    - email: String (メールアドレス)
+    - passwordHash: String (ハッシュ化されたパスワード)
+    - salt: String (パスワードハッシュに使用されたソルト)
+    - role: String (権限種別：admin, manager, user など)
+    - status: String (アカウント状態：active, inactive, pending など)
+    - lastLoginAt: DateTime (最終ログイン日時)
+    - createdAt: DateTime (作成日時)
+    - updatedAt: DateTime (更新日時)
+
 - 勤怠情報提出先(Company)：
   - 属性：
     - id: UUID
@@ -97,6 +110,26 @@
     - overHour: String (残業時間)
     - note: String (備考)
     - locationIds: UUID[] (関連する位置情報ID)
+
+- ユーザーの勤怠設定(UserAttendanceSetting)：
+  - 属性：
+    - id: UUID
+    - userId: UUID (ユーザーID)
+    - companyId: UUID (勤怠情報提出先ID)
+    - isDefault: Boolean (デフォルトの提出先かどうか)
+    - autoLocationTracking: Boolean (自動位置情報取得の有効/無効)
+    - trackingSchedule: { 
+        startTime: String, 
+        endTime: String, 
+        daysOfWeek: Number[] 
+      } (位置情報取得スケジュール)
+    - notificationSettings: {
+        reminderEnabled: Boolean,
+        reminderTime: String,
+        summaryEnabled: Boolean
+      } (通知設定)
+    - createdAt: DateTime (作成日時)
+    - updatedAt: DateTime (更新日時)
 ```
 
 ## 5. 非機能要件
