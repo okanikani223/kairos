@@ -22,3 +22,64 @@
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
 replay_pid*
+
+# VSCode関連
+.vscode/
+
+# ワークスペース設定（個人用と判断する場合）
+*.code-workspace
+
+# OSごとの不要ファイル
+.DS_Store         # macOS
+Thumbs.db         # Windows
+
+# Node.jsプロジェクトがある場合
+node_modules/
+
+# Pythonプロジェクトがある場合
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.env
+*.venv
+env/
+venv/
+
+# Java関連（あれば）
+*.class
+*.jar
+*.war
+*.ear
+target/
+
+# バックアップファイル
+*~
+*.swp
+*.swo
+
+# ログファイル
+*.log
+
+# 環境変数などの設定ファイル
+.env
+
+# ビルド/出力ファイル（プロジェクトに応じて）
+dist/
+build/
+out/
+
+# テスト結果
+coverage/
+*.lcov
+
+# IDE関係
+.idea/
+*.iml
+
+# Gitの一時ファイル
+*.orig
+
+# その他一時ファイル
+tmp/
+temp/
