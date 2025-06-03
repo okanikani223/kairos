@@ -51,8 +51,7 @@
     - id: UUID
     - username: String (ユーザー名)
     - email: String (メールアドレス)
-    - passwordHash: String (ハッシュ化されたパスワード)
-    - salt: String (パスワードハッシュに使用されたソルト)
+    - passwordHash: String (ハッシュ化されたパスワード、ソルト込み)
     - role: String (権限種別：admin, manager, user など)
     - status: String (アカウント状態：active, inactive, pending など)
     - lastLoginAt: DateTime (最終ログイン日時)
