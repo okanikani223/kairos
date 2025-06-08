@@ -1,0 +1,1 @@
+/home/kaz/dev/ai-instructions/copilot-instructions.md
