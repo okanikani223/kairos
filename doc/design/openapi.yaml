@@ -1,0 +1,2126 @@
+openapi: 3.0.3
+info:
+  title: Kairos API
+  description: |
+    位置情報を活用した勤怠管理システム「Kairos」のAPI仕様書
+    
+    ## 概要
+    Kairosは、GPS/位置情報を使って勤怠を自動記録し、複数の提出先（所属企業・作業現場・仲介会社）の
+    異なる締切や様式に対応した勤怠レポートを生成するシステムです。
+    
+    ## 主要機能
+    - 位置情報を活用した自動勤怠記録
+    - 複数提出先対応の勤怠管理
+    - 手動・自動の勤怠情報登録
+    - 勤怠情報提出先の管理
+    - ユーザー固有の勤怠設定管理
+    
+    ## 認証
+    すべてのAPIはJWT (JSON Web Token) による認証が必要です。
+    Authorization ヘッダーに `Bearer <token>` の形式で指定してください。
+  version: 1.0.0
+  contact:
+    name: Kairos Project Team
+    email: support@kairos.example.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: https://api.kairos.example.com/api/v1
+    description: 本番環境
+  - url: https://staging-api.kairos.example.com/api/v1
+    description: ステージング環境
+  - url: http://localhost:3000/api/v1
+    description: 開発環境
+
+security:
+  - BearerAuth: []
+
+paths:
+  /locations:
+    post:
+      tags:
+        - 位置情報
+      summary: 位置情報登録
+      description: GPS等から取得した位置情報を登録し、勤務地判定を行います
+      operationId: registerLocation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LocationRegistrationRequest'
+            examples:
+              basic:
+                summary: 基本的な位置情報登録
+                value:
+                  latitude: "35.6762"
+                  longitude: "139.6503"
+                  accuracy: 10.5
+                  timestamp: "2025-06-14T09:00:00+09:00"
+      responses:
+        '201':
+          description: 位置情報登録成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LocationRegistrationResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    get:
+      tags:
+        - 位置情報
+      summary: 位置情報履歴取得
+      description: ユーザーの位置情報履歴を取得します
+      operationId: getLocationHistory
+      parameters:
+        - name: fromDate
+          in: query
+          description: 取得開始日
+          schema:
+            type: string
+            format: date
+            example: "2025-06-01"
+        - name: toDate
+          in: query
+          description: 取得終了日
+          schema:
+            type: string
+            format: date
+            example: "2025-06-30"
+        - name: page
+          in: query
+          description: ページ番号
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          description: 1ページあたりの件数
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: 位置情報履歴取得成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LocationHistoryResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /attendances:
+    post:
+      tags:
+        - 勤怠情報
+      summary: 勤怠情報登録
+      description: 月次の勤怠情報を新規登録します。手動作成と自動生成の両方に対応
+      operationId: createAttendance
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AttendanceCreationRequest'
+            examples:
+              manual:
+                summary: 手動作成
+                value:
+                  year: 2025
+                  month: 6
+                  autoGenerate: false
+                  details:
+                    - date: "2025-06-01"
+                      holiday: false
+                      startDateTime: "2025-06-01T09:00:00+09:00"
+                      endDateTime: "2025-06-01T18:00:00+09:00"
+                      restHour: "1.0"
+                      workHour: "8.0"
+                      overHour: "0.0"
+              auto:
+                summary: 自動生成
+                value:
+                  year: 2025
+                  month: 6
+                  autoGenerate: true
+                  generateOptions:
+                    useLocationData: true
+                    fallbackToRegulation: true
+                    autoLeaveDetection: true
+      responses:
+        '201':
+          description: 勤怠情報登録成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AttendanceResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    get:
+      tags:
+        - 勤怠情報
+      summary: 勤怠情報一覧取得
+      description: 勤怠情報の一覧を取得します。期間指定やフィルタリングが可能
+      operationId: getAttendances
+      parameters:
+        - name: year
+          in: query
+          description: 取得対象年
+          schema:
+            type: integer
+            minimum: 2020
+            maximum: 2099
+            example: 2025
+        - name: month
+          in: query
+          description: 取得対象月
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 12
+            example: 6
+        - name: page
+          in: query
+          description: ページ番号
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          description: 1ページあたりの件数
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: sort
+          in: query
+          description: ソート基準
+          schema:
+            type: string
+            enum: [year, month, createdAt]
+            default: year,month
+        - name: order
+          in: query
+          description: ソート順序
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+      responses:
+        '200':
+          description: 勤怠情報一覧取得成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AttendanceListResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /attendances/{year}:
+    get:
+      tags:
+        - 勤怠情報
+      summary: 年別勤怠情報取得
+      description: 指定した年の勤怠情報を全て取得します
+      operationId: getAttendancesByYear
+      parameters:
+        - name: year
+          in: path
+          required: true
+          description: 取得対象年
+          schema:
+            type: integer
+            minimum: 2020
+            maximum: 2099
+            example: 2025
+      responses:
+        '200':
+          description: 年別勤怠情報取得成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AttendanceListResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /attendances/{year}/{month}:
+    get:
+      tags:
+        - 勤怠情報
+      summary: 月別勤怠情報取得
+      description: 指定した年月の勤怠情報を取得します
+      operationId: getAttendancesByMonth
+      parameters:
+        - name: year
+          in: path
+          required: true
+          description: 取得対象年
+          schema:
+            type: integer
+            minimum: 2020
+            maximum: 2099
+            example: 2025
+        - name: month
+          in: path
+          required: true
+          description: 取得対象月
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 12
+            example: 6
+      responses:
+        '200':
+          description: 月別勤怠情報取得成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AttendanceResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /attendances/{attendanceId}:
+    put:
+      tags:
+        - 勤怠情報
+      summary: 勤怠情報全体更新
+      description: 既存の勤怠情報を全体更新します
+      operationId: updateAttendance
+      parameters:
+        - name: attendanceId
+          in: path
+          required: true
+          description: 勤怠情報ID
+          schema:
+            type: string
+            format: uuid
+            example: "550e8400-e29b-41d4-a716-446655440000"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AttendanceUpdateRequest'
+      responses:
+        '200':
+          description: 勤怠情報更新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AttendanceUpdateResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    patch:
+      tags:
+        - 勤怠情報
+      summary: 勤怠情報部分更新
+      description: 既存の勤怠情報を部分更新します。手動編集と自動再生成に対応
+      operationId: patchAttendance
+      parameters:
+        - name: attendanceId
+          in: path
+          required: true
+          description: 勤怠情報ID
+          schema:
+            type: string
+            format: uuid
+            example: "550e8400-e29b-41d4-a716-446655440000"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AttendancePatchRequest'
+            examples:
+              partial:
+                summary: 部分更新
+                value:
+                  updateType: "partial"
+                  details:
+                    - id: "detail-001"
+                      startDateTime: "2025-06-01T09:15:00+09:00"
+                      endDateTime: "2025-06-01T18:30:00+09:00"
+                      note: "時刻修正"
+              regenerate:
+                summary: 自動再生成
+                value:
+                  updateType: "regenerate"
+                  targetDates: ["2025-06-01", "2025-06-02"]
+                  generateOptions:
+                    useLocationData: true
+                    fallbackToRegulation: true
+                    autoLeaveDetection: true
+                  preserveManualEdits: true
+      responses:
+        '200':
+          description: 勤怠情報部分更新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AttendanceUpdateResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    delete:
+      tags:
+        - 勤怠情報
+      summary: 勤怠情報物理削除
+      description: 勤怠情報を物理削除します
+      operationId: deleteAttendance
+      parameters:
+        - name: attendanceId
+          in: path
+          required: true
+          description: 勤怠情報ID
+          schema:
+            type: string
+            format: uuid
+            example: "550e8400-e29b-41d4-a716-446655440000"
+        - name: force
+          in: query
+          description: 強制削除フラグ
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: 勤怠情報削除成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AttendanceDeletionResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /attendances/{attendanceId}/disable:
+    patch:
+      tags:
+        - 勤怠情報
+      summary: 勤怠情報論理削除
+      description: 勤怠情報を論理削除（無効化）します
+      operationId: disableAttendance
+      parameters:
+        - name: attendanceId
+          in: path
+          required: true
+          description: 勤怠情報ID
+          schema:
+            type: string
+            format: uuid
+            example: "550e8400-e29b-41d4-a716-446655440000"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AttendanceDisableRequest'
+      responses:
+        '200':
+          description: 勤怠情報無効化成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AttendanceDisableResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /companies:
+    post:
+      tags:
+        - 勤怠情報提出先
+      summary: 提出先登録
+      description: 新しい勤怠情報提出先を登録します
+      operationId: createCompany
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompanyCreationRequest'
+            example:
+              companyName: "株式会社サンプル"
+              location:
+                latitude: "35.6762"
+                longitude: "139.6503"
+              regulationStartTime: "09:00"
+              regulationEndTime: "18:00"
+              regulationRestStartTime: "12:00"
+              regulationRestEndTime: "13:00"
+              affiliationStartDate: "2025-01-01"
+      responses:
+        '201':
+          description: 提出先登録成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompanyResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    get:
+      tags:
+        - 勤怠情報提出先
+      summary: 提出先一覧取得
+      description: 勤怠情報提出先の一覧を取得します
+      operationId: getCompanies
+      parameters:
+        - name: status
+          in: query
+          description: ステータスフィルタ
+          schema:
+            type: string
+            enum: [active, inactive, all]
+            default: active
+        - name: page
+          in: query
+          description: ページ番号
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          description: 1ページあたりの件数
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+        - name: sortBy
+          in: query
+          description: ソート基準
+          schema:
+            type: string
+            enum: [companyName, createdAt, updatedAt]
+            default: companyName
+        - name: order
+          in: query
+          description: ソート順序
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: asc
+      responses:
+        '200':
+          description: 提出先一覧取得成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompanyListResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /companies/{companyId}:
+    get:
+      tags:
+        - 勤怠情報提出先
+      summary: 提出先詳細取得
+      description: 指定した勤怠情報提出先の詳細情報を取得します
+      operationId: getCompany
+      parameters:
+        - name: companyId
+          in: path
+          required: true
+          description: 会社ID
+          schema:
+            type: string
+            format: uuid
+            example: "12345678-1234-1234-1234-123456789abc"
+      responses:
+        '200':
+          description: 提出先詳細取得成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompanyResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    put:
+      tags:
+        - 勤怠情報提出先
+      summary: 提出先全体更新
+      description: 勤怠情報提出先の情報を全体更新します
+      operationId: updateCompany
+      parameters:
+        - name: companyId
+          in: path
+          required: true
+          description: 会社ID
+          schema:
+            type: string
+            format: uuid
+            example: "12345678-1234-1234-1234-123456789abc"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompanyUpdateRequest'
+      responses:
+        '200':
+          description: 提出先更新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompanyResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    patch:
+      tags:
+        - 勤怠情報提出先
+      summary: 提出先部分更新
+      description: 勤怠情報提出先の情報を部分更新します
+      operationId: patchCompany
+      parameters:
+        - name: companyId
+          in: path
+          required: true
+          description: 会社ID
+          schema:
+            type: string
+            format: uuid
+            example: "12345678-1234-1234-1234-123456789abc"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompanyPatchRequest'
+            example:
+              companyName: "株式会社サンプル（更新版）"
+              regulationStartTime: "08:30"
+              regulationEndTime: "17:30"
+      responses:
+        '200':
+          description: 提出先部分更新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompanyResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    delete:
+      tags:
+        - 勤怠情報提出先
+      summary: 提出先物理削除
+      description: 勤怠情報提出先を物理削除します
+      operationId: deleteCompany
+      parameters:
+        - name: companyId
+          in: path
+          required: true
+          description: 会社ID
+          schema:
+            type: string
+            format: uuid
+            example: "12345678-1234-1234-1234-123456789abc"
+        - name: force
+          in: query
+          description: 強制削除フラグ
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: 提出先削除成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompanyDeletionResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /companies/{companyId}/disable:
+    patch:
+      tags:
+        - 勤怠情報提出先
+      summary: 提出先論理削除
+      description: 勤怠情報提出先を論理削除（無効化）します
+      operationId: disableCompany
+      parameters:
+        - name: companyId
+          in: path
+          required: true
+          description: 会社ID
+          schema:
+            type: string
+            format: uuid
+            example: "12345678-1234-1234-1234-123456789abc"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompanyDisableRequest'
+            example:
+              reason: "所属終了のため"
+              disableDate: "2025-06-30"
+      responses:
+        '200':
+          description: 提出先無効化成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompanyDisableResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /users/{userId}/attendance-settings:
+    get:
+      tags:
+        - ユーザー勤怠設定
+      summary: ユーザー勤怠設定取得
+      description: ユーザーの勤怠設定情報を取得します
+      operationId: getUserAttendanceSettings
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          description: ユーザーID
+          schema:
+            type: string
+            format: uuid
+            example: "550e8400-e29b-41d4-a716-446655441234"
+        - name: includeHistory
+          in: query
+          description: 履歴含有フラグ
+          schema:
+            type: boolean
+            default: false
+        - name: fromDate
+          in: query
+          description: 履歴取得開始日
+          schema:
+            type: string
+            format: date
+            example: "2025-06-01"
+        - name: toDate
+          in: query
+          description: 履歴取得終了日
+          schema:
+            type: string
+            format: date
+            example: "2025-06-30"
+      responses:
+        '200':
+          description: ユーザー勤怠設定取得成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserAttendanceSettingResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /users/{userId}/attendance-settings/history:
+    get:
+      tags:
+        - ユーザー勤怠設定
+      summary: 設定変更履歴取得
+      description: ユーザー勤怠設定の変更履歴を取得します
+      operationId: getUserAttendanceSettingsHistory
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          description: ユーザーID
+          schema:
+            type: string
+            format: uuid
+            example: "550e8400-e29b-41d4-a716-446655441234"
+        - name: fromDate
+          in: query
+          description: 履歴取得開始日
+          schema:
+            type: string
+            format: date
+            example: "2025-06-01"
+        - name: toDate
+          in: query
+          description: 履歴取得終了日
+          schema:
+            type: string
+            format: date
+            example: "2025-06-30"
+        - name: page
+          in: query
+          description: ページ番号
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          description: 1ページあたりの件数
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: 設定変更履歴取得成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserAttendanceSettingHistoryResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        JWT (JSON Web Token) による認証。
+        `Authorization: Bearer <token>` の形式でヘッダーに指定してください。
+
+  schemas:
+    # === 共通スキーマ ===
+    Location:
+      type: object
+      required:
+        - latitude
+        - longitude
+      properties:
+        latitude:
+          type: string
+          pattern: '^-?([0-8]?[0-9](\.[0-9]+)?|90(\.0+)?)$'
+          description: 緯度（-90.0～90.0）
+          example: "35.6762"
+        longitude:
+          type: string
+          pattern: '^-?(1[0-7][0-9](\.[0-9]+)?|[0-9]?[0-9](\.[0-9]+)?|180(\.0+)?)$'
+          description: 経度（-180.0～180.0）
+          example: "139.6503"
+
+    GenerateOptions:
+      type: object
+      properties:
+        useLocationData:
+          type: boolean
+          description: 位置情報使用フラグ
+          default: true
+        fallbackToRegulation:
+          type: boolean
+          description: 規定時間フォールバック
+          default: true
+        autoLeaveDetection:
+          type: boolean
+          description: 自動休暇判定
+          default: true
+        locationAccuracyThreshold:
+          type: number
+          description: 位置精度閾値(m)
+          minimum: 1
+          maximum: 10000
+          default: 100
+        workSiteProximityThreshold:
+          type: number
+          description: 勤務地近接閾値(m)
+          minimum: 1
+          maximum: 2000
+          default: 200
+        minimumWorkHours:
+          type: number
+          description: 最小勤務時間
+          minimum: 0
+          maximum: 24
+          default: 1.0
+        maximumWorkHours:
+          type: number
+          description: 最大勤務時間
+          minimum: 0
+          maximum: 24
+          default: 12.0
+
+    Pagination:
+      type: object
+      properties:
+        total:
+          type: integer
+          description: 総件数
+          example: 150
+        page:
+          type: integer
+          description: 現在のページ番号
+          example: 1
+        limit:
+          type: integer
+          description: 1ページあたりの件数
+          example: 20
+        totalPages:
+          type: integer
+          description: 総ページ数
+          example: 8
+        hasNext:
+          type: boolean
+          description: 次ページの有無
+          example: true
+        hasPrev:
+          type: boolean
+          description: 前ページの有無
+          example: false
+
+    ErrorDetail:
+      type: object
+      properties:
+        field:
+          type: string
+          description: エラー対象フィールド
+          example: "latitude"
+        message:
+          type: string
+          description: 詳細エラーメッセージ
+          example: "緯度は-90.0から90.0の範囲で入力してください"
+        value:
+          description: エラーとなった値
+          example: 95.0
+
+    SuccessResponse:
+      type: object
+      required:
+        - success
+        - timestamp
+      properties:
+        success:
+          type: boolean
+          enum: [true]
+          description: 成功フラグ
+        timestamp:
+          type: string
+          format: date-time
+          description: レスポンス生成時刻
+          example: "2025-06-14T10:30:00+09:00"
+
+    ErrorResponse:
+      type: object
+      required:
+        - success
+        - error
+        - timestamp
+      properties:
+        success:
+          type: boolean
+          enum: [false]
+          description: 失敗フラグ
+        error:
+          type: object
+          required:
+            - code
+            - message
+          properties:
+            code:
+              type: string
+              description: エラーコード
+              example: "VALIDATION_ERROR"
+            message:
+              type: string
+              description: エラーメッセージ
+              example: "入力データに不正な値が含まれています"
+            details:
+              type: array
+              items:
+                $ref: '#/components/schemas/ErrorDetail'
+              description: エラー詳細
+        timestamp:
+          type: string
+          format: date-time
+          description: レスポンス生成時刻
+          example: "2025-06-14T10:30:00+09:00"
+        requestId:
+          type: string
+          description: リクエストID
+          example: "req_123456789"
+
+    # === 位置情報関連スキーマ ===
+    LocationRegistrationRequest:
+      type: object
+      required:
+        - latitude
+        - longitude
+      properties:
+        latitude:
+          type: string
+          pattern: '^-?([0-8]?[0-9](\.[0-9]+)?|90(\.0+)?)$'
+          description: 緯度（-90.0～90.0）
+          example: "35.6762"
+        longitude:
+          type: string
+          pattern: '^-?(1[0-7][0-9](\.[0-9]+)?|[0-9]?[0-9](\.[0-9]+)?|180(\.0+)?)$'
+          description: 経度（-180.0～180.0）
+          example: "139.6503"
+        accuracy:
+          type: number
+          minimum: 0
+          maximum: 10000
+          description: 位置精度(m)
+          example: 10.5
+        timestamp:
+          type: string
+          format: date-time
+          description: 取得時刻（ISO8601形式）
+          example: "2025-06-14T09:00:00+09:00"
+        deviceInfo:
+          type: object
+          description: デバイス情報
+          properties:
+            type:
+              type: string
+              description: デバイス種別
+              example: "smartphone"
+            os:
+              type: string
+              description: OS情報
+              example: "iOS 17.0"
+
+    LocationRegistrationResponse:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                locationId:
+                  type: string
+                  format: uuid
+                  description: 位置情報ID
+                  example: "550e8400-e29b-41d4-a716-446655440000"
+                recordedAt:
+                  type: string
+                  format: date-time
+                  description: 記録日時
+                  example: "2025-06-14T09:00:00+09:00"
+                workJudgment:
+                  type: object
+                  description: 勤務地判定結果
+                  properties:
+                    isWorkLocation:
+                      type: boolean
+                      description: 勤務地判定
+                      example: true
+                    workSiteId:
+                      type: string
+                      description: 勤務地ID
+                      example: "site-001"
+                    distanceFromWorkSite:
+                      type: number
+                      description: 勤務地からの距離(m)
+                      example: 50.5
+
+    LocationHistoryResponse:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                locations:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                        description: 位置情報ID
+                      latitude:
+                        type: string
+                        description: 緯度
+                      longitude:
+                        type: string
+                        description: 経度
+                      accuracy:
+                        type: number
+                        description: 精度(m)
+                      recordedAt:
+                        type: string
+                        format: date-time
+                        description: 記録日時
+            meta:
+              type: object
+              properties:
+                pagination:
+                  $ref: '#/components/schemas/Pagination'
+
+    # === 勤怠情報関連スキーマ ===
+    AttendanceDetail:
+      type: object
+      required:
+        - date
+        - holiday
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: 詳細ID
+          example: "detail-001"
+        date:
+          type: string
+          format: date
+          description: 日付（YYYY-MM-DD）
+          example: "2025-06-01"
+        holiday:
+          type: boolean
+          description: 祝日フラグ
+          example: false
+        leave:
+          type: string
+          description: 休暇種別
+          enum: [paid, compensatory, special, unpaid]
+          example: "paid"
+        startDateTime:
+          type: string
+          format: date-time
+          description: 開始時刻（ISO8601形式）
+          example: "2025-06-01T09:00:00+09:00"
+        endDateTime:
+          type: string
+          format: date-time
+          description: 終了時刻（ISO8601形式）
+          example: "2025-06-01T18:00:00+09:00"
+        restHour:
+          type: string
+          pattern: '^\d+(\.\d+)?$'
+          description: 休憩時間
+          example: "1.0"
+        workHour:
+          type: string
+          pattern: '^\d+(\.\d+)?$'
+          description: 勤務時間
+          example: "8.0"
+        overHour:
+          type: string
+          pattern: '^\d+(\.\d+)?$'
+          description: 残業時間
+          example: "0.0"
+        note:
+          type: string
+          maxLength: 500
+          description: 備考
+          example: "定時出勤"
+
+    AttendanceSummary:
+      type: object
+      properties:
+        totalWorkDays:
+          type: string
+          description: 総勤務日数
+          example: "20"
+        totalPaidLeaveDays:
+          type: string
+          description: 総有給休暇日数
+          example: "1"
+        totalCompensatoryDays:
+          type: string
+          description: 総代休日数
+          example: "0"
+        totalSpecialLeaveDays:
+          type: string
+          description: 総特別休暇日数
+          example: "0"
+        totalWorkHours:
+          type: string
+          description: 総勤務時間
+          example: "160.0"
+        totalOverHours:
+          type: string
+          description: 総残業時間
+          example: "2.5"
+        totalHolidayWorkHours:
+          type: string
+          description: 総休日勤務時間
+          example: "0.0"
+
+    AttendanceCreationRequest:
+      type: object
+      required:
+        - year
+        - month
+        - autoGenerate
+      properties:
+        year:
+          type: integer
+          minimum: 2020
+          maximum: 2099
+          description: 対象年
+          example: 2025
+        month:
+          type: integer
+          minimum: 1
+          maximum: 12
+          description: 対象月
+          example: 6
+        autoGenerate:
+          type: boolean
+          description: 自動生成フラグ
+          example: false
+        details:
+          type: array
+          items:
+            $ref: '#/components/schemas/AttendanceDetail'
+          description: 勤怠詳細（手動作成時必須）
+        generateOptions:
+          $ref: '#/components/schemas/GenerateOptions'
+          description: 自動生成オプション（自動生成時必須）
+
+    AttendanceUpdateRequest:
+      type: object
+      required:
+        - year
+        - month
+        - details
+      properties:
+        year:
+          type: integer
+          minimum: 2020
+          maximum: 2099
+          description: 対象年
+          example: 2025
+        month:
+          type: integer
+          minimum: 1
+          maximum: 12
+          description: 対象月
+          example: 6
+        details:
+          type: array
+          items:
+            $ref: '#/components/schemas/AttendanceDetail'
+          description: 勤怠詳細
+
+    AttendancePatchRequest:
+      type: object
+      required:
+        - updateType
+      properties:
+        updateType:
+          type: string
+          enum: [partial, regenerate]
+          description: 更新タイプ
+          example: "partial"
+        details:
+          type: array
+          items:
+            $ref: '#/components/schemas/AttendanceDetail'
+          description: 部分更新対象詳細
+        targetDates:
+          type: array
+          items:
+            type: string
+            format: date
+          description: 再生成対象日付
+          example: ["2025-06-01", "2025-06-02"]
+        generateOptions:
+          $ref: '#/components/schemas/GenerateOptions'
+          description: 自動生成オプション
+        preserveManualEdits:
+          type: boolean
+          description: 手動編集保持フラグ
+          default: true
+
+    AttendanceDisableRequest:
+      type: object
+      required:
+        - reason
+      properties:
+        reason:
+          type: string
+          maxLength: 200
+          description: 無効化理由
+          example: "誤って作成したため"
+        disableDate:
+          type: string
+          format: date
+          description: 無効化日
+          example: "2025-06-30"
+
+    AttendanceResponse:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                attendance:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      format: uuid
+                      description: 勤怠情報ID
+                      example: "550e8400-e29b-41d4-a716-446655440000"
+                    year:
+                      type: integer
+                      description: 対象年
+                      example: 2025
+                    month:
+                      type: integer
+                      description: 対象月
+                      example: 6
+                    userId:
+                      type: string
+                      format: uuid
+                      description: ユーザーID
+                      example: "550e8400-e29b-41d4-a716-446655441234"
+                    details:
+                      type: array
+                      items:
+                        $ref: '#/components/schemas/AttendanceDetail'
+                      description: 勤怠詳細
+                    summary:
+                      $ref: '#/components/schemas/AttendanceSummary'
+                      description: 月次集計
+                    generationMethod:
+                      type: string
+                      enum: [manual, auto]
+                      description: 生成方法
+                      example: "auto"
+                    createdAt:
+                      type: string
+                      format: date-time
+                      description: 作成日時
+                      example: "2025-06-14T10:30:00+09:00"
+                    updatedAt:
+                      type: string
+                      format: date-time
+                      description: 更新日時
+                      example: "2025-06-14T10:30:00+09:00"
+
+    AttendanceListResponse:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                attendances:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                        description: 勤怠情報ID
+                      year:
+                        type: integer
+                        description: 対象年
+                      month:
+                        type: integer
+                        description: 対象月
+                      summary:
+                        $ref: '#/components/schemas/AttendanceSummary'
+                      generationMethod:
+                        type: string
+                        enum: [manual, auto]
+                        description: 生成方法
+                      created:
+                        type: boolean
+                        description: 新規作成フラグ
+                      createdAt:
+                        type: string
+                        format: date-time
+                        description: 作成日時
+            meta:
+              type: object
+              properties:
+                pagination:
+                  $ref: '#/components/schemas/Pagination'
+
+    AttendanceUpdateResponse:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                attendance:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      format: uuid
+                      description: 勤怠情報ID
+                    updatedAt:
+                      type: string
+                      format: date-time
+                      description: 更新日時
+                changedFields:
+                  type: array
+                  items:
+                    type: string
+                  description: 変更されたフィールド
+                  example: ["startDateTime", "endDateTime"]
+                recalculatedSummary:
+                  type: boolean
+                  description: サマリ再計算フラグ
+                  example: true
+
+    AttendanceDeletionResponse:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                message:
+                  type: string
+                  description: 削除完了メッセージ
+                  example: "勤怠情報が正常に削除されました"
+                deletedCount:
+                  type: object
+                  properties:
+                    attendanceRecords:
+                      type: integer
+                      description: 削除された勤怠レコード数
+                      example: 1
+                    detailRecords:
+                      type: integer
+                      description: 削除された詳細レコード数
+                      example: 30
+
+    AttendanceDisableResponse:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                message:
+                  type: string
+                  description: 無効化完了メッセージ
+                  example: "勤怠情報が正常に無効化されました"
+                disabledAt:
+                  type: string
+                  format: date-time
+                  description: 無効化日時
+                  example: "2025-06-14T10:30:00+09:00"
+
+    # === 勤怠情報提出先関連スキーマ ===
+    CompanyCreationRequest:
+      type: object
+      required:
+        - companyName
+        - location
+        - regulationStartTime
+        - regulationEndTime
+        - affiliationStartDate
+      properties:
+        companyName:
+          type: string
+          minLength: 1
+          maxLength: 200
+          description: 会社名
+          example: "株式会社サンプル"
+        location:
+          $ref: '#/components/schemas/Location'
+          description: 位置情報
+        regulationStartTime:
+          type: string
+          pattern: '^([01]?[0-9]|2[0-3]):[0-5][0-9]$'
+          description: 規定開始時刻（HH:mm）
+          example: "09:00"
+        regulationEndTime:
+          type: string
+          pattern: '^([01]?[0-9]|2[0-3]):[0-5][0-9]$'
+          description: 規定終了時刻（HH:mm）
+          example: "18:00"
+        regulationRestStartTime:
+          type: string
+          pattern: '^([01]?[0-9]|2[0-3]):[0-5][0-9]$'
+          description: 規定休憩開始時刻（HH:mm）
+          example: "12:00"
+        regulationRestEndTime:
+          type: string
+          pattern: '^([01]?[0-9]|2[0-3]):[0-5][0-9]$'
+          description: 規定休憩終了時刻（HH:mm）
+          example: "13:00"
+        affiliationStartDate:
+          type: string
+          format: date
+          description: 所属開始日（YYYY-MM-DD）
+          example: "2025-01-01"
+        affiliationEndDate:
+          type: string
+          format: date
+          description: 所属終了日（YYYY-MM-DD）
+          example: "2025-12-31"
+
+    CompanyUpdateRequest:
+      allOf:
+        - $ref: '#/components/schemas/CompanyCreationRequest'
+
+    CompanyPatchRequest:
+      type: object
+      properties:
+        companyName:
+          type: string
+          minLength: 1
+          maxLength: 200
+          description: 会社名
+        location:
+          $ref: '#/components/schemas/Location'
+          description: 位置情報
+        regulationStartTime:
+          type: string
+          pattern: '^([01]?[0-9]|2[0-3]):[0-5][0-9]$'
+          description: 規定開始時刻（HH:mm）
+        regulationEndTime:
+          type: string
+          pattern: '^([01]?[0-9]|2[0-3]):[0-5][0-9]$'
+          description: 規定終了時刻（HH:mm）
+        regulationRestStartTime:
+          type: string
+          pattern: '^([01]?[0-9]|2[0-3]):[0-5][0-9]$'
+          description: 規定休憩開始時刻（HH:mm）
+        regulationRestEndTime:
+          type: string
+          pattern: '^([01]?[0-9]|2[0-3]):[0-5][0-9]$'
+          description: 規定休憩終了時刻（HH:mm）
+        affiliationStartDate:
+          type: string
+          format: date
+          description: 所属開始日（YYYY-MM-DD）
+        affiliationEndDate:
+          type: string
+          format: date
+          description: 所属終了日（YYYY-MM-DD）
+
+    CompanyDisableRequest:
+      type: object
+      required:
+        - reason
+      properties:
+        reason:
+          type: string
+          maxLength: 200
+          description: 無効化理由
+          example: "所属終了のため"
+        disableDate:
+          type: string
+          format: date
+          description: 無効化日
+          example: "2025-06-30"
+
+    CompanyResponse:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                company:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      format: uuid
+                      description: 会社ID
+                      example: "12345678-1234-1234-1234-123456789abc"
+                    companyName:
+                      type: string
+                      description: 会社名
+                      example: "株式会社サンプル"
+                    location:
+                      $ref: '#/components/schemas/Location'
+                      description: 位置情報
+                    regulationStartTime:
+                      type: string
+                      description: 規定開始時刻
+                      example: "09:00"
+                    regulationEndTime:
+                      type: string
+                      description: 規定終了時刻
+                      example: "18:00"
+                    regulationRestStartTime:
+                      type: string
+                      description: 規定休憩開始時刻
+                      example: "12:00"
+                    regulationRestEndTime:
+                      type: string
+                      description: 規定休憩終了時刻
+                      example: "13:00"
+                    affiliationStartDate:
+                      type: string
+                      format: date
+                      description: 所属開始日
+                      example: "2025-01-01"
+                    affiliationEndDate:
+                      type: string
+                      format: date
+                      description: 所属終了日
+                      example: "2025-12-31"
+                    status:
+                      type: string
+                      enum: [active, inactive]
+                      description: ステータス
+                      example: "active"
+                    createdAt:
+                      type: string
+                      format: date-time
+                      description: 作成日時
+                      example: "2025-06-14T10:30:00+09:00"
+                    updatedAt:
+                      type: string
+                      format: date-time
+                      description: 更新日時
+                      example: "2025-06-14T10:30:00+09:00"
+
+    CompanyListResponse:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                companies:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                        description: 会社ID
+                      companyName:
+                        type: string
+                        description: 会社名
+                      location:
+                        $ref: '#/components/schemas/Location'
+                      regulationStartTime:
+                        type: string
+                        description: 規定開始時刻
+                      regulationEndTime:
+                        type: string
+                        description: 規定終了時刻
+                      status:
+                        type: string
+                        enum: [active, inactive]
+                        description: ステータス
+                      createdAt:
+                        type: string
+                        format: date-time
+                        description: 作成日時
+            meta:
+              type: object
+              properties:
+                pagination:
+                  $ref: '#/components/schemas/Pagination'
+
+    CompanyDeletionResponse:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                message:
+                  type: string
+                  description: 削除完了メッセージ
+                  example: "勤怠情報提出先が正常に削除されました"
+                deletedCompanyId:
+                  type: string
+                  format: uuid
+                  description: 削除された会社ID
+                  example: "12345678-1234-1234-1234-123456789abc"
+                relatedDataCleanup:
+                  type: object
+                  properties:
+                    attendanceRecords:
+                      type: integer
+                      description: 関連削除された勤怠レコード数
+                      example: 5
+                    userSettings:
+                      type: integer
+                      description: 関連削除された設定レコード数
+                      example: 1
+
+    CompanyDisableResponse:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                message:
+                  type: string
+                  description: 無効化完了メッセージ
+                  example: "勤怠情報提出先が正常に無効化されました"
+                disabledAt:
+                  type: string
+                  format: date-time
+                  description: 無効化日時
+                  example: "2025-06-14T10:30:00+09:00"
+
+    # === ユーザー勤怠設定関連スキーマ ===
+    UserAttendanceSettingResponse:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                setting:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      format: uuid
+                      description: 設定ID
+                      example: "550e8400-e29b-41d4-a716-446655440010"
+                    userId:
+                      type: string
+                      format: uuid
+                      description: ユーザーID
+                      example: "550e8400-e29b-41d4-a716-446655441234"
+                    companyId:
+                      type: string
+                      format: uuid
+                      description: 勤怠情報提出先ID
+                      example: "12345678-1234-1234-1234-123456789abc"
+                    isDefault:
+                      type: boolean
+                      description: デフォルト提出先フラグ
+                      example: true
+                    autoLocationTracking:
+                      type: boolean
+                      description: 自動位置情報取得の有効/無効
+                      example: true
+                    trackingSchedule:
+                      type: object
+                      description: 位置情報取得スケジュール
+                      properties:
+                        startTime:
+                          type: string
+                          pattern: '^([01]?[0-9]|2[0-3]):[0-5][0-9]$'
+                          description: 開始時刻
+                          example: "08:30"
+                        endTime:
+                          type: string
+                          pattern: '^([01]?[0-9]|2[0-3]):[0-5][0-9]$'
+                          description: 終了時刻
+                          example: "18:30"
+                        daysOfWeek:
+                          type: array
+                          items:
+                            type: integer
+                            minimum: 0
+                            maximum: 6
+                          description: 曜日（0:日曜～6:土曜）
+                          example: [1, 2, 3, 4, 5]
+                    notificationSettings:
+                      type: object
+                      description: 通知設定
+                      properties:
+                        reminderEnabled:
+                          type: boolean
+                          description: リマインダー通知有効フラグ
+                          example: true
+                        reminderTime:
+                          type: string
+                          pattern: '^([01]?[0-9]|2[0-3]):[0-5][0-9]$'
+                          description: リマインダー時刻
+                          example: "08:00"
+                        summaryEnabled:
+                          type: boolean
+                          description: サマリ通知有効フラグ
+                          example: true
+                    regulationStartTime:
+                      type: string
+                      description: 規定開始時刻
+                      example: "09:00"
+                    regulationEndTime:
+                      type: string
+                      description: 規定終了時刻
+                      example: "18:00"
+                    regulationRestStartTime:
+                      type: string
+                      description: 規定休憩開始時刻
+                      example: "12:00"
+                    regulationRestEndTime:
+                      type: string
+                      description: 規定休憩終了時刻
+                      example: "13:00"
+                    regulationWorkHours:
+                      type: number
+                      description: 規定勤務時間
+                      example: 8
+                    createdAt:
+                      type: string
+                      format: date-time
+                      description: 作成日時
+                      example: "2025-06-14T10:30:00+09:00"
+                    updatedAt:
+                      type: string
+                      format: date-time
+                      description: 更新日時
+                      example: "2025-06-14T10:30:00+09:00"
+
+    UserAttendanceSettingHistoryResponse:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                history:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                        description: 履歴ID
+                      changeType:
+                        type: string
+                        enum: [create, update, delete]
+                        description: 変更種別
+                      changedFields:
+                        type: array
+                        items:
+                          type: string
+                        description: 変更されたフィールド
+                      beforeValue:
+                        type: object
+                        description: 変更前の値
+                      afterValue:
+                        type: object
+                        description: 変更後の値
+                      changedAt:
+                        type: string
+                        format: date-time
+                        description: 変更日時
+                      changedBy:
+                        type: string
+                        format: uuid
+                        description: 変更者ID
+            meta:
+              type: object
+              properties:
+                pagination:
+                  $ref: '#/components/schemas/Pagination'
+
+  responses:
+    BadRequest:
+      description: リクエストパラメータ不正
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            error:
+              code: "VALIDATION_ERROR"
+              message: "入力データに不正な値が含まれています"
+              details:
+                - field: "latitude"
+                  message: "緯度は-90.0から90.0の範囲で入力してください"
+                  value: 95.0
+            timestamp: "2025-06-14T10:30:00+09:00"
+            requestId: "req_123456789"
+
+    Unauthorized:
+      description: 認証失敗
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            error:
+              code: "AUTHENTICATION_REQUIRED"
+              message: "認証が必要です。有効なJWTトークンを提供してください"
+            timestamp: "2025-06-14T10:30:00+09:00"
+            requestId: "req_123456789"
+
+    Forbidden:
+      description: 権限不足
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            error:
+              code: "PERMISSION_DENIED"
+              message: "このリソースにアクセスする権限がありません"
+            timestamp: "2025-06-14T10:30:00+09:00"
+            requestId: "req_123456789"
+
+    NotFound:
+      description: リソース未存在
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            error:
+              code: "RESOURCE_NOT_FOUND"
+              message: "指定されたリソースが見つかりません"
+              details:
+                - field: "attendanceId"
+                  message: "ID 'att_999' に対応する勤怠情報は存在しません"
+                  value: "att_999"
+            timestamp: "2025-06-14T10:30:00+09:00"
+            requestId: "req_123456789"
+
+    Conflict:
+      description: 競合・重複エラー
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            duplicate:
+              summary: データ重複
+              value:
+                success: false
+                error:
+                  code: "DUPLICATE_DATA"
+                  message: "指定された年月の勤怠情報は既に存在します"
+                timestamp: "2025-06-14T10:30:00+09:00"
+                requestId: "req_123456789"
+            optimistic_lock:
+              summary: 楽観的ロック競合
+              value:
+                success: false
+                error:
+                  code: "OPTIMISTIC_LOCK_ERROR"
+                  message: "データが他のユーザーによって更新されています"
+                  details:
+                    - field: "version"
+                      message: "楽観的ロックエラー。最新データを取得して再度実行してください"
+                      expected: 5
+                      actual: 7
+                timestamp: "2025-06-14T10:30:00+09:00"
+                requestId: "req_123456789"
+
+    UnprocessableEntity:
+      description: 業務ルール違反
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            error:
+              code: "BUSINESS_RULE_VIOLATION"
+              message: "ビジネスルールに違反しています"
+              details:
+                - field: "startDateTime"
+                  message: "開始時刻は終了時刻より前である必要があります"
+                  value: "18:00"
+            timestamp: "2025-06-14T10:30:00+09:00"
+            requestId: "req_123456789"
+
+    InternalServerError:
+      description: サーバー内部エラー
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            error:
+              code: "INTERNAL_SERVER_ERROR"
+              message: "サーバー内部エラーが発生しました"
+            timestamp: "2025-06-14T10:30:00+09:00"
+            requestId: "req_123456789"
+
+tags:
+  - name: 位置情報
+    description: |
+      GPS等による位置情報の登録・管理機能
+      
+      - 位置情報の登録と勤務地判定
+      - 位置情報履歴の参照
+      - プライバシー保護対応
+  - name: 勤怠情報
+    description: |
+      勤怠情報の登録・管理機能
+      
+      - 手動・自動による勤怠情報の登録
+      - 勤怠情報の検索・取得
+      - 勤怠情報の更新・削除
+      - 月次サマリの自動計算
+  - name: 勤怠情報提出先
+    description: |
+      勤怠情報の提出先となる企業・組織の管理機能
+      
+      - 提出先企業の登録・管理
+      - 規定勤務時間の設定
+      - 所属期間の管理
+  - name: ユーザー勤怠設定
+    description: |
+      ユーザー固有の勤怠設定の参照機能
+      
+      - 位置情報追跡設定の参照
+      - 通知設定の参照
+      - 規定勤務時間の参照
+      - 設定変更履歴の参照
+
+externalDocs:
+  description: Kairos プロジェクト関連ドキュメント
+  url: https://github.com/okanikani223/kairos/tree/main/doc
