@@ -66,3 +66,11 @@ The codebase follows Domain-Driven Design (DDD) principles with clear separation
 - Null safety is enforced through `Objects.requireNonNull()` validation
 - Japanese comments and documentation are used throughout the codebase
 - Domain models include comprehensive validation in constructors
+
+## Commit Message Guidelines
+
+Follow Conventional Commits specification (https://www.conventionalcommits.org/ja/v1.0.0/#%e4%bb%95%e6%a7%98):
+- Use format: `<type>: <description>`
+- Common types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`
+- Write descriptions in Japanese for consistency with codebase
+- Example: `docs: CLAUDE.mdファイル更新 - Java/Spring Boot開発ガイド追加`
