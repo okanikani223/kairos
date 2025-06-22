@@ -101,6 +101,26 @@ The project follows Clean Architecture with clear separation of concerns:
 - Use `@Repository` annotation for repository implementations
 - Use `@RestController` for REST API controllers
 
+#### REST API Controller Best Practices
+- Always specify `name` property in `@PathVariable` annotations when multiple path variables have the same type
+- This prevents ambiguity in parameter mapping and potential runtime errors
+
+```java
+// Good: Explicit parameter mapping
+@DeleteMapping("/{year}/{month}")
+public ResponseEntity<Void> deleteReport(
+    @PathVariable(name = "year") int year,
+    @PathVariable(name = "month") int month,
+    Authentication authentication) {
+
+// Bad: Ambiguous parameter mapping (can cause errors)
+@DeleteMapping("/{year}/{month}")
+public ResponseEntity<Void> deleteReport(
+    @PathVariable int year,
+    @PathVariable int month,
+    Authentication authentication) {
+```
+
 ### Code Comment Best Practices
 Based on Stack Overflow's best practices for writing code comments (https://stackoverflow.blog/2021/12/23/best-practices-for-writing-code-comments/), this project follows these guidelines:
 
