@@ -10,15 +10,16 @@ import javax.crypto.SecretKey;
 import java.util.Date;
 import java.util.function.Function;
 
-/**
- * JWT関連処理を担当するサービス
- */
 @Service
 public class JwtService {
     
+    // JWTシークレットキー: 本番環境では必ず環境変数で設定すること
+    // デフォルト値は開発・テスト用のみ、セキュリティ上必ず32文字以上で設定
     @Value("${jwt.secret:mySecretKey123456789012345678901234567890}")
     private String secretKey;
     
+    // JWTトークン有効期限: 86400000ms = 24時間
+    // 業務要件では1日以内のセッションで再ログインが必要
     @Value("${jwt.expiration:86400000}")
     private long jwtExpiration;
     

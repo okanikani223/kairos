@@ -41,7 +41,8 @@ public class RegisterReportUsecase {
             .map(ReportMapper::toDetail)
             .toList();
         
-        // 既存の勤怠表があるかチェック
+        // 業務ルール: 同一ユーザー・同一年月の勤怠表は重複登録不可
+        // 理由: 給与計算の二重処理やデータ不整合を防止するため
         Report existingReport = reportRepository.find(request.yearMonth(), user);
         if (existingReport != null) {
             throw new IllegalArgumentException(
@@ -56,7 +57,7 @@ public class RegisterReportUsecase {
         Report report = new Report(
             request.yearMonth(),
             user,
-            ReportStatus.NOT_SUBMITTED,
+            ReportStatus.NOT_SUBMITTED, // 新規作成時は必ず未提出状態から開始する業務ルール
             workDays,
             summary
         );

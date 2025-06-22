@@ -13,6 +13,10 @@ import java.util.Objects;
 
 /**
  * インメモリ勤怠表リポジトリ実装
+ * 
+ * ※これは開発・テスト用の一時的な実装です。
+ * 本番環境ではデータベースを使用した実装に置き換える必要があります。
+ * TODO: PostgreSQL等を使用した永続化実装への置き換え
  */
 @Repository
 public class InMemoryReportRepository implements ReportRepository {

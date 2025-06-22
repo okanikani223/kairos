@@ -42,6 +42,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
         
+        // "Bearer " プレフィックス（7文字）を除去してJWTトークンのみを抽出
         jwt = authHeader.substring(7);
         username = jwtService.extractUsername(jwt);
         

@@ -81,6 +81,87 @@ The project follows Clean Architecture with clear separation of concerns:
 - Use `@Repository` annotation for repository implementations
 - Use `@RestController` for REST API controllers
 
+### Code Comment Best Practices
+Based on Stack Overflow's best practices for writing code comments, this project follows these guidelines:
+
+#### 1. Comments Should Tell You "Why", Not "What"
+- Code tells you HOW, comments tell you WHY
+- Focus on business rules, domain knowledge, and design decisions
+- Avoid comments that simply restate what the code is doing
+
+```java
+// Good: Explains business rule
+// 業務ルール: 同一ユーザー・同一年月の勤怠表は重複登録不可
+// 理由: 給与計算の二重処理やデータ不整合を防止するため
+Report existingReport = reportRepository.find(request.yearMonth(), user);
+
+// Bad: Just restates the code
+// ユーザーIDからJWTトークンを生成
+String token = jwtService.generateToken(userId);
+```
+
+#### 2. Good Comments vs Bad Comments
+- **Good**: Explain complex business logic, magic numbers, workarounds, TODOs
+- **Bad**: Duplicate method names, obvious operations, excuse unclear code
+
+#### 3. Key Rules to Follow
+1. **Don't duplicate code**: If the method name clearly states what it does, don't repeat it in comments
+2. **Don't excuse unclear code**: Make code clearer instead of adding explaining comments
+3. **Explain unidiomatic code**: When you must use unusual patterns, explain why
+4. **Add context for magic numbers**: Always explain constants and configuration values
+5. **Mark incomplete implementations**: Use TODO/FIXME for temporary solutions
+6. **Document bug fixes**: Explain why specific workarounds exist
+7. **Provide external references**: Link to specifications, RFCs, or business requirements
+
+#### 4. Comment Examples in This Project
+
+**Business Logic Comments (Good):**
+```java
+// 特別休暇日数計算: 業務ルールにより部分取得不可のためcount()で固定1日として扱う
+// ※企業ポリシー上特別休暇の部分取得が認められていないため
+double specialLeave = details.stream()
+    .filter(l -> l == LeaveType.SPECIAL_LEAVE)
+    .count();
+```
+
+**Configuration Comments (Good):**
+```java
+// JWTトークン有効期限: 86400000ms = 24時間
+// 業務要件では1日以内のセッションで再ログインが必要
+@Value("${jwt.expiration:86400000}")
+private long jwtExpiration;
+```
+
+**TODO Comments (Good):**
+```java
+/**
+ * ※これは開発・テスト用の一時的な実装です。
+ * 本番環境ではデータベースを使用した実装に置き換える必要があります。
+ * TODO: PostgreSQL等を使用した永続化実装への置き換え
+ */
+@Repository
+public class InMemoryReportRepository implements ReportRepository {
+```
+
+**Magic Number Explanations (Good):**
+```java
+// "Bearer " プレフィックス（7文字）を除去してJWTトークンのみを抽出
+jwt = authHeader.substring(7);
+```
+
+#### 5. When NOT to Comment
+- Method names that clearly describe their purpose
+- Simple getter/setter operations
+- Obvious parameter mappings in DTOs
+- Self-explanatory variable assignments
+- Standard framework patterns (unless there's a specific business reason)
+
+#### 6. Documentation Standards
+- Use Japanese for consistency with the codebase
+- Write Javadoc for public APIs that will be used by other developers
+- Focus comments on domain-specific knowledge that isn't obvious from code
+- Keep comments up-to-date when code changes
+
 ### Testing Guidelines
 - Use `@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)` for unit tests
 - Use `@MockitoBean` annotation has been deprecated since Spring Boot 3.4; use `@MockitoBean` from `org.springframework.test.context.bean.override.mockito` instead
