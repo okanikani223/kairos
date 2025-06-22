@@ -82,7 +82,7 @@ The project follows Clean Architecture with clear separation of concerns:
 - Use `@RestController` for REST API controllers
 
 ### Code Comment Best Practices
-Based on Stack Overflow's best practices for writing code comments, this project follows these guidelines:
+Based on Stack Overflow's best practices for writing code comments (https://stackoverflow.blog/2021/12/23/best-practices-for-writing-code-comments/), this project follows these guidelines:
 
 #### 1. Comments Should Tell You "Why", Not "What"
 - Code tells you HOW, comments tell you WHY
