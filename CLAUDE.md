@@ -169,6 +169,48 @@ jwt = authHeader.substring(7);
 - Test classes should follow the naming convention: `{ClassUnderTest}Test`
 - Test method names should be descriptive in Japanese: `execute_正常ケース_期待される結果`
 
+### Test-Driven Development (TDD)
+Based on Kent Beck's canonical approach to TDD (https://t-wada.hatenablog.jp/entry/canon-tdd-by-kent-beck), this project follows TDD principles:
+
+#### TDD Core Workflow
+1. **テストリスト作成**: Create a list of expected behaviors to implement
+2. **Red**: Write a single, specific test that fails
+3. **Green**: Write just enough code to make the test pass
+4. **Refactor**: Improve code structure while maintaining test success
+5. **Repeat**: Continue until test list is empty
+
+#### TDD Principles
+- **プログラミングワークフロー**: TDD is a programming workflow, not just a testing technique
+- **インターフェース設計と実装設計の分離**: Separates interface design from implementation design
+- **漸進的開発**: Focuses on incremental development and design
+- **設計の創発**: Design emerges naturally through the TDD cycle
+
+#### What TDD Is NOT
+- Not just about writing tests first
+- Not about achieving high code coverage
+- Not about skipping design
+- Not about writing many tests upfront
+
+#### TDD Benefits
+- **過剰設計・不足設計の防止**: Prevents over-designing or under-designing
+- **設計の漸進的発見**: Allows design to emerge incrementally
+- **システム動作への信頼**: Provides confidence in system behavior
+- **既存機能の保護**: Ensures existing functionality remains intact while adding new features
+
+#### TDD Implementation Guidelines
+- Start with a clear test list of behaviors to implement
+- Write the smallest test that expresses one behavior
+- Make the test pass with minimal implementation
+- Refactor once tests are green
+- Use Japanese for test method names to clearly express business requirements
+- Focus on business value and domain logic in tests
+
+#### Testing Spectrum (位置づけ)
+1. **自動テスト (Automated Testing)**: Basic foundation
+2. **開発者テスト (Developer Testing)**: Developers write tests
+3. **テストファースト (Test-First Programming)**: Write tests before implementation
+4. **テスト駆動開発 (TDD)**: Full TDD workflow with design feedback
+
 ### Security Implementation
 - JWT authentication is implemented using jjwt library
 - API endpoints require authentication except `/api/auth/**`
