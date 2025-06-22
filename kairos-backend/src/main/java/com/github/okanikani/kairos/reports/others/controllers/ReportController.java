@@ -1,8 +1,10 @@
 package com.github.okanikani.kairos.reports.others.controllers;
 
+import com.github.okanikani.kairos.reports.applications.usecases.DeleteReportUsecase;
 import com.github.okanikani.kairos.reports.applications.usecases.FindReportUsecase;
 import com.github.okanikani.kairos.reports.applications.usecases.RegisterReportUsecase;
 import com.github.okanikani.kairos.reports.applications.usecases.UpdateReportUsecase;
+import com.github.okanikani.kairos.reports.applications.usecases.dto.DeleteReportRequest;
 import com.github.okanikani.kairos.reports.applications.usecases.dto.FindReportRequest;
 import com.github.okanikani.kairos.reports.applications.usecases.dto.RegisterReportRequest;
 import com.github.okanikani.kairos.reports.applications.usecases.dto.UpdateReportRequest;
@@ -16,9 +18,6 @@ import org.springframework.web.bind.annotation.*;
 import java.time.YearMonth;
 import java.util.Objects;
 
-/**
- * 勤怠表REST APIコントローラー
- */
 @RestController
 @RequestMapping("/api/reports")
 public class ReportController {
@@ -26,25 +25,22 @@ public class ReportController {
     private final RegisterReportUsecase registerReportUsecase;
     private final FindReportUsecase findReportUsecase;
     private final UpdateReportUsecase updateReportUsecase;
+    private final DeleteReportUsecase deleteReportUsecase;
     
-    public ReportController(RegisterReportUsecase registerReportUsecase, FindReportUsecase findReportUsecase, UpdateReportUsecase updateReportUsecase) {
+    public ReportController(RegisterReportUsecase registerReportUsecase, FindReportUsecase findReportUsecase, UpdateReportUsecase updateReportUsecase, DeleteReportUsecase deleteReportUsecase) {
         this.registerReportUsecase = Objects.requireNonNull(registerReportUsecase, "registerReportUsecaseは必須です");
         this.findReportUsecase = Objects.requireNonNull(findReportUsecase, "findReportUsecaseは必須です");
         this.updateReportUsecase = Objects.requireNonNull(updateReportUsecase, "updateReportUsecaseは必須です");
+        this.deleteReportUsecase = Objects.requireNonNull(deleteReportUsecase, "deleteReportUsecaseは必須です");
     }
     
-    /**
-     * 勤怠表を登録する
-     * @param request 登録リクエスト
-     * @param authentication JWT認証情報
-     * @return 登録された勤怠表のレスポンス
-     */
     @PostMapping
     public ResponseEntity<ReportResponse> registerReport(
             @RequestBody RegisterReportRequest request,
             Authentication authentication) {
         try {
-            // JWT認証からユーザーIDを取得して、リクエストのユーザーIDと一致することを確認
+            // セキュリティチェック: JWT認証ユーザーとリクエストユーザーIDの一致確認
+            // 理由: 他のユーザーの勤怠表を誤って操作することを防ぐため
             String authenticatedUserId = authentication.getName();
             if (!authenticatedUserId.equals(request.user().userId())) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
@@ -59,20 +55,12 @@ public class ReportController {
         }
     }
     
-    /**
-     * 勤怠表を取得する
-     * @param year 年
-     * @param month 月
-     * @param authentication JWT認証情報
-     * @return 勤怠表のレスポンス
-     */
     @GetMapping("/{year}/{month}")
     public ResponseEntity<ReportResponse> findReport(
             @PathVariable(name = "year") int year,
             @PathVariable(name = "month") int month,
             Authentication authentication) {
         try {
-            // JWT認証からユーザーIDを取得
             String userId = authentication.getName();
             
             YearMonth yearMonth = YearMonth.of(year, month);
@@ -98,22 +86,45 @@ public class ReportController {
             @RequestBody UpdateReportRequest request,
             Authentication authentication) {
         try {
-            // JWT認証からユーザーIDを取得
             String authenticatedUserId = authentication.getName();
             
-            // パスパラメータの年月とリクエストボディの年月が一致することを確認
+            // REST API設計原則: パスパラメータとボディの年月一致確認
+            // 理由: URLとボディの不整合によるデータ破損を防止するため
             YearMonth pathYearMonth = YearMonth.of(year, month);
             if (!pathYearMonth.equals(request.yearMonth())) {
                 return ResponseEntity.badRequest().build();
             }
             
-            // 認証ユーザーとリクエストのユーザーIDが一致することを確認
+            // セキュリティチェック: JWT認証ユーザーとリクエストユーザーIDの一致確認
             if (!authenticatedUserId.equals(request.user().userId())) {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
             }
             
             ReportResponse response = updateReportUsecase.execute(request);
             return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+    
+    @DeleteMapping("/{year}/{month}")
+    public ResponseEntity<Void> deleteReport(
+            @PathVariable int year,
+            @PathVariable int month,
+            Authentication authentication) {
+        try {
+            // セキュリティ制約: 認証されたユーザー自身の勤怠表のみ削除可能
+            // 理由: 他のユーザーの勤怠データを誤って削除することを防ぐため
+            String authenticatedUserId = authentication.getName();
+            
+            YearMonth yearMonth = YearMonth.of(year, month);
+            UserDto userDto = new UserDto(authenticatedUserId);
+            DeleteReportRequest request = new DeleteReportRequest(yearMonth, userDto);
+            
+            deleteReportUsecase.execute(request);
+            return ResponseEntity.noContent().build();
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
         } catch (Exception e) {
