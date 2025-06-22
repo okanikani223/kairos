@@ -111,8 +111,8 @@ public class ReportController {
     
     @DeleteMapping("/{year}/{month}")
     public ResponseEntity<Void> deleteReport(
-            @PathVariable int year,
-            @PathVariable int month,
+            @PathVariable(name = "year") int year,
+            @PathVariable(name = "month") int month,
             Authentication authentication) {
         try {
             // セキュリティ制約: 認証されたユーザー自身の勤怠表のみ削除可能
