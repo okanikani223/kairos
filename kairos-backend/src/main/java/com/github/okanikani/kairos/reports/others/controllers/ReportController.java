@@ -2,8 +2,10 @@ package com.github.okanikani.kairos.reports.others.controllers;
 
 import com.github.okanikani.kairos.reports.applications.usecases.FindReportUsecase;
 import com.github.okanikani.kairos.reports.applications.usecases.RegisterReportUsecase;
+import com.github.okanikani.kairos.reports.applications.usecases.UpdateReportUsecase;
 import com.github.okanikani.kairos.reports.applications.usecases.dto.FindReportRequest;
 import com.github.okanikani.kairos.reports.applications.usecases.dto.RegisterReportRequest;
+import com.github.okanikani.kairos.reports.applications.usecases.dto.UpdateReportRequest;
 import com.github.okanikani.kairos.reports.applications.usecases.dto.ReportResponse;
 import com.github.okanikani.kairos.reports.applications.usecases.dto.UserDto;
 import org.springframework.http.HttpStatus;
@@ -23,10 +25,12 @@ public class ReportController {
     
     private final RegisterReportUsecase registerReportUsecase;
     private final FindReportUsecase findReportUsecase;
+    private final UpdateReportUsecase updateReportUsecase;
     
-    public ReportController(RegisterReportUsecase registerReportUsecase, FindReportUsecase findReportUsecase) {
+    public ReportController(RegisterReportUsecase registerReportUsecase, FindReportUsecase findReportUsecase, UpdateReportUsecase updateReportUsecase) {
         this.registerReportUsecase = Objects.requireNonNull(registerReportUsecase, "registerReportUsecaseは必須です");
         this.findReportUsecase = Objects.requireNonNull(findReportUsecase, "findReportUsecaseは必須です");
+        this.updateReportUsecase = Objects.requireNonNull(updateReportUsecase, "updateReportUsecaseは必須です");
     }
     
     /**
@@ -64,8 +68,8 @@ public class ReportController {
      */
     @GetMapping("/{year}/{month}")
     public ResponseEntity<ReportResponse> findReport(
-            @PathVariable int year,
-            @PathVariable int month,
+            @PathVariable(name = "year") int year,
+            @PathVariable(name = "month") int month,
             Authentication authentication) {
         try {
             // JWT認証からユーザーIDを取得
@@ -84,6 +88,36 @@ public class ReportController {
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             return ResponseEntity.badRequest().build();
+        }
+    }
+    
+    @PutMapping("/{year}/{month}")
+    public ResponseEntity<ReportResponse> updateReport(
+            @PathVariable(name = "year") int year,
+            @PathVariable(name = "month") int month,
+            @RequestBody UpdateReportRequest request,
+            Authentication authentication) {
+        try {
+            // JWT認証からユーザーIDを取得
+            String authenticatedUserId = authentication.getName();
+            
+            // パスパラメータの年月とリクエストボディの年月が一致することを確認
+            YearMonth pathYearMonth = YearMonth.of(year, month);
+            if (!pathYearMonth.equals(request.yearMonth())) {
+                return ResponseEntity.badRequest().build();
+            }
+            
+            // 認証ユーザーとリクエストのユーザーIDが一致することを確認
+            if (!authenticatedUserId.equals(request.user().userId())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            }
+            
+            ReportResponse response = updateReportUsecase.execute(request);
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
         }
     }
 }
