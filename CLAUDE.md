@@ -4,7 +4,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Kairos is a Java-based timesheet/attendance management system built with Spring Boot 3.5.3 and Java 21. The project focuses on managing work reports (勤怠表) with features for tracking work time, leave types, and report status management.
+Kairos is a Java-based timesheet/attendance management system built with Spring Boot 3.5.3 and Java 21. The project focuses on managing work reports (勤怠表) and location tracking with features for:
+- Timesheet management: tracking work time, leave types, and report status
+- Location tracking: GPS coordinate recording with validation
+- Clean Architecture implementation with Domain-Driven Design principles
 
 ## Build and Development Commands
 
@@ -39,28 +42,45 @@ The codebase follows Domain-Driven Design (DDD) principles with clear separation
 ### Package Structure
 The project follows Clean Architecture with clear separation of concerns:
 
-- `com.github.okanikani.kairos.reports` - Main domain package for attendance reports
+- `com.github.okanikani.kairos.reports` - Attendance reports domain package
   - `domains/models/` - Core domain models
     - `entities/` - Domain entities (Report)
     - `vos/` - Value objects (User, Summary, Detail, WorkTime)
     - `constants/` - Enums (LeaveType, ReportStatus)
-    - `repositories/` - Repository interfaces
+    - `repositories/` - Repository interfaces (ReportRepository)
   - `domains/service/` - Domain services (SummaryFactory)
   - `domains/roundings/` - Rounding logic for time calculations
   - `applications/usecases/` - Application layer use cases
     - `dto/` - Data Transfer Objects for use case input/output
     - `mapper/` - Mappers between DTOs and domain objects
   - `others/` - Interface Adapters layer
-    - `controllers/` - REST API controllers
-    - `repositories/` - Repository implementations
+    - `controllers/` - REST API controllers (ReportController)
+    - `repositories/` - Repository implementations (InMemoryReportRepository)
+
+- `com.github.okanikani.kairos.locations` - Location tracking domain package
+  - `domains/models/` - Core domain models
+    - `entities/` - Domain entities (Location)
+    - `repositories/` - Repository interfaces (LocationRepository)
+  - `applications/usecases/` - Application layer use cases
+    - `dto/` - Data Transfer Objects (RegisterLocationRequest, LocationResponse)
+  - `others/` - Interface Adapters layer
+    - `controllers/` - REST API controllers (LocationController)
+
 - `com.github.okanikani.kairos.security` - Security and authentication components
+  - Authentication controllers, JWT services, security configuration
 
 ### Key Domain Concepts
+
+**Reports Domain:**
 - **Report**: Core entity representing a monthly timesheet with owner, status, work days, and summary
 - **Detail**: Represents individual work day information
 - **Summary**: Aggregated information for a report period
 - **LeaveType**: Enumeration of different leave types
 - **ReportStatus**: Current state of a report (draft, submitted, approved, etc.)
+
+**Locations Domain:**
+- **Location**: Core entity representing GPS coordinates (latitude, longitude) with timestamp
+- GPS coordinate validation ensures latitude (-90.0 to 90.0) and longitude (-180.0 to 180.0) ranges
 
 ### Technology Stack
 - Java 21
@@ -224,6 +244,10 @@ Based on Kent Beck's canonical approach to TDD (https://t-wada.hatenablog.jp/ent
 - **Reports**: 
   - POST `/api/reports` - Register new timesheet report
   - GET `/api/reports/{year}/{month}` - Get timesheet report by year/month
+  - PUT `/api/reports/{year}/{month}` - Update existing timesheet report
+  - DELETE `/api/reports/{year}/{month}` - Delete timesheet report
+- **Locations**:
+  - POST `/api/locations` - Register new location data
 - All API endpoints except authentication require JWT token in Authorization header: `Bearer {token}`
 - Year and month are passed as path parameters, user ID is extracted from JWT token
 - Request/response bodies use DTOs for data transfer between layers
