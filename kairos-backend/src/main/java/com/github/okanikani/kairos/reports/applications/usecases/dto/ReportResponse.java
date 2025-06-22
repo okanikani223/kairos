@@ -1,30 +1,25 @@
-package com.github.okanikani.kairos.reports.domains.models.entities;
-
-import com.github.okanikani.kairos.reports.domains.models.constants.ReportStatus;
-import com.github.okanikani.kairos.reports.domains.models.vos.Detail;
-import com.github.okanikani.kairos.reports.domains.models.vos.Summary;
-import com.github.okanikani.kairos.reports.domains.models.vos.User;
+package com.github.okanikani.kairos.reports.applications.usecases.dto;
 
 import java.time.YearMonth;
 import java.util.List;
 import java.util.Objects;
 
 /**
- * 勤怠表を表わすクラス
+ * 勤怠表レスポンスDTO
  * @param yearMonth 勤怠年月
  * @param owner 所有者
- * @param status ステータス
+ * @param status ステータス（文字列表現）
  * @param workDays 勤務日情報一覧
  * @param summary サマリ情報
  */
-public record Report(
+public record ReportResponse(
         YearMonth yearMonth,
-        User owner,
-        ReportStatus status,
-        List<Detail> workDays,
-        Summary summary
+        UserDto owner,
+        String status,
+        List<DetailDto> workDays,
+        SummaryDto summary
 ) {
-    public Report {
+    public ReportResponse {
         Objects.requireNonNull(yearMonth, "yearMonthは必須です");
         Objects.requireNonNull(owner, "ownerは必須です");
         Objects.requireNonNull(status, "statusは必須です");

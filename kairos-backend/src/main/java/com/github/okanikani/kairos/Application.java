@@ -1,4 +1,4 @@
-package com.github.okanikani223.kairos;
+package com.github.okanikani.kairos;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

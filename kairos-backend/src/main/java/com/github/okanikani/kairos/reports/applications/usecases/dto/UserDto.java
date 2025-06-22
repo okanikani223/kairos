@@ -1,13 +1,13 @@
-package com.github.okanikani.kairos.reports.domains.models.vos;
+package com.github.okanikani.kairos.reports.applications.usecases.dto;
 
 import java.util.Objects;
 
 /**
- * 勤怠表の所有者を表わすクラス
- * @param userId 所有者(ユーザー)のID
+ * ユーザー情報DTO
+ * @param userId ユーザーID
  */
-public record User(String userId) {
-    public User {
+public record UserDto(String userId) {
+    public UserDto {
         Objects.requireNonNull(userId, "userIdは必須です");
         if (userId.isBlank()) {
             throw new IllegalArgumentException("userIdは空文字列にできません");

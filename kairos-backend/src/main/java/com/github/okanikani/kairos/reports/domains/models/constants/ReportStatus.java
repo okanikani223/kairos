@@ -1,4 +1,4 @@
-package com.github.okanikani223.kairos.reports.domains.models.constants;
+package com.github.okanikani.kairos.reports.domains.models.constants;
 
 /**
  * 勤怠表のステータスを表わす定数

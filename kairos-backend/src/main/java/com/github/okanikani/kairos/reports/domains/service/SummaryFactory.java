@@ -1,8 +1,8 @@
-package com.github.okanikani223.kairos.reports.domains.service;
+package com.github.okanikani.kairos.reports.domains.service;
 
-import com.github.okanikani223.kairos.reports.domains.models.constants.LeaveType;
-import com.github.okanikani223.kairos.reports.domains.models.vos.Detail;
-import com.github.okanikani223.kairos.reports.domains.models.vos.Summary;
+import com.github.okanikani.kairos.reports.domains.models.constants.LeaveType;
+import com.github.okanikani.kairos.reports.domains.models.vos.Detail;
+import com.github.okanikani.kairos.reports.domains.models.vos.Summary;
 
 import java.time.Duration;
 import java.util.List;

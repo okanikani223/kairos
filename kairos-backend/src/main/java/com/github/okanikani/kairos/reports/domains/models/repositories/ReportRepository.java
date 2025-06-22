@@ -1,7 +1,7 @@
-package com.github.okanikani223.kairos.reports.domains.models.repositories;
+package com.github.okanikani.kairos.reports.domains.models.repositories;
 
-import com.github.okanikani223.kairos.reports.domains.models.entities.Report;
-import com.github.okanikani223.kairos.reports.domains.models.vos.User;
+import com.github.okanikani.kairos.reports.domains.models.entities.Report;
+import com.github.okanikani.kairos.reports.domains.models.vos.User;
 
 import java.time.YearMonth;
 import java.util.List;

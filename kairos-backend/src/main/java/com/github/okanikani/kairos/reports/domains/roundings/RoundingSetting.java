@@ -1,4 +1,4 @@
-package com.github.okanikani223.kairos.reports.domains.roundings;
+package com.github.okanikani.kairos.reports.domains.roundings;
 
 import java.time.LocalDateTime;
 

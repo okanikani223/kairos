@@ -1,18 +1,18 @@
-package com.github.okanikani.kairos.reports.domains.models.vos;
+package com.github.okanikani.kairos.reports.applications.usecases.dto;
 
 import java.time.Duration;
 
 /**
- * 勤怠の集計情報を表わすクラス
+ * 勤怠集計情報DTO
  * @param workDays 就業日数
- * @param paidLeaveDays 有給日数（午前/午後有給は0.5日として加算）
- * @param compensatoryLeaveDays 代休日数（午前/午後代休は0.5日として加算）
+ * @param paidLeaveDays 有給日数
+ * @param compensatoryLeaveDays 代休日数
  * @param specialLeaveDays 特休日数
  * @param totalWorkTime 総就業時間
  * @param totalOvertime 総残業時間
  * @param totalHolidayWork 総休出時間
  */
-public record Summary(
+public record SummaryDto(
         double workDays,
         double paidLeaveDays,
         double compensatoryLeaveDays,
@@ -20,7 +20,4 @@ public record Summary(
         Duration totalWorkTime,
         Duration totalOvertime,
         Duration totalHolidayWork
-) {
-    public static final Summary EMPTY = new Summary(0, 0, 0, 0, Duration.ZERO, Duration.ZERO, Duration.ZERO);
-}
-
+) {}

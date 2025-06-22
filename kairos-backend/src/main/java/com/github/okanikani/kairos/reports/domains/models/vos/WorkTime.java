@@ -1,6 +1,6 @@
-package com.github.okanikani223.kairos.reports.domains.models.vos;
+package com.github.okanikani.kairos.reports.domains.models.vos;
 
-import com.github.okanikani223.kairos.reports.domains.roundings.RoundingSetting;
+import com.github.okanikani.kairos.reports.domains.roundings.RoundingSetting;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
