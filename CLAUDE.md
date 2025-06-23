@@ -39,6 +39,42 @@ mvn clean package
 
 The codebase follows Domain-Driven Design (DDD) principles with clear separation of concerns:
 
+### Domain-Driven Design (DDD) Principles
+
+**Bounded Context Isolation:**
+- Each domain package (reports, locations, rules, security) represents a distinct bounded context
+- **NO SHARING OF DOMAIN MODELS BETWEEN CONTEXTS**: Each bounded context must maintain its own domain models
+- Cross-context communication must occur only through well-defined interfaces and anti-corruption layers
+- Domain entities, value objects, and domain services must not be imported across domain boundaries
+
+**Anti-Corruption Layer Pattern:**
+- When one bounded context needs data from another, use application-level integration
+- Create domain-specific DTOs or value objects within each context
+- Use domain services or application services to coordinate between contexts
+- Never directly reference domain models from other bounded contexts
+
+**Context Independence:**
+- Each bounded context should be independently deployable and testable
+- Domain logic must not depend on external contexts
+- Changes in one context should not require changes in other contexts (except at integration points)
+
+**Cross-Context Integration Patterns:**
+- Use domain service interfaces to abstract external dependencies (Anti-Corruption Layer pattern)
+- Each domain defines its own domain-specific value objects (e.g., User) even if they appear similar
+- Cross-context communication should occur through application services, not domain services directly
+- Avoid sharing concrete domain models; use domain service abstractions instead
+
+**Example: Reports-Locations Integration**
+```java
+// Good: Reports domain defines its own abstraction
+public interface LocationService {
+    List<LocalDateTime> getLocationRecordTimes(YearMonth yearMonth, User user);
+}
+
+// Bad: Direct import from another domain
+import com.github.okanikani.kairos.locations.domains.models.entities.Location;
+```
+
 ### Package Structure
 The project follows Clean Architecture with clear separation of concerns:
 
