@@ -1,10 +1,10 @@
 package com.github.okanikani.kairos.rules.applications.usecases;
 
 import com.github.okanikani.kairos.rules.applications.usecases.dto.RegisterWorkRuleRequest;
+import com.github.okanikani.kairos.rules.applications.usecases.dto.UserDto;
 import com.github.okanikani.kairos.rules.applications.usecases.dto.WorkRuleResponse;
 import com.github.okanikani.kairos.rules.domains.models.entities.WorkRule;
 import com.github.okanikani.kairos.rules.domains.models.repositories.WorkRuleRepository;
-import com.github.okanikani.kairos.reports.applications.usecases.dto.UserDto;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;

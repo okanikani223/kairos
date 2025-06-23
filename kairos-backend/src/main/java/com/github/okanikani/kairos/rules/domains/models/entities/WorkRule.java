@@ -1,6 +1,6 @@
 package com.github.okanikani.kairos.rules.domains.models.entities;
 
-import com.github.okanikani.kairos.reports.domains.models.vos.User;
+import com.github.okanikani.kairos.rules.domains.models.vos.User;
 
 import java.time.LocalDate;
 import java.time.LocalTime;

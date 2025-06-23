@@ -1,7 +1,5 @@
 package com.github.okanikani.kairos.rules.applications.usecases.dto;
 
-import com.github.okanikani.kairos.reports.applications.usecases.dto.UserDto;
-
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.Objects;

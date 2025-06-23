@@ -1,7 +1,7 @@
 package com.github.okanikani.kairos.rules.domains.models.repositories;
 
 import com.github.okanikani.kairos.rules.domains.models.entities.WorkRule;
-import com.github.okanikani.kairos.reports.domains.models.vos.User;
+import com.github.okanikani.kairos.rules.domains.models.vos.User;
 
 import java.time.LocalDate;
 import java.util.List;

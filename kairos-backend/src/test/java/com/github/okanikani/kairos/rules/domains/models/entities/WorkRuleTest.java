@@ -1,6 +1,6 @@
 package com.github.okanikani.kairos.rules.domains.models.entities;
 
-import com.github.okanikani.kairos.reports.domains.models.vos.User;
+import com.github.okanikani.kairos.rules.domains.models.vos.User;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;

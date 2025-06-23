@@ -1,10 +1,10 @@
 package com.github.okanikani.kairos.rules.applications.usecases.mapper;
 
 import com.github.okanikani.kairos.rules.applications.usecases.dto.RegisterWorkRuleRequest;
+import com.github.okanikani.kairos.rules.applications.usecases.dto.UserDto;
 import com.github.okanikani.kairos.rules.applications.usecases.dto.WorkRuleResponse;
 import com.github.okanikani.kairos.rules.domains.models.entities.WorkRule;
-import com.github.okanikani.kairos.reports.applications.usecases.dto.UserDto;
-import com.github.okanikani.kairos.reports.domains.models.vos.User;
+import com.github.okanikani.kairos.rules.domains.models.vos.User;
 
 public class WorkRuleMapper {
     

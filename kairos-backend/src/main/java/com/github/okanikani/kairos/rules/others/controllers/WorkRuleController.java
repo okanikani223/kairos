@@ -2,8 +2,8 @@ package com.github.okanikani.kairos.rules.others.controllers;
 
 import com.github.okanikani.kairos.rules.applications.usecases.RegisterWorkRuleUsecase;
 import com.github.okanikani.kairos.rules.applications.usecases.dto.RegisterWorkRuleRequest;
+import com.github.okanikani.kairos.rules.applications.usecases.dto.UserDto;
 import com.github.okanikani.kairos.rules.applications.usecases.dto.WorkRuleResponse;
-import com.github.okanikani.kairos.reports.applications.usecases.dto.UserDto;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
