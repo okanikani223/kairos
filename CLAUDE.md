@@ -66,6 +66,16 @@ The project follows Clean Architecture with clear separation of concerns:
   - `others/` - Interface Adapters layer
     - `controllers/` - REST API controllers (LocationController)
 
+- `com.github.okanikani.kairos.rules` - Work rules management domain package
+  - `domains/models/` - Core domain models
+    - `entities/` - Domain entities (WorkRule)
+    - `repositories/` - Repository interfaces (WorkRuleRepository)
+  - `applications/usecases/` - Application layer use cases
+    - `dto/` - Data Transfer Objects (RegisterWorkRuleRequest, WorkRuleResponse)
+    - `mapper/` - Mappers between DTOs and domain objects (WorkRuleMapper)
+  - `others/` - Interface Adapters layer
+    - `controllers/` - REST API controllers (WorkRuleController)
+
 - `com.github.okanikani.kairos.security` - Security and authentication components
   - Authentication controllers, JWT services, security configuration
 
@@ -82,6 +92,21 @@ The project follows Clean Architecture with clear separation of concerns:
 - **Location**: Core entity representing GPS coordinates (latitude, longitude) with timestamp
 - GPS coordinate validation ensures latitude (-90.0 to 90.0) and longitude (-180.0 to 180.0) ranges
 
+**Rules Domain:**
+- **WorkRule**: Core entity representing work rules for specific workplace locations
+- Contains workplace ID, GPS coordinates, user assignment, standard work hours, break times, and membership period
+- Comprehensive validation for GPS coordinates, time logic, and period validation
+- Supports flexible break time configuration (can be null for no break periods)
+
+**WorkRule Business Rules:**
+- Workplace ID is mandatory
+- GPS coordinates must be within valid ranges (latitude: -90.0 to 90.0, longitude: -180.0 to 180.0)
+- User, standard work times, and membership period are required
+- Standard start time must be before standard end time
+- Break start time must be before break end time (when configured)
+- Membership start date must be before or equal to membership end date
+- Break times must be configured as both start and end times or both null (partial configuration not allowed)
+
 ### Technology Stack
 - Java 21
 - Spring Boot 3.5.3 (Web, Security)
@@ -91,6 +116,26 @@ The project follows Clean Architecture with clear separation of concerns:
 - Spring Security for authorization and security configuration
 
 ## Development Notes
+
+### Language Usage Guidelines
+This project follows specific language conventions for different contexts:
+
+**Japanese Usage:**
+- User communication and conversations
+- Git commit messages and descriptions
+- Code comments and inline documentation
+- Test method names for business requirement clarity
+
+**English Usage:**
+- Claude's internal thinking and reasoning processes
+- CLAUDE.md documentation and project guidelines
+- Code implementation (variable names, method names, class names)
+- API endpoints and technical specifications
+
+**Rationale:**
+- Japanese ensures clear communication with Japanese stakeholders and business requirements
+- English maintains international development standards and global accessibility
+- Consistent language switching prevents confusion and maintains professional standards
 
 ### Code Style and Patterns
 - The project uses Java Records for immutable domain models
@@ -251,6 +296,21 @@ Based on Kent Beck's canonical approach to TDD (https://t-wada.hatenablog.jp/ent
 3. **テストファースト (Test-First Programming)**: Write tests before implementation
 4. **テスト駆動開発 (TDD)**: Full TDD workflow with design feedback
 
+#### TDD Implementation Example
+The work rule management feature was implemented using complete TDD approach:
+
+**Implementation Flow:**
+1. **Test List Creation**: Identified WorkRule entity requirements and created comprehensive test case list
+2. **Red Phase**: Implemented WorkRuleTest class first, causing compilation errors (expected)
+3. **Green Phase**: Created minimal WorkRule entity implementation to make tests pass
+4. **Refactor Phase**: Improved validation logic organization and code readability
+5. **Repeat**: Applied same TDD cycle for RegisterWorkRuleUsecase implementation
+
+**Test Coverage:**
+- All entity validation rules (12 test cases)
+- Use case happy and error paths (4 test cases)
+- Boundary value testing (GPS coordinate ranges, time ordering logic)
+
 ### Security Implementation
 - JWT authentication is implemented using jjwt library
 - API endpoints require authentication except `/api/auth/**`
@@ -268,6 +328,8 @@ Based on Kent Beck's canonical approach to TDD (https://t-wada.hatenablog.jp/ent
   - DELETE `/api/reports/{year}/{month}` - Delete timesheet report
 - **Locations**:
   - POST `/api/locations` - Register new location data
+- **Work Rules**:
+  - POST `/api/work-rules` - Register new work rule
 - All API endpoints except authentication require JWT token in Authorization header: `Bearer {token}`
 - Year and month are passed as path parameters, user ID is extracted from JWT token
 - Request/response bodies use DTOs for data transfer between layers
