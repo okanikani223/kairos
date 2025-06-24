@@ -104,13 +104,28 @@ The project follows Clean Architecture with clear separation of concerns:
 
 - `com.github.okanikani.kairos.rules` - Work rules management domain package
   - `domains/models/` - Core domain models
-    - `entities/` - Domain entities (WorkRule)
-    - `repositories/` - Repository interfaces (WorkRuleRepository)
+    - `entities/` - Domain entities (WorkRule, DefaultWorkRule)
+    - `repositories/` - Repository interfaces (WorkRuleRepository, DefaultWorkRuleRepository)
+    - `vos/` - Value objects (User)
+  - `domains/service/` - Domain services (WorkRuleDomainService)
   - `applications/usecases/` - Application layer use cases
-    - `dto/` - Data Transfer Objects (RegisterWorkRuleRequest, WorkRuleResponse)
-    - `mapper/` - Mappers between DTOs and domain objects (WorkRuleMapper)
+    - `dto/` - Data Transfer Objects (RegisterWorkRuleRequest, WorkRuleResponse, etc.)
+    - `mapper/` - Mappers between DTOs and domain objects (WorkRuleMapper, DefaultWorkRuleMapper)
   - `others/` - Interface Adapters layer
-    - `controllers/` - REST API controllers (WorkRuleController)
+    - `controllers/` - REST API controllers (WorkRuleController, DefaultWorkRuleController)
+    - `repositories/` - Repository implementations (InMemoryWorkRuleRepository, InMemoryDefaultWorkRuleRepository)
+
+- `com.github.okanikani.kairos.reportcreationrules` - Report creation rules domain package
+  - `domains/models/` - Core domain models
+    - `entities/` - Domain entities (ReportCreationRule)
+    - `repositories/` - Repository interfaces (ReportCreationRuleRepository)
+    - `vos/` - Value objects (User)
+  - `applications/usecases/` - Application layer use cases
+    - `dto/` - Data Transfer Objects (RegisterReportCreationRuleRequest, ReportCreationRuleResponse, UserDto)
+    - `mapper/` - Mappers between DTOs and domain objects (ReportCreationRuleMapper)
+  - `others/` - Interface Adapters layer
+    - `controllers/` - REST API controllers (ReportCreationRuleController)
+    - `repositories/` - Repository implementations (InMemoryReportCreationRuleRepository)
 
 - `com.github.okanikani.kairos.security` - Security and authentication components
   - Authentication controllers, JWT services, security configuration
@@ -173,6 +188,20 @@ The project follows Clean Architecture with clear separation of concerns:
 - Spring Security for authorization and security configuration
 
 ## Development Notes
+
+### CLAUDE.md Update Guidelines
+When creating new features or updating existing functionality, you must update the relevant sections in CLAUDE.md:
+
+**Sections requiring updates:**
+- Package Structure - when new domain packages are added or existing structure changes
+- Key Domain Concepts - when new entities, business rules are added or existing ones are modified
+- REST API Endpoints - when new API endpoints are added or existing endpoints are modified
+- Technology Stack - when new dependencies or libraries are added or versions are updated
+
+**Purpose:**
+- Maintain project documentation consistency
+- Provide accurate information for new developers
+- Enable Claude Code to understand the latest project status
 
 ### Language Usage Guidelines
 This project follows specific language conventions for different contexts:
