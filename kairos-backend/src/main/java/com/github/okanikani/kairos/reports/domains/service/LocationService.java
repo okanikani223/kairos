@@ -3,7 +3,6 @@ package com.github.okanikani.kairos.reports.domains.service;
 import com.github.okanikani.kairos.reports.domains.models.vos.User;
 
 import java.time.LocalDateTime;
-import java.time.YearMonth;
 import java.util.List;
 
 /**
@@ -13,10 +12,10 @@ import java.util.List;
 public interface LocationService {
     
     /**
-     * 指定年月とユーザーの位置情報の記録日時を取得する
-     * @param yearMonth 対象年月
+     * 期間を指定して位置情報記録日時を取得
+     * @param period 勤怠計算期間
      * @param user ユーザー
-     * @return 記録日時のリスト（昇順）
+     * @return 位置情報記録日時リスト（昇順）
      */
-    List<LocalDateTime> getLocationRecordTimes(YearMonth yearMonth, User user);
+    List<LocalDateTime> getLocationRecordTimes(ReportPeriodCalculator.ReportPeriod period, User user);
 }

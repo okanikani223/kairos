@@ -1,6 +1,7 @@
 package com.github.okanikani.kairos.locations.domains.models.repositories;
 
 import com.github.okanikani.kairos.locations.domains.models.entities.Location;
+import com.github.okanikani.kairos.locations.domains.models.vos.User;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -23,6 +24,15 @@ public interface LocationRepository {
      * @return 指定範囲の位置情報リスト（記録日時の昇順）
      */
     List<Location> findByDateTimeRange(LocalDateTime startDateTime, LocalDateTime endDateTime);
+
+    /**
+     * 指定したユーザーの指定した日時範囲の位置情報を取得する
+     * @param user 対象ユーザー
+     * @param startDateTime 開始日時
+     * @param endDateTime 終了日時
+     * @return 指定ユーザーの指定範囲の位置情報リスト（記録日時の昇順）
+     */
+    List<Location> findByUserAndDateTimeRange(User user, LocalDateTime startDateTime, LocalDateTime endDateTime);
 
     /**
      * 指定した日の位置情報を取得する

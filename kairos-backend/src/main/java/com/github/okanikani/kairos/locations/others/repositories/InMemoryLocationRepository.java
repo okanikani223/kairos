@@ -2,6 +2,7 @@ package com.github.okanikani.kairos.locations.others.repositories;
 
 import com.github.okanikani.kairos.locations.domains.models.entities.Location;
 import com.github.okanikani.kairos.locations.domains.models.repositories.LocationRepository;
+import com.github.okanikani.kairos.locations.domains.models.vos.User;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
@@ -31,7 +32,8 @@ public class InMemoryLocationRepository implements LocationRepository {
                 id,
                 location.latitude(),
                 location.longitude(),
-                location.recordedAt()
+                location.recordedAt(),
+                location.user()
             );
         }
         locations.put(id, location);
@@ -69,5 +71,15 @@ public class InMemoryLocationRepository implements LocationRepository {
     @Override
     public void deleteById(Long id) {
         locations.remove(id);
+    }
+    
+    @Override
+    public List<Location> findByUserAndDateTimeRange(User user, LocalDateTime startDateTime, LocalDateTime endDateTime) {
+        return locations.values().stream()
+            .filter(location -> location.user().equals(user))
+            .filter(location -> !location.recordedAt().isBefore(startDateTime) && 
+                               !location.recordedAt().isAfter(endDateTime))
+            .sorted((l1, l2) -> l1.recordedAt().compareTo(l2.recordedAt()))
+            .toList();
     }
 }

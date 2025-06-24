@@ -5,6 +5,7 @@ import com.github.okanikani.kairos.locations.applications.usecases.dto.RegisterL
 import com.github.okanikani.kairos.locations.applications.usecases.dto.LocationResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Objects;
@@ -20,9 +21,10 @@ public class LocationController {
     }
     
     @PostMapping
-    public ResponseEntity<LocationResponse> registerLocation(@RequestBody RegisterLocationRequest request) {
+    public ResponseEntity<LocationResponse> registerLocation(@RequestBody RegisterLocationRequest request, Authentication authentication) {
         try {
-            LocationResponse response = registerLocationUsecase.execute(request);
+            String userId = authentication.getName();
+            LocationResponse response = registerLocationUsecase.execute(request, userId);
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();

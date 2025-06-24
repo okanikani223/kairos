@@ -6,6 +6,9 @@ import com.github.okanikani.kairos.reports.applications.usecases.dto.UserDto;
 import com.github.okanikani.kairos.reports.domains.models.entities.Report;
 import com.github.okanikani.kairos.reports.domains.models.repositories.ReportRepository;
 import com.github.okanikani.kairos.reports.domains.service.LocationService;
+import com.github.okanikani.kairos.reports.domains.service.ReportPeriodCalculator;
+import com.github.okanikani.kairos.reports.domains.service.WorkRuleResolverService;
+import com.github.okanikani.kairos.reports.domains.roundings.MinuteBasedRoundingSetting;
 import com.github.okanikani.kairos.reports.domains.models.vos.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -33,13 +36,17 @@ class GenerateReportFromLocationUsecaseTest {
 
     @Mock
     private ReportRepository reportRepository;
+    
+    @Mock
+    private WorkRuleResolverService workRuleResolverService;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
         generateReportFromLocationUsecase = new GenerateReportFromLocationUsecase(
             locationService, 
-            reportRepository
+            reportRepository,
+            workRuleResolverService
         );
     }
 
@@ -58,7 +65,12 @@ class GenerateReportFromLocationUsecaseTest {
             LocalDateTime.of(2024, 1, 1, 10, 0)   // 1時間後（同じグループ）
         );
 
-        when(locationService.getLocationRecordTimes(eq(yearMonth), eq(user)))
+        // モックの設定
+        when(workRuleResolverService.getCalculationStartDay(eq(user))).thenReturn(1);
+        when(workRuleResolverService.createRoundingSetting(eq(user))).thenReturn(new MinuteBasedRoundingSetting(15));
+        when(workRuleResolverService.resolveWorkRule(eq(user), any())).thenReturn(WorkRuleResolverService.WorkRuleInfo.createDefault());
+        
+        when(locationService.getLocationRecordTimes(any(ReportPeriodCalculator.ReportPeriod.class), eq(user)))
             .thenReturn(locationTimes);
         doNothing().when(reportRepository).save(any(Report.class));
 
@@ -79,7 +91,7 @@ class GenerateReportFromLocationUsecaseTest {
         assertEquals(LocalDateTime.of(2024, 1, 1, 9, 0), workDay.startDateTime().value());
         assertEquals(LocalDateTime.of(2024, 1, 1, 10, 0), workDay.endDateTime().value());
 
-        verify(locationService, times(1)).getLocationRecordTimes(eq(yearMonth), eq(user));
+        verify(locationService, times(1)).getLocationRecordTimes(any(ReportPeriodCalculator.ReportPeriod.class), eq(user));
         verify(reportRepository, times(1)).save(any(Report.class));
     }
 
@@ -100,7 +112,7 @@ class GenerateReportFromLocationUsecaseTest {
             LocalDateTime.of(2024, 1, 1, 14, 0)   // グループ2終了
         );
 
-        when(locationService.getLocationRecordTimes(eq(yearMonth), eq(user)))
+        when(locationService.getLocationRecordTimes(any(ReportPeriodCalculator.ReportPeriod.class), eq(user)))
             .thenReturn(locationTimes);
         doNothing().when(reportRepository).save(any(Report.class));
 
@@ -113,7 +125,7 @@ class GenerateReportFromLocationUsecaseTest {
         // 2つのグループに分かれるため、2つの勤務データが生成される
         assertEquals(2, response.workDays().size());
         
-        verify(locationService, times(1)).getLocationRecordTimes(eq(yearMonth), eq(user));
+        verify(locationService, times(1)).getLocationRecordTimes(any(ReportPeriodCalculator.ReportPeriod.class), eq(user));
         verify(reportRepository, times(1)).save(any(Report.class));
     }
 
@@ -138,7 +150,7 @@ class GenerateReportFromLocationUsecaseTest {
         User user = new User("testuser");
         GenerateReportFromLocationRequest request = new GenerateReportFromLocationRequest(yearMonth, userDto);
 
-        when(locationService.getLocationRecordTimes(eq(yearMonth), eq(user)))
+        when(locationService.getLocationRecordTimes(any(ReportPeriodCalculator.ReportPeriod.class), eq(user)))
             .thenReturn(List.of()); // 空のリスト
 
         doNothing().when(reportRepository).save(any(Report.class));
@@ -150,7 +162,7 @@ class GenerateReportFromLocationUsecaseTest {
         assertNotNull(response);
         assertEquals(0, response.workDays().size()); // 勤務日なし
         
-        verify(locationService, times(1)).getLocationRecordTimes(eq(yearMonth), eq(user));
+        verify(locationService, times(1)).getLocationRecordTimes(any(ReportPeriodCalculator.ReportPeriod.class), eq(user));
         verify(reportRepository, times(1)).save(any(Report.class));
     }
 
@@ -159,7 +171,7 @@ class GenerateReportFromLocationUsecaseTest {
         // Act & Assert
         NullPointerException exception = assertThrows(
             NullPointerException.class,
-            () -> new GenerateReportFromLocationUsecase(null, reportRepository)
+            () -> new GenerateReportFromLocationUsecase(null, reportRepository, workRuleResolverService)
         );
         assertEquals("locationServiceは必須です", exception.getMessage());
     }
@@ -169,7 +181,7 @@ class GenerateReportFromLocationUsecaseTest {
         // Act & Assert
         NullPointerException exception = assertThrows(
             NullPointerException.class,
-            () -> new GenerateReportFromLocationUsecase(locationService, null)
+            () -> new GenerateReportFromLocationUsecase(locationService, null, workRuleResolverService)
         );
         assertEquals("reportRepositoryは必須です", exception.getMessage());
     }
@@ -189,7 +201,7 @@ class GenerateReportFromLocationUsecaseTest {
             LocalDateTime.of(2024, 1, 6, 10, 0)   // 1時間後（合計1時間勤務）
         );
 
-        when(locationService.getLocationRecordTimes(eq(yearMonth), eq(user)))
+        when(locationService.getLocationRecordTimes(any(ReportPeriodCalculator.ReportPeriod.class), eq(user)))
             .thenReturn(locationTimes);
         doNothing().when(reportRepository).save(any(Report.class));
 
@@ -205,7 +217,7 @@ class GenerateReportFromLocationUsecaseTest {
         assertEquals(Duration.ofHours(1), workDay.holidayWorkHours()); // 1時間全てが休出時間
         assertEquals(Duration.ZERO, workDay.overtimeHours()); // 残業時間は0
         
-        verify(locationService, times(1)).getLocationRecordTimes(eq(yearMonth), eq(user));
+        verify(locationService, times(1)).getLocationRecordTimes(any(ReportPeriodCalculator.ReportPeriod.class), eq(user));
         verify(reportRepository, times(1)).save(any(Report.class));
     }
 
@@ -224,7 +236,7 @@ class GenerateReportFromLocationUsecaseTest {
             LocalDateTime.of(2024, 1, 1, 10, 0)   // 1時間後（合計1時間勤務）
         );
 
-        when(locationService.getLocationRecordTimes(eq(yearMonth), eq(user)))
+        when(locationService.getLocationRecordTimes(any(ReportPeriodCalculator.ReportPeriod.class), eq(user)))
             .thenReturn(locationTimes);
         doNothing().when(reportRepository).save(any(Report.class));
 
@@ -240,7 +252,7 @@ class GenerateReportFromLocationUsecaseTest {
         assertEquals(Duration.ZERO, workDay.overtimeHours()); // 1時間なので残業なし（7.5h未満）
         assertEquals(Duration.ZERO, workDay.holidayWorkHours()); // 休出時間は0
         
-        verify(locationService, times(1)).getLocationRecordTimes(eq(yearMonth), eq(user));
+        verify(locationService, times(1)).getLocationRecordTimes(any(ReportPeriodCalculator.ReportPeriod.class), eq(user));
         verify(reportRepository, times(1)).save(any(Report.class));
     }
 
@@ -275,7 +287,7 @@ class GenerateReportFromLocationUsecaseTest {
             LocalDateTime.of(2024, 1, 1, 18, 0)   // 9時間後（合計9時間勤務）
         );
 
-        when(locationService.getLocationRecordTimes(eq(yearMonth), eq(user)))
+        when(locationService.getLocationRecordTimes(any(ReportPeriodCalculator.ReportPeriod.class), eq(user)))
             .thenReturn(locationTimes);
         doNothing().when(reportRepository).save(any(Report.class));
 
@@ -292,7 +304,7 @@ class GenerateReportFromLocationUsecaseTest {
         assertEquals(Duration.ZERO, workDay.holidayWorkHours()); // 休出時間は0
         assertEquals(Duration.ofHours(9), workDay.workingHours()); // 総勤務時間9時間
         
-        verify(locationService, times(1)).getLocationRecordTimes(eq(yearMonth), eq(user));
+        verify(locationService, times(1)).getLocationRecordTimes(any(ReportPeriodCalculator.ReportPeriod.class), eq(user));
         verify(reportRepository, times(1)).save(any(Report.class));
     }
 
@@ -309,7 +321,7 @@ class GenerateReportFromLocationUsecaseTest {
             LocalDateTime.of(2024, 1, 1, 9, 0)   // 1つの記録のみ
         );
 
-        when(locationService.getLocationRecordTimes(eq(yearMonth), eq(user)))
+        when(locationService.getLocationRecordTimes(any(ReportPeriodCalculator.ReportPeriod.class), eq(user)))
             .thenReturn(locationTimes);
         doNothing().when(reportRepository).save(any(Report.class));
 
@@ -325,7 +337,7 @@ class GenerateReportFromLocationUsecaseTest {
         assertEquals(LocalDateTime.of(2024, 1, 1, 9, 0), workDay.endDateTime().value());
         assertEquals(Duration.ZERO, workDay.workingHours()); // 開始時刻と終了時刻が同じなので0時間
         
-        verify(locationService, times(1)).getLocationRecordTimes(eq(yearMonth), eq(user));
+        verify(locationService, times(1)).getLocationRecordTimes(any(ReportPeriodCalculator.ReportPeriod.class), eq(user));
         verify(reportRepository, times(1)).save(any(Report.class));
     }
 
@@ -343,7 +355,7 @@ class GenerateReportFromLocationUsecaseTest {
             LocalDateTime.of(2024, 1, 7, 10, 0)   // 日曜日の勤務終了
         );
 
-        when(locationService.getLocationRecordTimes(eq(yearMonth), eq(user)))
+        when(locationService.getLocationRecordTimes(any(ReportPeriodCalculator.ReportPeriod.class), eq(user)))
             .thenReturn(locationTimes);
         doNothing().when(reportRepository).save(any(Report.class));
 
@@ -359,7 +371,7 @@ class GenerateReportFromLocationUsecaseTest {
         assertEquals(Duration.ofHours(1), workDay.holidayWorkHours()); // 1時間全てが休出時間
         assertEquals(Duration.ZERO, workDay.overtimeHours()); // 残業時間は0
         
-        verify(locationService, times(1)).getLocationRecordTimes(eq(yearMonth), eq(user));
+        verify(locationService, times(1)).getLocationRecordTimes(any(ReportPeriodCalculator.ReportPeriod.class), eq(user));
         verify(reportRepository, times(1)).save(any(Report.class));
     }
 
@@ -391,7 +403,7 @@ class GenerateReportFromLocationUsecaseTest {
             LocalDateTime.of(2024, 1, 1, 16, 30)  // 7.5時間後（定時ちょうど）
         );
 
-        when(locationService.getLocationRecordTimes(eq(yearMonth), eq(user)))
+        when(locationService.getLocationRecordTimes(any(ReportPeriodCalculator.ReportPeriod.class), eq(user)))
             .thenReturn(locationTimes);
         doNothing().when(reportRepository).save(any(Report.class));
 
@@ -408,7 +420,7 @@ class GenerateReportFromLocationUsecaseTest {
         assertEquals(Duration.ZERO, workDay.holidayWorkHours()); // 休出時間は0
         assertEquals(Duration.ofMinutes(450), workDay.workingHours()); // 7.5時間 = 450分
         
-        verify(locationService, times(1)).getLocationRecordTimes(eq(yearMonth), eq(user));
+        verify(locationService, times(1)).getLocationRecordTimes(any(ReportPeriodCalculator.ReportPeriod.class), eq(user));
         verify(reportRepository, times(1)).save(any(Report.class));
     }
 
@@ -427,7 +439,7 @@ class GenerateReportFromLocationUsecaseTest {
             LocalDateTime.of(2024, 1, 1, 11, 0)   // グループ2
         );
 
-        when(locationService.getLocationRecordTimes(eq(yearMonth), eq(user)))
+        when(locationService.getLocationRecordTimes(any(ReportPeriodCalculator.ReportPeriod.class), eq(user)))
             .thenReturn(locationTimes);
         doNothing().when(reportRepository).save(any(Report.class));
 
@@ -448,7 +460,7 @@ class GenerateReportFromLocationUsecaseTest {
         assertEquals(LocalDateTime.of(2024, 1, 1, 10, 1), workDay2.startDateTime().value());
         assertEquals(LocalDateTime.of(2024, 1, 1, 11, 0), workDay2.endDateTime().value());
         
-        verify(locationService, times(1)).getLocationRecordTimes(eq(yearMonth), eq(user));
+        verify(locationService, times(1)).getLocationRecordTimes(any(ReportPeriodCalculator.ReportPeriod.class), eq(user));
         verify(reportRepository, times(1)).save(any(Report.class));
     }
 }

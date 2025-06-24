@@ -11,8 +11,11 @@ import com.github.okanikani.kairos.reports.domains.models.repositories.ReportRep
 import com.github.okanikani.kairos.reports.domains.models.vos.Detail;
 import com.github.okanikani.kairos.reports.domains.models.vos.Summary;
 import com.github.okanikani.kairos.reports.domains.models.vos.User;
+import com.github.okanikani.kairos.reports.domains.roundings.RoundingSetting;
 import com.github.okanikani.kairos.reports.domains.service.LocationService;
+import com.github.okanikani.kairos.reports.domains.service.ReportPeriodCalculator;
 import com.github.okanikani.kairos.reports.domains.service.SummaryFactory;
+import com.github.okanikani.kairos.reports.domains.service.WorkRuleResolverService;
 import org.springframework.stereotype.Service;
 
 import java.time.DayOfWeek;
@@ -27,10 +30,16 @@ public class GenerateReportFromLocationUsecase {
     
     private final LocationService locationService;
     private final ReportRepository reportRepository;
+    private final WorkRuleResolverService workRuleResolverService;
     
-    public GenerateReportFromLocationUsecase(LocationService locationService, ReportRepository reportRepository) {
+    public GenerateReportFromLocationUsecase(
+        LocationService locationService, 
+        ReportRepository reportRepository,
+        WorkRuleResolverService workRuleResolverService) {
+        
         this.locationService = Objects.requireNonNull(locationService, "locationServiceは必須です");
         this.reportRepository = Objects.requireNonNull(reportRepository, "reportRepositoryは必須です");
+        this.workRuleResolverService = Objects.requireNonNull(workRuleResolverService, "workRuleResolverServiceは必須です");
     }
     
     public ReportResponse execute(GenerateReportFromLocationRequest request) {
@@ -38,11 +47,21 @@ public class GenerateReportFromLocationUsecase {
         
         User user = ReportMapper.toUser(request.user());
         
-        // 位置情報の記録日時を取得
-        List<LocalDateTime> locationTimes = locationService.getLocationRecordTimes(request.yearMonth(), user);
+        // 勤怠計算開始日を取得
+        int calculationStartDay = workRuleResolverService.getCalculationStartDay(user);
+        
+        // 実際の勤怠計算期間を算出
+        ReportPeriodCalculator.ReportPeriod period = 
+            ReportPeriodCalculator.calculatePeriod(request.yearMonth(), calculationStartDay);
+        
+        // 期間内の位置情報記録日時を取得
+        List<LocalDateTime> locationTimes = locationService.getLocationRecordTimes(period, user);
+        
+        // 丸め設定を取得
+        RoundingSetting roundingSetting = workRuleResolverService.createRoundingSetting(user);
         
         // 位置情報を1時間以内の間隔でグルーピングして勤務日詳細を生成
-        List<DetailDto> workDays = groupLocationTimesAndCreateDetails(locationTimes);
+        List<DetailDto> workDays = groupLocationTimesAndCreateDetails(locationTimes, user, roundingSetting);
         
         // 勤怠表エンティティを作成
         List<Detail> details = workDays.stream()
@@ -70,9 +89,14 @@ public class GenerateReportFromLocationUsecase {
     /**
      * 位置情報記録日時を1時間以内の間隔でグルーピングし、勤務日詳細を作成する
      * @param locationTimes 位置情報記録日時のリスト（昇順）
+     * @param user ユーザー
+     * @param roundingSetting 丸め設定
      * @return 勤務日詳細のリスト
      */
-    private List<DetailDto> groupLocationTimesAndCreateDetails(List<LocalDateTime> locationTimes) {
+    private List<DetailDto> groupLocationTimesAndCreateDetails(
+        List<LocalDateTime> locationTimes, 
+        User user, 
+        RoundingSetting roundingSetting) {
         List<DetailDto> workDays = new ArrayList<>();
         
         if (locationTimes.isEmpty()) {
@@ -93,7 +117,7 @@ public class GenerateReportFromLocationUsecase {
                 currentGroup.add(current);
             } else {
                 // 新しいグループ開始：現在のグループから勤務日詳細を作成
-                DetailDto workDay = createDetailFromGroup(currentGroup);
+                DetailDto workDay = createDetailFromGroup(currentGroup, user, roundingSetting);
                 workDays.add(workDay);
                 
                 // 新しいグループ開始
@@ -104,7 +128,7 @@ public class GenerateReportFromLocationUsecase {
         
         // 最後のグループを処理
         if (!currentGroup.isEmpty()) {
-            DetailDto workDay = createDetailFromGroup(currentGroup);
+            DetailDto workDay = createDetailFromGroup(currentGroup, user, roundingSetting);
             workDays.add(workDay);
         }
         
@@ -114,17 +138,34 @@ public class GenerateReportFromLocationUsecase {
     /**
      * 位置情報記録日時のグループから勤務日詳細を作成する
      * @param group 位置情報記録日時のグループ
+     * @param user ユーザー
+     * @param roundingSetting 丸め設定
      * @return 勤務日詳細
      */
-    private DetailDto createDetailFromGroup(List<LocalDateTime> group) {
-        LocalDateTime startTime = group.get(0);
-        LocalDateTime endTime = group.get(group.size() - 1);
+    private DetailDto createDetailFromGroup(
+        List<LocalDateTime> group, 
+        User user, 
+        RoundingSetting roundingSetting) {
+        LocalDateTime rawStartTime = group.get(0);
+        LocalDateTime rawEndTime = group.get(group.size() - 1);
         
+        // WorkTimeファクトリメソッドで丸め処理適用
+        com.github.okanikani.kairos.reports.domains.models.vos.WorkTime startWorkTime = 
+            com.github.okanikani.kairos.reports.domains.models.vos.WorkTime.of(rawStartTime, roundingSetting);
+        com.github.okanikani.kairos.reports.domains.models.vos.WorkTime endWorkTime = 
+            com.github.okanikani.kairos.reports.domains.models.vos.WorkTime.of(rawEndTime, roundingSetting);
+        
+        LocalDateTime startTime = startWorkTime.value();
+        LocalDateTime endTime = endWorkTime.value();
+        
+        // 勤務ルール取得
+        WorkRuleResolverService.WorkRuleInfo workRule = 
+            workRuleResolverService.resolveWorkRule(user, startTime.toLocalDate());
+        
+        // 休日判定・勤務時間計算
         boolean isHoliday = isHolidayDate(startTime);
         Duration totalWorkTime = Duration.between(startTime, endTime);
-        
-        // 勤務時間の種別計算
-        var workTimeCalculation = calculateWorkTimeBreakdown(totalWorkTime, isHoliday);
+        var workTimeCalculation = calculateWorkTimeBreakdown(totalWorkTime, isHoliday, workRule);
         
         return new DetailDto(
             startTime.toLocalDate(),           // 勤務日付
@@ -161,18 +202,28 @@ public class GenerateReportFromLocationUsecase {
      * 勤務時間を残業時間と休出時間に分類して計算する
      * @param totalWorkTime 総勤務時間
      * @param isHoliday 休日フラグ
+     * @param workRule 勤務ルール情報
      * @return 勤務時間の内訳
      */
-    private WorkTimeCalculation calculateWorkTimeBreakdown(Duration totalWorkTime, boolean isHoliday) {
-        Duration standardWorkTime = Duration.ofMinutes(450); // 定時7.5時間
+    private WorkTimeCalculation calculateWorkTimeBreakdown(
+        Duration totalWorkTime, 
+        boolean isHoliday, 
+        WorkRuleResolverService.WorkRuleInfo workRule) {
+        
+        // ルールが無効な場合はシステムデフォルトを使用
+        WorkRuleResolverService.WorkRuleInfo effectiveRule = workRule.isValid() ? 
+            workRule : WorkRuleResolverService.WorkRuleInfo.createDefault();
+        
+        // 休憩時間を除いた実労働時間を計算
+        Duration effectiveWorkTime = totalWorkTime.minus(effectiveRule.breakTime());
         
         if (isHoliday) {
-            // 休日勤務: 全時間を休出時間として扱う
-            return new WorkTimeCalculation(Duration.ZERO, totalWorkTime);
+            // 休日勤務: 実労働時間を休出時間として扱う
+            return new WorkTimeCalculation(Duration.ZERO, effectiveWorkTime);
         } else {
-            // 平日勤務: 定時を超えた分を残業時間として扱う
-            Duration overtimeHours = totalWorkTime.compareTo(standardWorkTime) > 0 
-                ? totalWorkTime.minus(standardWorkTime) 
+            // 平日勤務: 標準勤務時間を超えた分を残業時間として扱う
+            Duration overtimeHours = effectiveWorkTime.compareTo(effectiveRule.standardWorkTime()) > 0 
+                ? effectiveWorkTime.minus(effectiveRule.standardWorkTime()) 
                 : Duration.ZERO;
             return new WorkTimeCalculation(overtimeHours, Duration.ZERO);
         }
