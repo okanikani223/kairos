@@ -133,6 +133,9 @@ The project follows Clean Architecture with clear separation of concerns:
 - Contains workplace ID, GPS coordinates, user assignment, standard work hours, break times, and membership period
 - Comprehensive validation for GPS coordinates, time logic, and period validation
 - Supports flexible break time configuration (can be null for no break periods)
+- **DefaultWorkRule**: Core entity representing default work rules without membership period constraints
+- Similar to WorkRule but without start/end dates, providing more flexible rule configuration
+- Used as fallback or template rules for workplace locations
 
 **WorkRule Business Rules:**
 - Workplace ID is mandatory
@@ -142,6 +145,12 @@ The project follows Clean Architecture with clear separation of concerns:
 - Break start time must be before break end time (when configured)
 - Membership start date must be before or equal to membership end date
 - Break times must be configured as both start and end times or both null (partial configuration not allowed)
+- **Membership period overlap prevention**: Same user cannot have overlapping membership periods across multiple work rules
+
+**DefaultWorkRule Business Rules:**
+- Similar validation rules as WorkRule except no membership period constraints
+- Same user and workplace combination can only have one default work rule
+- Used for establishing baseline work rule configurations
 
 ### Technology Stack
 - Java 21
@@ -366,6 +375,8 @@ The work rule management feature was implemented using complete TDD approach:
   - POST `/api/locations` - Register new location data
 - **Work Rules**:
   - POST `/api/work-rules` - Register new work rule
+- **Default Work Rules**:
+  - POST `/api/default-work-rules` - Register new default work rule
 - All API endpoints except authentication require JWT token in Authorization header: `Bearer {token}`
 - Year and month are passed as path parameters, user ID is extracted from JWT token
 - Request/response bodies use DTOs for data transfer between layers
