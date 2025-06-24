@@ -152,6 +152,18 @@ The project follows Clean Architecture with clear separation of concerns:
 - Same user and workplace combination can only have one default work rule
 - Used for establishing baseline work rule configurations
 
+**Report Creation Rules Domain:**
+- **ReportCreationRule**: Core entity representing timesheet creation rules for users
+- Contains user, calculation start day of month, and time calculation unit in minutes
+- Comprehensive validation for day range (1-31) and time unit range (1-60 minutes)
+- Used for determining timesheet calculation periods and time rounding rules
+
+**ReportCreationRule Business Rules:**
+- User is mandatory and must be unique (one rule per user)
+- Calculation start day must be between 1 and 31 (accommodates various month-end patterns)
+- Time calculation unit must be between 1 and 60 minutes for flexible time rounding
+- Used for establishing user-specific timesheet creation and calculation settings
+
 ### Technology Stack
 - Java 21
 - Spring Boot 3.5.3 (Web, Security)
@@ -377,6 +389,8 @@ The work rule management feature was implemented using complete TDD approach:
   - POST `/api/work-rules` - Register new work rule
 - **Default Work Rules**:
   - POST `/api/default-work-rules` - Register new default work rule
+- **Report Creation Rules**:
+  - POST `/api/report-creation-rules` - Register new report creation rule
 - All API endpoints except authentication require JWT token in Authorization header: `Bearer {token}`
 - Year and month are passed as path parameters, user ID is extracted from JWT token
 - Request/response bodies use DTOs for data transfer between layers

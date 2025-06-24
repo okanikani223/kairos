@@ -1,0 +1,62 @@
+package com.github.okanikani.kairos.reportcreationrules.others.repositories;
+
+import com.github.okanikani.kairos.reportcreationrules.domains.models.entities.ReportCreationRule;
+import com.github.okanikani.kairos.reportcreationrules.domains.models.repositories.ReportCreationRuleRepository;
+import com.github.okanikani.kairos.reportcreationrules.domains.models.vos.User;
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
+
+/**
+ * ※これは開発・テスト用の一時的な実装です。
+ * 本番環境ではデータベースを使用した実装に置き換える必要があります。
+ * TODO: PostgreSQL等を使用した永続化実装への置き換え
+ */
+@Repository
+public class InMemoryReportCreationRuleRepository implements ReportCreationRuleRepository {
+    
+    private final Map<Long, ReportCreationRule> reportCreationRules = new ConcurrentHashMap<>();
+    private final AtomicLong idGenerator = new AtomicLong(1);
+    
+    @Override
+    public void save(ReportCreationRule reportCreationRule) {
+        Long id = reportCreationRule.id();
+        if (id == null) {
+            // 新規作成の場合は自動生成IDを設定
+            id = idGenerator.getAndIncrement();
+            reportCreationRule = new ReportCreationRule(
+                id,
+                reportCreationRule.user(),
+                reportCreationRule.calculationStartDay(),
+                reportCreationRule.timeCalculationUnitMinutes()
+            );
+        }
+        reportCreationRules.put(id, reportCreationRule);
+    }
+    
+    @Override
+    public ReportCreationRule findById(Long id) {
+        return reportCreationRules.get(id);
+    }
+    
+    @Override
+    public ReportCreationRule findByUser(User user) {
+        return reportCreationRules.values().stream()
+            .filter(rule -> rule.user().equals(user))
+            .findFirst()
+            .orElse(null);
+    }
+    
+    @Override
+    public void deleteById(Long id) {
+        reportCreationRules.remove(id);
+    }
+    
+    @Override
+    public List<ReportCreationRule> findAll() {
+        return List.copyOf(reportCreationRules.values());
+    }
+}
