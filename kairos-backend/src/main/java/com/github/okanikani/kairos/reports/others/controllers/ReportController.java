@@ -2,10 +2,12 @@ package com.github.okanikani.kairos.reports.others.controllers;
 
 import com.github.okanikani.kairos.reports.applications.usecases.DeleteReportUsecase;
 import com.github.okanikani.kairos.reports.applications.usecases.FindReportUsecase;
+import com.github.okanikani.kairos.reports.applications.usecases.GenerateReportFromLocationUsecase;
 import com.github.okanikani.kairos.reports.applications.usecases.RegisterReportUsecase;
 import com.github.okanikani.kairos.reports.applications.usecases.UpdateReportUsecase;
 import com.github.okanikani.kairos.reports.applications.usecases.dto.DeleteReportRequest;
 import com.github.okanikani.kairos.reports.applications.usecases.dto.FindReportRequest;
+import com.github.okanikani.kairos.reports.applications.usecases.dto.GenerateReportFromLocationRequest;
 import com.github.okanikani.kairos.reports.applications.usecases.dto.RegisterReportRequest;
 import com.github.okanikani.kairos.reports.applications.usecases.dto.UpdateReportRequest;
 import com.github.okanikani.kairos.reports.applications.usecases.dto.ReportResponse;
@@ -26,12 +28,14 @@ public class ReportController {
     private final FindReportUsecase findReportUsecase;
     private final UpdateReportUsecase updateReportUsecase;
     private final DeleteReportUsecase deleteReportUsecase;
+    private final GenerateReportFromLocationUsecase generateReportFromLocationUsecase;
     
-    public ReportController(RegisterReportUsecase registerReportUsecase, FindReportUsecase findReportUsecase, UpdateReportUsecase updateReportUsecase, DeleteReportUsecase deleteReportUsecase) {
+    public ReportController(RegisterReportUsecase registerReportUsecase, FindReportUsecase findReportUsecase, UpdateReportUsecase updateReportUsecase, DeleteReportUsecase deleteReportUsecase, GenerateReportFromLocationUsecase generateReportFromLocationUsecase) {
         this.registerReportUsecase = Objects.requireNonNull(registerReportUsecase, "registerReportUsecaseは必須です");
         this.findReportUsecase = Objects.requireNonNull(findReportUsecase, "findReportUsecaseは必須です");
         this.updateReportUsecase = Objects.requireNonNull(updateReportUsecase, "updateReportUsecaseは必須です");
         this.deleteReportUsecase = Objects.requireNonNull(deleteReportUsecase, "deleteReportUsecaseは必須です");
+        this.generateReportFromLocationUsecase = Objects.requireNonNull(generateReportFromLocationUsecase, "generateReportFromLocationUsecaseは必須です");
     }
     
     @PostMapping
@@ -125,6 +129,27 @@ public class ReportController {
             
             deleteReportUsecase.execute(request);
             return ResponseEntity.noContent().build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+    
+    @PostMapping("/generate")
+    public ResponseEntity<ReportResponse> generateReportFromLocation(
+            @RequestBody GenerateReportFromLocationRequest request,
+            Authentication authentication) {
+        try {
+            // セキュリティチェック: JWT認証ユーザーとリクエストユーザーIDの一致確認
+            // 理由: 他のユーザーの位置情報から勤怠表を誤って生成することを防ぐため
+            String authenticatedUserId = authentication.getName();
+            if (!authenticatedUserId.equals(request.user().userId())) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            }
+            
+            ReportResponse response = generateReportFromLocationUsecase.execute(request);
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
         } catch (Exception e) {

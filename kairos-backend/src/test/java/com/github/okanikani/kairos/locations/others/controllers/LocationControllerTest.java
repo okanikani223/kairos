@@ -14,7 +14,10 @@ import java.time.LocalDateTime;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
+import org.springframework.security.core.Authentication;
 
 class LocationControllerTest {
 
@@ -22,6 +25,9 @@ class LocationControllerTest {
 
     @Mock
     private RegisterLocationUsecase registerLocationUsecase;
+    
+    @Mock
+    private Authentication authentication;
 
     @BeforeEach
     void setUp() {
@@ -46,10 +52,11 @@ class LocationControllerTest {
             recordedAt
         );
 
-        when(registerLocationUsecase.execute(any(RegisterLocationRequest.class))).thenReturn(expectedResponse);
+        when(registerLocationUsecase.execute(any(RegisterLocationRequest.class), anyString())).thenReturn(expectedResponse);
+        when(authentication.getName()).thenReturn("testuser");
 
         // Act
-        ResponseEntity<LocationResponse> response = locationController.registerLocation(request);
+        ResponseEntity<LocationResponse> response = locationController.registerLocation(request, authentication);
 
         // Assert
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
@@ -58,7 +65,7 @@ class LocationControllerTest {
         assertEquals(35.6812, response.getBody().latitude());
         assertEquals(139.7671, response.getBody().longitude());
         assertEquals(recordedAt, response.getBody().recordedAt());
-        verify(registerLocationUsecase, times(1)).execute(any(RegisterLocationRequest.class));
+        verify(registerLocationUsecase, times(1)).execute(any(RegisterLocationRequest.class), eq("testuser"));
     }
 
     @Test
@@ -70,16 +77,17 @@ class LocationControllerTest {
             LocalDateTime.now()
         );
 
-        when(registerLocationUsecase.execute(any(RegisterLocationRequest.class)))
+        when(registerLocationUsecase.execute(any(RegisterLocationRequest.class), anyString()))
             .thenThrow(new IllegalArgumentException("緯度は-90.0～90.0の範囲で指定してください"));
+        when(authentication.getName()).thenReturn("testuser");
 
         // Act
-        ResponseEntity<LocationResponse> response = locationController.registerLocation(request);
+        ResponseEntity<LocationResponse> response = locationController.registerLocation(request, authentication);
 
         // Assert
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         assertNull(response.getBody());
-        verify(registerLocationUsecase, times(1)).execute(any(RegisterLocationRequest.class));
+        verify(registerLocationUsecase, times(1)).execute(any(RegisterLocationRequest.class), eq("testuser"));
     }
 
     @Test
@@ -91,16 +99,17 @@ class LocationControllerTest {
             LocalDateTime.now()
         );
 
-        when(registerLocationUsecase.execute(any(RegisterLocationRequest.class)))
+        when(registerLocationUsecase.execute(any(RegisterLocationRequest.class), anyString()))
             .thenThrow(new RuntimeException("データベースエラー"));
+        when(authentication.getName()).thenReturn("testuser");
 
         // Act
-        ResponseEntity<LocationResponse> response = locationController.registerLocation(request);
+        ResponseEntity<LocationResponse> response = locationController.registerLocation(request, authentication);
 
         // Assert
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
         assertNull(response.getBody());
-        verify(registerLocationUsecase, times(1)).execute(any(RegisterLocationRequest.class));
+        verify(registerLocationUsecase, times(1)).execute(any(RegisterLocationRequest.class), eq("testuser"));
     }
 
     @Test

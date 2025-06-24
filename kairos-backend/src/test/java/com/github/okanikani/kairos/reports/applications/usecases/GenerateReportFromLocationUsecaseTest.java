@@ -49,6 +49,12 @@ class GenerateReportFromLocationUsecaseTest {
             workRuleResolverService
         );
     }
+    
+    private void setupDefaultWorkRuleMocks(User user) {
+        when(workRuleResolverService.getCalculationStartDay(eq(user))).thenReturn(1);
+        when(workRuleResolverService.createRoundingSetting(eq(user))).thenReturn(new MinuteBasedRoundingSetting(15));
+        when(workRuleResolverService.resolveWorkRule(eq(user), any())).thenReturn(WorkRuleResolverService.WorkRuleInfo.createDefault());
+    }
 
     @Test
     void execute_正常ケース_位置情報から勤怠表が生成される() {
@@ -70,6 +76,7 @@ class GenerateReportFromLocationUsecaseTest {
         when(workRuleResolverService.createRoundingSetting(eq(user))).thenReturn(new MinuteBasedRoundingSetting(15));
         when(workRuleResolverService.resolveWorkRule(eq(user), any())).thenReturn(WorkRuleResolverService.WorkRuleInfo.createDefault());
         
+        setupDefaultWorkRuleMocks(user);
         when(locationService.getLocationRecordTimes(any(ReportPeriodCalculator.ReportPeriod.class), eq(user)))
             .thenReturn(locationTimes);
         doNothing().when(reportRepository).save(any(Report.class));
@@ -112,6 +119,8 @@ class GenerateReportFromLocationUsecaseTest {
             LocalDateTime.of(2024, 1, 1, 14, 0)   // グループ2終了
         );
 
+        setupDefaultWorkRuleMocks(user);
+        setupDefaultWorkRuleMocks(user);
         when(locationService.getLocationRecordTimes(any(ReportPeriodCalculator.ReportPeriod.class), eq(user)))
             .thenReturn(locationTimes);
         doNothing().when(reportRepository).save(any(Report.class));
@@ -150,6 +159,7 @@ class GenerateReportFromLocationUsecaseTest {
         User user = new User("testuser");
         GenerateReportFromLocationRequest request = new GenerateReportFromLocationRequest(yearMonth, userDto);
 
+        setupDefaultWorkRuleMocks(user);
         when(locationService.getLocationRecordTimes(any(ReportPeriodCalculator.ReportPeriod.class), eq(user)))
             .thenReturn(List.of()); // 空のリスト
 
@@ -201,6 +211,7 @@ class GenerateReportFromLocationUsecaseTest {
             LocalDateTime.of(2024, 1, 6, 10, 0)   // 1時間後（合計1時間勤務）
         );
 
+        setupDefaultWorkRuleMocks(user);
         when(locationService.getLocationRecordTimes(any(ReportPeriodCalculator.ReportPeriod.class), eq(user)))
             .thenReturn(locationTimes);
         doNothing().when(reportRepository).save(any(Report.class));
@@ -236,6 +247,7 @@ class GenerateReportFromLocationUsecaseTest {
             LocalDateTime.of(2024, 1, 1, 10, 0)   // 1時間後（合計1時間勤務）
         );
 
+        setupDefaultWorkRuleMocks(user);
         when(locationService.getLocationRecordTimes(any(ReportPeriodCalculator.ReportPeriod.class), eq(user)))
             .thenReturn(locationTimes);
         doNothing().when(reportRepository).save(any(Report.class));
@@ -287,6 +299,7 @@ class GenerateReportFromLocationUsecaseTest {
             LocalDateTime.of(2024, 1, 1, 18, 0)   // 9時間後（合計9時間勤務）
         );
 
+        setupDefaultWorkRuleMocks(user);
         when(locationService.getLocationRecordTimes(any(ReportPeriodCalculator.ReportPeriod.class), eq(user)))
             .thenReturn(locationTimes);
         doNothing().when(reportRepository).save(any(Report.class));
@@ -321,6 +334,7 @@ class GenerateReportFromLocationUsecaseTest {
             LocalDateTime.of(2024, 1, 1, 9, 0)   // 1つの記録のみ
         );
 
+        setupDefaultWorkRuleMocks(user);
         when(locationService.getLocationRecordTimes(any(ReportPeriodCalculator.ReportPeriod.class), eq(user)))
             .thenReturn(locationTimes);
         doNothing().when(reportRepository).save(any(Report.class));
@@ -355,6 +369,7 @@ class GenerateReportFromLocationUsecaseTest {
             LocalDateTime.of(2024, 1, 7, 10, 0)   // 日曜日の勤務終了
         );
 
+        setupDefaultWorkRuleMocks(user);
         when(locationService.getLocationRecordTimes(any(ReportPeriodCalculator.ReportPeriod.class), eq(user)))
             .thenReturn(locationTimes);
         doNothing().when(reportRepository).save(any(Report.class));
@@ -403,6 +418,7 @@ class GenerateReportFromLocationUsecaseTest {
             LocalDateTime.of(2024, 1, 1, 16, 30)  // 7.5時間後（定時ちょうど）
         );
 
+        setupDefaultWorkRuleMocks(user);
         when(locationService.getLocationRecordTimes(any(ReportPeriodCalculator.ReportPeriod.class), eq(user)))
             .thenReturn(locationTimes);
         doNothing().when(reportRepository).save(any(Report.class));
@@ -439,6 +455,7 @@ class GenerateReportFromLocationUsecaseTest {
             LocalDateTime.of(2024, 1, 1, 11, 0)   // グループ2
         );
 
+        setupDefaultWorkRuleMocks(user);
         when(locationService.getLocationRecordTimes(any(ReportPeriodCalculator.ReportPeriod.class), eq(user)))
             .thenReturn(locationTimes);
         doNothing().when(reportRepository).save(any(Report.class));

@@ -3,6 +3,7 @@ package com.github.okanikani.kairos.reports.others.controllers;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.okanikani.kairos.reports.applications.usecases.DeleteReportUsecase;
 import com.github.okanikani.kairos.reports.applications.usecases.FindReportUsecase;
+import com.github.okanikani.kairos.reports.applications.usecases.GenerateReportFromLocationUsecase;
 import com.github.okanikani.kairos.reports.applications.usecases.RegisterReportUsecase;
 import com.github.okanikani.kairos.reports.applications.usecases.UpdateReportUsecase;
 import com.github.okanikani.kairos.reports.applications.usecases.dto.*;
@@ -42,6 +43,9 @@ class ReportControllerTest {
     private DeleteReportUsecase deleteReportUsecase;
 
     @Mock
+    private GenerateReportFromLocationUsecase generateReportFromLocationUsecase;
+
+    @Mock
     private Authentication authentication;
 
     private ObjectMapper objectMapper;
@@ -49,7 +53,7 @@ class ReportControllerTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        reportController = new ReportController(registerReportUsecase, findReportUsecase, updateReportUsecase, deleteReportUsecase);
+        reportController = new ReportController(registerReportUsecase, findReportUsecase, updateReportUsecase, deleteReportUsecase, generateReportFromLocationUsecase);
         objectMapper = new ObjectMapper();
     }
 
@@ -378,5 +382,120 @@ class ReportControllerTest {
 
         // Assert
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+    }
+
+    @Test
+    void generateReportFromLocation_正常ケース_201ステータスとレスポンスを返す() {
+        // Arrange
+        when(authentication.getName()).thenReturn("testuser");
+        
+        UserDto userDto = new UserDto("testuser");
+        GenerateReportFromLocationRequest request = new GenerateReportFromLocationRequest(
+            YearMonth.of(2024, 1),
+            userDto
+        );
+
+        DetailDto detailDto = new DetailDto(
+            LocalDate.of(2024, 1, 1),
+            false,
+            null,
+            new WorkTimeDto(LocalDateTime.of(2024, 1, 1, 9, 0)),
+            new WorkTimeDto(LocalDateTime.of(2024, 1, 1, 18, 0)),
+            Duration.ofHours(8),
+            Duration.ZERO,
+            Duration.ZERO,
+            ""
+        );
+        SummaryDto summaryDto = new SummaryDto(
+            1.0,
+            0.0,
+            0.0,
+            0.0,
+            Duration.ofHours(8),
+            Duration.ZERO,
+            Duration.ZERO
+        );
+        ReportResponse expectedResponse = new ReportResponse(
+            YearMonth.of(2024, 1),
+            userDto,
+            "NOT_SUBMITTED",
+            List.of(detailDto),
+            summaryDto
+        );
+
+        when(generateReportFromLocationUsecase.execute(any())).thenReturn(expectedResponse);
+
+        // Act
+        ResponseEntity<ReportResponse> response = reportController.generateReportFromLocation(request, authentication);
+
+        // Assert
+        assertEquals(HttpStatus.CREATED, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals("testuser", response.getBody().owner().userId());
+        assertEquals(YearMonth.of(2024, 1), response.getBody().yearMonth());
+        verify(generateReportFromLocationUsecase, times(1)).execute(any());
+    }
+
+    @Test
+    void generateReportFromLocation_認証ユーザーとリクエストユーザーが異なる_403ステータスを返す() {
+        // Arrange
+        when(authentication.getName()).thenReturn("testuser");
+        
+        UserDto userDto = new UserDto("anotheruser"); // 認証ユーザーと異なる
+        GenerateReportFromLocationRequest request = new GenerateReportFromLocationRequest(
+            YearMonth.of(2024, 1),
+            userDto
+        );
+
+        // Act
+        ResponseEntity<ReportResponse> response = reportController.generateReportFromLocation(request, authentication);
+
+        // Assert
+        assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
+        verify(generateReportFromLocationUsecase, never()).execute(any());
+    }
+
+    @Test
+    void generateReportFromLocation_ユースケースで例外発生_400ステータスを返す() {
+        // Arrange
+        when(authentication.getName()).thenReturn("testuser");
+        
+        UserDto userDto = new UserDto("testuser");
+        GenerateReportFromLocationRequest request = new GenerateReportFromLocationRequest(
+            YearMonth.of(2024, 1),
+            userDto
+        );
+
+        when(generateReportFromLocationUsecase.execute(any()))
+            .thenThrow(new IllegalArgumentException("位置情報が存在しません"));
+
+        // Act
+        ResponseEntity<ReportResponse> response = reportController.generateReportFromLocation(request, authentication);
+
+        // Assert
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        verify(generateReportFromLocationUsecase, times(1)).execute(any());
+    }
+
+    @Test
+    void generateReportFromLocation_予期しない例外発生_500ステータスを返す() {
+        // Arrange
+        when(authentication.getName()).thenReturn("testuser");
+        
+        UserDto userDto = new UserDto("testuser");
+        GenerateReportFromLocationRequest request = new GenerateReportFromLocationRequest(
+            YearMonth.of(2024, 1),
+            userDto
+        );
+
+        when(generateReportFromLocationUsecase.execute(any()))
+            .thenThrow(new RuntimeException("データベースエラー"));
+
+        // Act
+        ResponseEntity<ReportResponse> response = reportController.generateReportFromLocation(request, authentication);
+
+        // Assert
+        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+        verify(generateReportFromLocationUsecase, times(1)).execute(any());
     }
 }

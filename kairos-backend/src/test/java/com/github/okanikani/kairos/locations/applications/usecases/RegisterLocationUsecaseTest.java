@@ -4,6 +4,7 @@ import com.github.okanikani.kairos.locations.applications.usecases.dto.RegisterL
 import com.github.okanikani.kairos.locations.applications.usecases.dto.LocationResponse;
 import com.github.okanikani.kairos.locations.domains.models.entities.Location;
 import com.github.okanikani.kairos.locations.domains.models.repositories.LocationRepository;
+import com.github.okanikani.kairos.locations.domains.models.vos.User;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -42,13 +43,14 @@ class RegisterLocationUsecaseTest {
             1L,       // DB採番されたID
             35.6812,
             139.7671,
-            recordedAt
+            recordedAt,
+            new User("testuser")
         );
 
         when(locationRepository.save(any(Location.class))).thenReturn(savedLocation);
 
         // Act
-        LocationResponse response = registerLocationUsecase.execute(request);
+        LocationResponse response = registerLocationUsecase.execute(request, "testuser");
 
         // Assert
         assertNotNull(response);
@@ -65,7 +67,7 @@ class RegisterLocationUsecaseTest {
         // Act & Assert
         NullPointerException exception = assertThrows(
             NullPointerException.class,
-            () -> registerLocationUsecase.execute(null)
+            () -> registerLocationUsecase.execute(null, "testuser")
         );
         assertEquals("requestは必須です", exception.getMessage());
         verify(locationRepository, never()).save(any());
@@ -83,7 +85,7 @@ class RegisterLocationUsecaseTest {
         // Act & Assert
         IllegalArgumentException exception = assertThrows(
             IllegalArgumentException.class,
-            () -> registerLocationUsecase.execute(request)
+            () -> registerLocationUsecase.execute(request, "testuser")
         );
         assertTrue(exception.getMessage().contains("緯度は-90.0～90.0の範囲で指定してください"));
         verify(locationRepository, never()).save(any());
@@ -101,7 +103,7 @@ class RegisterLocationUsecaseTest {
         // Act & Assert
         IllegalArgumentException exception = assertThrows(
             IllegalArgumentException.class,
-            () -> registerLocationUsecase.execute(request)
+            () -> registerLocationUsecase.execute(request, "testuser")
         );
         assertTrue(exception.getMessage().contains("経度は-180.0～180.0の範囲で指定してください"));
         verify(locationRepository, never()).save(any());
