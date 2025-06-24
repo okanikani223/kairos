@@ -376,6 +376,41 @@ Based on Kent Beck's canonical approach to TDD (https://t-wada.hatenablog.jp/ent
 - Use Japanese for test method names to clearly express business requirements
 - Focus on business value and domain logic in tests
 
+#### TDD for Existing Code Modifications
+**IMPORTANT: Apply TDD even when modifying existing implementations**
+
+When modifying existing code, follow the TDD workflow:
+
+1. **Test List for Changes**: Create a list of behaviors that need to be modified or added
+2. **Red Phase**: Write failing tests that express the new expected behavior
+3. **Green Phase**: Modify the existing implementation to make tests pass
+4. **Refactor Phase**: Clean up both test and production code while maintaining green tests
+5. **Regression Protection**: Ensure existing tests continue to pass to prevent breaking changes
+
+**Examples of modifications requiring TDD:**
+- Adding new validation rules to existing entities
+- Modifying business logic in domain services
+- Changing API endpoint behavior or adding new endpoints
+- Updating data transformation logic in mappers
+- Enhancing existing use cases with new functionality
+
+**Workflow Example:**
+```java
+// 1. Add failing test for new requirement
+@Test
+void validateWorkRule_重複期間の場合_例外が発生する() {
+    // Test new overlap validation requirement
+}
+
+// 2. Modify existing implementation
+public class WorkRule {
+    // Add overlap validation logic
+}
+
+// 3. Ensure all existing tests still pass
+// 4. Refactor if needed while maintaining green tests
+```
+
 #### Testing Spectrum (位置づけ)
 1. **自動テスト (Automated Testing)**: Basic foundation
 2. **開発者テスト (Developer Testing)**: Developers write tests
@@ -412,6 +447,7 @@ The work rule management feature was implemented using complete TDD approach:
   - GET `/api/reports/{year}/{month}` - Get timesheet report by year/month
   - PUT `/api/reports/{year}/{month}` - Update existing timesheet report
   - DELETE `/api/reports/{year}/{month}` - Delete timesheet report
+  - POST `/api/reports/generate` - Generate timesheet report from location data
 - **Locations**:
   - POST `/api/locations` - Register new location data
 - **Work Rules**:
