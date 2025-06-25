@@ -1,91 +1,103 @@
 package com.github.okanikani.kairos.reportcreationrules.others.controllers;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.github.okanikani.kairos.commons.controllers.GlobalExceptionHandler;
 import com.github.okanikani.kairos.reportcreationrules.applications.usecases.FindAllReportCreationRulesUseCase;
 import com.github.okanikani.kairos.reportcreationrules.applications.usecases.RegisterReportCreationRuleUseCase;
 import com.github.okanikani.kairos.reportcreationrules.applications.usecases.dto.ReportCreationRuleResponse;
 import com.github.okanikani.kairos.reportcreationrules.applications.usecases.dto.UserDto;
+import com.github.okanikani.kairos.security.JwtService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.context.annotation.Import;
+import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.MockMvc;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+@WebMvcTest(ReportCreationRuleController.class)
+@Import(GlobalExceptionHandler.class)
 class ReportCreationRuleControllerTest {
 
-    private ReportCreationRuleController reportCreationRuleController;
+    @Autowired
+    private MockMvc mockMvc;
 
-    @Mock
+    @MockitoBean
     private RegisterReportCreationRuleUseCase registerReportCreationRuleUseCase;
     
-    @Mock
+    @MockitoBean
     private FindAllReportCreationRulesUseCase findAllReportCreationRulesUseCase;
     
-    @Mock
-    private Authentication authentication;
+    @MockitoBean
+    private JwtService jwtService;
+    
+    private ObjectMapper objectMapper;
 
     @BeforeEach
     void setUp() {
-        MockitoAnnotations.openMocks(this);
-        reportCreationRuleController = new ReportCreationRuleController(registerReportCreationRuleUseCase, findAllReportCreationRulesUseCase);
+        objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule());
     }
 
     @Test
-    void findReportCreationRule_正常ケース_200ステータスとレポート作成ルールを返す() {
+    @WithMockUser(username = "testuser")
+    void findReportCreationRule_正常ケース_200ステータスとレポート作成ルールを返す() throws Exception {
         // Arrange
-        when(authentication.getName()).thenReturn("testuser");
-        
         ReportCreationRuleResponse expectedResponse = new ReportCreationRuleResponse(
             1L, new UserDto("testuser"), 1, 15
         );
+        when(findAllReportCreationRulesUseCase.execute(eq("testuser"))).thenReturn(expectedResponse);
+
+        // Act & Assert
+        mockMvc.perform(get("/api/report-creation-rules")
+                .with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(1))
+                .andExpect(jsonPath("$.user.userId").value("testuser"))
+                .andExpect(jsonPath("$.closingDay").value(1))
+                .andExpect(jsonPath("$.timeCalculationUnitMinutes").value(15));
         
-        when(findAllReportCreationRulesUseCase.execute(anyString())).thenReturn(expectedResponse);
-
-        // Act
-        ResponseEntity<ReportCreationRuleResponse> response = reportCreationRuleController.findReportCreationRule(authentication);
-
-        // Assert
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertEquals(1L, response.getBody().id());
-        assertEquals("testuser", response.getBody().user().userId());
-        assertEquals(1, response.getBody().closingDay());
-        assertEquals(15, response.getBody().timeCalculationUnitMinutes());
         verify(findAllReportCreationRulesUseCase, times(1)).execute(eq("testuser"));
     }
 
     @Test
-    void findReportCreationRule_レポート作成ルールが存在しない場合_404ステータスを返す() {
+    @WithMockUser(username = "testuser")
+    void findReportCreationRule_レポート作成ルールが存在しない場合_404ステータスを返す() throws Exception {
         // Arrange
-        when(authentication.getName()).thenReturn("testuser");
         when(findAllReportCreationRulesUseCase.execute(anyString())).thenReturn(null);
 
-        // Act
-        ResponseEntity<ReportCreationRuleResponse> response = reportCreationRuleController.findReportCreationRule(authentication);
-
-        // Assert
-        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+        // Act & Assert
+        mockMvc.perform(get("/api/report-creation-rules")
+                .with(csrf()))
+                .andExpect(status().isNotFound());
+        
         verify(findAllReportCreationRulesUseCase, times(1)).execute(eq("testuser"));
     }
 
     @Test
-    void findReportCreationRule_ユースケースで例外発生_500ステータスを返す() {
+    @WithMockUser(username = "testuser")
+    void findReportCreationRule_ユースケースで例外発生_500ステータスを返す() throws Exception {
         // Arrange
-        when(authentication.getName()).thenReturn("testuser");
         when(findAllReportCreationRulesUseCase.execute(anyString()))
             .thenThrow(new RuntimeException("データベースエラー"));
 
-        // Act
-        ResponseEntity<ReportCreationRuleResponse> response = reportCreationRuleController.findReportCreationRule(authentication);
-
-        // Assert
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+        // Act & Assert
+        mockMvc.perform(get("/api/report-creation-rules")
+                .with(csrf()))
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.errorCode").value("INTERNAL_ERROR"))
+                .andExpect(jsonPath("$.message").value("システムエラーが発生しました。しばらく時間をおいて再度お試しください。"));
+        
         verify(findAllReportCreationRulesUseCase, times(1)).execute(eq("testuser"));
     }
 
@@ -99,8 +111,8 @@ class ReportCreationRuleControllerTest {
         assertEquals("registerReportCreationRuleUseCaseは必須です", exception.getMessage());
     }
 
-    @Test
-    void constructor_nullFindAllUseCase_例外が発生する() {
+    @Test  
+    void constructor_nullFindUseCase_例外が発生する() {
         // Act & Assert
         NullPointerException exception = assertThrows(
             NullPointerException.class,

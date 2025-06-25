@@ -1,50 +1,62 @@
 package com.github.okanikani.kairos.rules.others.controllers;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.github.okanikani.kairos.commons.controllers.GlobalExceptionHandler;
 import com.github.okanikani.kairos.rules.applications.usecases.FindAllDefaultWorkRulesUseCase;
 import com.github.okanikani.kairos.rules.applications.usecases.RegisterDefaultWorkRuleUseCase;
 import com.github.okanikani.kairos.rules.applications.usecases.dto.DefaultWorkRuleResponse;
 import com.github.okanikani.kairos.rules.applications.usecases.dto.UserDto;
+import com.github.okanikani.kairos.security.JwtService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.context.annotation.Import;
+import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalTime;
 import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+@WebMvcTest(DefaultWorkRuleController.class)
+@Import(GlobalExceptionHandler.class)
 class DefaultWorkRuleControllerTest {
 
-    private DefaultWorkRuleController defaultWorkRuleController;
+    @Autowired
+    private MockMvc mockMvc;
 
-    @Mock
+    @MockitoBean
     private RegisterDefaultWorkRuleUseCase registerDefaultWorkRuleUseCase;
     
-    @Mock
+    @MockitoBean
     private FindAllDefaultWorkRulesUseCase findAllDefaultWorkRulesUseCase;
     
-    @Mock
-    private Authentication authentication;
+    @MockitoBean
+    private JwtService jwtService;
+    
+    private ObjectMapper objectMapper;
 
     @BeforeEach
     void setUp() {
-        MockitoAnnotations.openMocks(this);
-        defaultWorkRuleController = new DefaultWorkRuleController(registerDefaultWorkRuleUseCase, findAllDefaultWorkRulesUseCase);
+        objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule());
     }
 
     @Test
-    void findAllDefaultWorkRules_正常ケース_200ステータスとデフォルト勤務ルール一覧を返す() {
+    @WithMockUser(username = "testuser")
+    void findAllDefaultWorkRules_正常ケース_200ステータスとデフォルト勤務ルール一覧を返す() throws Exception {
         // Arrange
-        when(authentication.getName()).thenReturn("testuser");
-        
         List<DefaultWorkRuleResponse> expectedDefaultWorkRules = Arrays.asList(
             new DefaultWorkRuleResponse(1L, 100L, 35.6812, 139.7671, new UserDto("testuser"),
                 LocalTime.of(9, 0), LocalTime.of(18, 0),
@@ -54,48 +66,51 @@ class DefaultWorkRuleControllerTest {
                 null, null)
         );
         
-        when(findAllDefaultWorkRulesUseCase.execute(anyString())).thenReturn(expectedDefaultWorkRules);
+        when(findAllDefaultWorkRulesUseCase.execute(eq("testuser"))).thenReturn(expectedDefaultWorkRules);
 
-        // Act
-        ResponseEntity<List<DefaultWorkRuleResponse>> response = defaultWorkRuleController.findAllDefaultWorkRules(authentication);
-
-        // Assert
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertEquals(2, response.getBody().size());
-        assertEquals(1L, response.getBody().get(0).id());
-        assertEquals(100L, response.getBody().get(0).workPlaceId());
+        // Act & Assert
+        mockMvc.perform(get("/api/default-work-rules")
+                .with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(1))
+                .andExpect(jsonPath("$[0].workPlaceId").value(100))
+                .andExpect(jsonPath("$[0].user.userId").value("testuser"))
+                .andExpect(jsonPath("$[1].id").value(2))
+                .andExpect(jsonPath("$[1].workPlaceId").value(200));
+        
         verify(findAllDefaultWorkRulesUseCase, times(1)).execute(eq("testuser"));
     }
 
     @Test
-    void findAllDefaultWorkRules_デフォルト勤務ルールが存在しない場合_200ステータスと空リストを返す() {
+    @WithMockUser(username = "testuser")
+    void findAllDefaultWorkRules_デフォルト勤務ルールが存在しない場合_200ステータスと空リストを返す() throws Exception {
         // Arrange
-        when(authentication.getName()).thenReturn("testuser");
-        when(findAllDefaultWorkRulesUseCase.execute(anyString())).thenReturn(List.of());
+        when(findAllDefaultWorkRulesUseCase.execute(eq("testuser"))).thenReturn(List.of());
 
-        // Act
-        ResponseEntity<List<DefaultWorkRuleResponse>> response = defaultWorkRuleController.findAllDefaultWorkRules(authentication);
-
-        // Assert
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertTrue(response.getBody().isEmpty());
+        // Act & Assert
+        mockMvc.perform(get("/api/default-work-rules")
+                .with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(jsonPath("$").isEmpty());
+        
         verify(findAllDefaultWorkRulesUseCase, times(1)).execute(eq("testuser"));
     }
 
     @Test
-    void findAllDefaultWorkRules_ユースケースで例外発生_500ステータスを返す() {
+    @WithMockUser(username = "testuser")
+    void findAllDefaultWorkRules_ユースケースで例外発生_500ステータスを返す() throws Exception {
         // Arrange
-        when(authentication.getName()).thenReturn("testuser");
-        when(findAllDefaultWorkRulesUseCase.execute(anyString()))
+        when(findAllDefaultWorkRulesUseCase.execute(eq("testuser")))
             .thenThrow(new RuntimeException("データベースエラー"));
 
-        // Act
-        ResponseEntity<List<DefaultWorkRuleResponse>> response = defaultWorkRuleController.findAllDefaultWorkRules(authentication);
-
-        // Assert
-        assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
+        // Act & Assert
+        mockMvc.perform(get("/api/default-work-rules")
+                .with(csrf()))
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.errorCode").value("INTERNAL_ERROR"))
+                .andExpect(jsonPath("$.message").value("システムエラーが発生しました。しばらく時間をおいて再度お試しください。"));
+        
         verify(findAllDefaultWorkRulesUseCase, times(1)).execute(eq("testuser"));
     }
 

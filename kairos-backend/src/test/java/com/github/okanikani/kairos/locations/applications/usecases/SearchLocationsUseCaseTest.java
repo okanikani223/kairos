@@ -1,5 +1,6 @@
 package com.github.okanikani.kairos.locations.applications.usecases;
 
+import com.github.okanikani.kairos.commons.exceptions.ValidationException;
 import com.github.okanikani.kairos.locations.applications.usecases.dto.LocationResponse;
 import com.github.okanikani.kairos.locations.applications.usecases.dto.SearchLocationsRequest;
 import com.github.okanikani.kairos.locations.domains.models.entities.Location;
@@ -138,8 +139,8 @@ class SearchLocationsUseCaseTest {
     @Test
     void execute_startDateTimeがendDateTimeより後_例外が発生する() {
         // Act & Assert
-        IllegalArgumentException exception = assertThrows(
-            IllegalArgumentException.class,
+        ValidationException exception = assertThrows(
+            ValidationException.class,
             () -> new SearchLocationsRequest(
                 LocalDateTime.of(2024, 1, 1, 18, 0),  // 終了日時
                 LocalDateTime.of(2024, 1, 1, 9, 0)    // 開始日時（逆転）
