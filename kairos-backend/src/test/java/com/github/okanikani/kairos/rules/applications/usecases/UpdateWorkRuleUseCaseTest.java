@@ -1,5 +1,7 @@
 package com.github.okanikani.kairos.rules.applications.usecases;
 
+import com.github.okanikani.kairos.commons.exceptions.AuthorizationException;
+import com.github.okanikani.kairos.commons.exceptions.ResourceNotFoundException;
 import com.github.okanikani.kairos.rules.applications.usecases.dto.UpdateWorkRuleRequest;
 import com.github.okanikani.kairos.rules.applications.usecases.dto.UserDto;
 import com.github.okanikani.kairos.rules.applications.usecases.dto.WorkRuleResponse;
@@ -92,8 +94,8 @@ class UpdateWorkRuleUseCaseTest {
         when(workRuleRepository.findById(eq(workRuleId))).thenReturn(null);
 
         // Act & Assert
-        IllegalArgumentException exception = assertThrows(
-            IllegalArgumentException.class,
+        ResourceNotFoundException exception = assertThrows(
+            ResourceNotFoundException.class,
             () -> updateWorkRuleUseCase.execute(workRuleId, request, userId)
         );
         assertEquals("指定された勤務ルールが存在しません", exception.getMessage());
@@ -125,8 +127,8 @@ class UpdateWorkRuleUseCaseTest {
         when(workRuleRepository.findById(eq(workRuleId))).thenReturn(existingWorkRule);
 
         // Act & Assert
-        IllegalArgumentException exception = assertThrows(
-            IllegalArgumentException.class,
+        AuthorizationException exception = assertThrows(
+            AuthorizationException.class,
             () -> updateWorkRuleUseCase.execute(workRuleId, request, userId)
         );
         assertEquals("この勤務ルールを更新する権限がありません", exception.getMessage());

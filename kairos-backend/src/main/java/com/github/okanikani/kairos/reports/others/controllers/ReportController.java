@@ -42,21 +42,15 @@ public class ReportController {
     public ResponseEntity<ReportResponse> registerReport(
             @RequestBody RegisterReportRequest request,
             Authentication authentication) {
-        try {
-            // セキュリティチェック: JWT認証ユーザーとリクエストユーザーIDの一致確認
-            // 理由: 他のユーザーの勤怠表を誤って操作することを防ぐため
-            String authenticatedUserId = authentication.getName();
-            if (!authenticatedUserId.equals(request.user().userId())) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-            }
-            
-            ReportResponse response = registerReportUseCase.execute(request);
-            return ResponseEntity.status(HttpStatus.CREATED).body(response);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().build();
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().build();
+        // セキュリティチェック: JWT認証ユーザーとリクエストユーザーIDの一致確認
+        // 理由: 他のユーザーの勤怠表を誤って操作することを防ぐため
+        String authenticatedUserId = authentication.getName();
+        if (!authenticatedUserId.equals(request.user().userId())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
+        
+        ReportResponse response = registerReportUseCase.execute(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
     
     @GetMapping("/{year}/{month}")
@@ -64,23 +58,19 @@ public class ReportController {
             @PathVariable(name = "year") int year,
             @PathVariable(name = "month") int month,
             Authentication authentication) {
-        try {
-            String userId = authentication.getName();
-            
-            YearMonth yearMonth = YearMonth.of(year, month);
-            UserDto userDto = new UserDto(userId);
-            FindReportRequest request = new FindReportRequest(yearMonth, userDto);
-            
-            ReportResponse response = findReportUseCase.execute(request);
-            
-            if (response == null) {
-                return ResponseEntity.notFound().build();
-            }
-            
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().build();
+        String userId = authentication.getName();
+        
+        YearMonth yearMonth = YearMonth.of(year, month);
+        UserDto userDto = new UserDto(userId);
+        FindReportRequest request = new FindReportRequest(yearMonth, userDto);
+        
+        ReportResponse response = findReportUseCase.execute(request);
+        
+        if (response == null) {
+            return ResponseEntity.notFound().build();
         }
+        
+        return ResponseEntity.ok(response);
     }
     
     @PutMapping("/{year}/{month}")
@@ -89,28 +79,22 @@ public class ReportController {
             @PathVariable(name = "month") int month,
             @RequestBody UpdateReportRequest request,
             Authentication authentication) {
-        try {
-            String authenticatedUserId = authentication.getName();
-            
-            // REST API設計原則: パスパラメータとボディの年月一致確認
-            // 理由: URLとボディの不整合によるデータ破損を防止するため
-            YearMonth pathYearMonth = YearMonth.of(year, month);
-            if (!pathYearMonth.equals(request.yearMonth())) {
-                return ResponseEntity.badRequest().build();
-            }
-            
-            // セキュリティチェック: JWT認証ユーザーとリクエストユーザーIDの一致確認
-            if (!authenticatedUserId.equals(request.user().userId())) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-            }
-            
-            ReportResponse response = updateReportUseCase.execute(request);
-            return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
+        String authenticatedUserId = authentication.getName();
+        
+        // REST API設計原則: パスパラメータとボディの年月一致確認
+        // 理由: URLとボディの不整合によるデータ破損を防止するため
+        YearMonth pathYearMonth = YearMonth.of(year, month);
+        if (!pathYearMonth.equals(request.yearMonth())) {
             return ResponseEntity.badRequest().build();
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().build();
         }
+        
+        // セキュリティチェック: JWT認証ユーザーとリクエストユーザーIDの一致確認
+        if (!authenticatedUserId.equals(request.user().userId())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+        
+        ReportResponse response = updateReportUseCase.execute(request);
+        return ResponseEntity.ok(response);
     }
     
     @DeleteMapping("/{year}/{month}")
@@ -118,42 +102,30 @@ public class ReportController {
             @PathVariable(name = "year") int year,
             @PathVariable(name = "month") int month,
             Authentication authentication) {
-        try {
-            // セキュリティ制約: 認証されたユーザー自身の勤怠表のみ削除可能
-            // 理由: 他のユーザーの勤怠データを誤って削除することを防ぐため
-            String authenticatedUserId = authentication.getName();
-            
-            YearMonth yearMonth = YearMonth.of(year, month);
-            UserDto userDto = new UserDto(authenticatedUserId);
-            DeleteReportRequest request = new DeleteReportRequest(yearMonth, userDto);
-            
-            deleteReportUseCase.execute(request);
-            return ResponseEntity.noContent().build();
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().build();
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().build();
-        }
+        // セキュリティ制約: 認証されたユーザー自身の勤怠表のみ削除可能
+        // 理由: 他のユーザーの勤怠データを誤って削除することを防ぐため
+        String authenticatedUserId = authentication.getName();
+        
+        YearMonth yearMonth = YearMonth.of(year, month);
+        UserDto userDto = new UserDto(authenticatedUserId);
+        DeleteReportRequest request = new DeleteReportRequest(yearMonth, userDto);
+        
+        deleteReportUseCase.execute(request);
+        return ResponseEntity.noContent().build();
     }
     
     @PostMapping("/generate")
     public ResponseEntity<ReportResponse> generateReportFromLocation(
             @RequestBody GenerateReportFromLocationRequest request,
             Authentication authentication) {
-        try {
-            // セキュリティチェック: JWT認証ユーザーとリクエストユーザーIDの一致確認
-            // 理由: 他のユーザーの位置情報から勤怠表を誤って生成することを防ぐため
-            String authenticatedUserId = authentication.getName();
-            if (!authenticatedUserId.equals(request.user().userId())) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-            }
-            
-            ReportResponse response = generateReportFromLocationUseCase.execute(request);
-            return ResponseEntity.status(HttpStatus.CREATED).body(response);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().build();
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().build();
+        // セキュリティチェック: JWT認証ユーザーとリクエストユーザーIDの一致確認
+        // 理由: 他のユーザーの位置情報から勤怠表を誤って生成することを防ぐため
+        String authenticatedUserId = authentication.getName();
+        if (!authenticatedUserId.equals(request.user().userId())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
+        
+        ReportResponse response = generateReportFromLocationUseCase.execute(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 }

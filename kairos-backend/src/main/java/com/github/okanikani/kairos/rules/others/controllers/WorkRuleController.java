@@ -69,13 +69,9 @@ public class WorkRuleController {
      */
     @GetMapping
     public ResponseEntity<List<WorkRuleResponse>> findAllWorkRules(Authentication authentication) {
-        try {
-            String userId = authentication.getName();
-            List<WorkRuleResponse> response = findAllWorkRulesUseCase.execute(userId);
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().build();
-        }
+        String userId = authentication.getName();
+        List<WorkRuleResponse> response = findAllWorkRulesUseCase.execute(userId);
+        return ResponseEntity.ok(response);
     }
     
     /**
@@ -83,23 +79,9 @@ public class WorkRuleController {
      */
     @GetMapping("/{id}")
     public ResponseEntity<WorkRuleResponse> findWorkRuleById(@PathVariable(name = "id") Long id, Authentication authentication) {
-        try {
-            String userId = authentication.getName();
-            WorkRuleResponse response = findWorkRuleByIdUseCase.execute(id, userId);
-            return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            // セキュリティエラー判定: 権限なしエラーと存在しないエラーを区別
-            // 理由: 適切なHTTPステータスコードを返すため
-            if (e.getMessage().contains("権限がありません")) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-            } else if (e.getMessage().contains("存在しません")) {
-                return ResponseEntity.notFound().build();
-            } else {
-                return ResponseEntity.badRequest().build();
-            }
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().build();
-        }
+        String userId = authentication.getName();
+        WorkRuleResponse response = findWorkRuleByIdUseCase.execute(id, userId);
+        return ResponseEntity.ok(response);
     }
     
     /**
@@ -110,38 +92,24 @@ public class WorkRuleController {
             @PathVariable(name = "id") Long id,
             @RequestBody UpdateWorkRuleRequestBody requestBody,
             Authentication authentication) {
-        try {
-            String userId = authentication.getName();
-            UserDto userDto = new UserDto(userId);
-            
-            UpdateWorkRuleRequest request = new UpdateWorkRuleRequest(
-                requestBody.workPlaceId(),
-                requestBody.latitude(),
-                requestBody.longitude(),
-                userDto,
-                requestBody.standardStartTime(),
-                requestBody.standardEndTime(),
-                requestBody.breakStartTime(),
-                requestBody.breakEndTime(),
-                requestBody.membershipStartDate(),
-                requestBody.membershipEndDate()
-            );
-            
-            WorkRuleResponse response = updateWorkRuleUseCase.execute(id, request, userId);
-            return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            // セキュリティエラー判定: 権限なしエラーと存在しないエラーを区別
-            // 理由: 適切なHTTPステータスコードを返すため
-            if (e.getMessage().contains("権限がありません")) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-            } else if (e.getMessage().contains("存在しません")) {
-                return ResponseEntity.notFound().build();
-            } else {
-                return ResponseEntity.badRequest().build();
-            }
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().build();
-        }
+        String userId = authentication.getName();
+        UserDto userDto = new UserDto(userId);
+        
+        UpdateWorkRuleRequest request = new UpdateWorkRuleRequest(
+            requestBody.workPlaceId(),
+            requestBody.latitude(),
+            requestBody.longitude(),
+            userDto,
+            requestBody.standardStartTime(),
+            requestBody.standardEndTime(),
+            requestBody.breakStartTime(),
+            requestBody.breakEndTime(),
+            requestBody.membershipStartDate(),
+            requestBody.membershipEndDate()
+        );
+        
+        WorkRuleResponse response = updateWorkRuleUseCase.execute(id, request, userId);
+        return ResponseEntity.ok(response);
     }
     
     /**
@@ -149,23 +117,9 @@ public class WorkRuleController {
      */
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteWorkRule(@PathVariable(name = "id") Long id, Authentication authentication) {
-        try {
-            String userId = authentication.getName();
-            deleteWorkRuleUseCase.execute(id, userId);
-            return ResponseEntity.noContent().build();
-        } catch (IllegalArgumentException e) {
-            // セキュリティエラー判定: 権限なしエラーと存在しないエラーを区別
-            // 理由: 適切なHTTPステータスコードを返すため
-            if (e.getMessage().contains("権限がありません")) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-            } else if (e.getMessage().contains("存在しません")) {
-                return ResponseEntity.notFound().build();
-            } else {
-                return ResponseEntity.badRequest().build();
-            }
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().build();
-        }
+        String userId = authentication.getName();
+        deleteWorkRuleUseCase.execute(id, userId);
+        return ResponseEntity.noContent().build();
     }
     
     /**

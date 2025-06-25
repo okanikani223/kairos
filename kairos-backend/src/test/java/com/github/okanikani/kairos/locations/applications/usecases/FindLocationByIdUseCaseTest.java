@@ -1,5 +1,7 @@
 package com.github.okanikani.kairos.locations.applications.usecases;
 
+import com.github.okanikani.kairos.commons.exceptions.AuthorizationException;
+import com.github.okanikani.kairos.commons.exceptions.ResourceNotFoundException;
 import com.github.okanikani.kairos.locations.applications.usecases.dto.LocationResponse;
 import com.github.okanikani.kairos.locations.domains.models.entities.Location;
 import com.github.okanikani.kairos.locations.domains.models.repositories.LocationRepository;
@@ -61,8 +63,8 @@ class FindLocationByIdUseCaseTest {
         when(locationRepository.findById(eq(locationId))).thenReturn(null);
 
         // Act & Assert
-        IllegalArgumentException exception = assertThrows(
-            IllegalArgumentException.class,
+        ResourceNotFoundException exception = assertThrows(
+            ResourceNotFoundException.class,
             () -> findLocationByIdUseCase.execute(locationId, userId)
         );
         assertEquals("指定された位置情報が存在しません", exception.getMessage());
@@ -82,8 +84,8 @@ class FindLocationByIdUseCaseTest {
         when(locationRepository.findById(eq(locationId))).thenReturn(location);
 
         // Act & Assert
-        IllegalArgumentException exception = assertThrows(
-            IllegalArgumentException.class,
+        AuthorizationException exception = assertThrows(
+            AuthorizationException.class,
             () -> findLocationByIdUseCase.execute(locationId, requestUserId)
         );
         assertEquals("この位置情報にアクセスする権限がありません", exception.getMessage());

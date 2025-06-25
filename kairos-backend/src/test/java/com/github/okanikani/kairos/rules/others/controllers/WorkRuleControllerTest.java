@@ -1,5 +1,7 @@
 package com.github.okanikani.kairos.rules.others.controllers;
 
+import com.github.okanikani.kairos.commons.exceptions.AuthorizationException;
+import com.github.okanikani.kairos.commons.exceptions.ResourceNotFoundException;
 import com.github.okanikani.kairos.rules.applications.usecases.DeleteWorkRuleUseCase;
 import com.github.okanikani.kairos.rules.applications.usecases.FindAllWorkRulesUseCase;
 import com.github.okanikani.kairos.rules.applications.usecases.FindWorkRuleByIdUseCase;
@@ -145,7 +147,7 @@ class WorkRuleControllerTest {
         Long workRuleId = 999L;
         when(authentication.getName()).thenReturn("testuser");
         when(findWorkRuleByIdUseCase.execute(eq(workRuleId), anyString()))
-            .thenThrow(new IllegalArgumentException("指定された勤務ルールが存在しません"));
+            .thenThrow(new ResourceNotFoundException("指定された勤務ルールが存在しません"));
 
         // Act
         ResponseEntity<WorkRuleResponse> response = workRuleController.findWorkRuleById(workRuleId, authentication);
@@ -161,7 +163,7 @@ class WorkRuleControllerTest {
         Long workRuleId = 1L;
         when(authentication.getName()).thenReturn("testuser");
         when(findWorkRuleByIdUseCase.execute(eq(workRuleId), anyString()))
-            .thenThrow(new IllegalArgumentException("この勤務ルールにアクセスする権限がありません"));
+            .thenThrow(new AuthorizationException("この勤務ルールにアクセスする権限がありません"));
 
         // Act
         ResponseEntity<WorkRuleResponse> response = workRuleController.findWorkRuleById(workRuleId, authentication);
@@ -233,7 +235,7 @@ class WorkRuleControllerTest {
         );
         
         when(updateWorkRuleUseCase.execute(eq(workRuleId), any(), anyString()))
-            .thenThrow(new IllegalArgumentException("指定された勤務ルールが存在しません"));
+            .thenThrow(new ResourceNotFoundException("指定された勤務ルールが存在しません"));
 
         // Act
         ResponseEntity<WorkRuleResponse> response = workRuleController.updateWorkRule(workRuleId, requestBody, authentication);
@@ -257,7 +259,7 @@ class WorkRuleControllerTest {
         );
         
         when(updateWorkRuleUseCase.execute(eq(workRuleId), any(), anyString()))
-            .thenThrow(new IllegalArgumentException("この勤務ルールを更新する権限がありません"));
+            .thenThrow(new AuthorizationException("この勤務ルールを更新する権限がありません"));
 
         // Act
         ResponseEntity<WorkRuleResponse> response = workRuleController.updateWorkRule(workRuleId, requestBody, authentication);
@@ -311,7 +313,7 @@ class WorkRuleControllerTest {
         // Arrange
         Long workRuleId = 999L;
         when(authentication.getName()).thenReturn("testuser");
-        doThrow(new IllegalArgumentException("指定された勤務ルールが存在しません"))
+        doThrow(new ResourceNotFoundException("指定された勤務ルールが存在しません"))
             .when(deleteWorkRuleUseCase).execute(eq(workRuleId), anyString());
 
         // Act
@@ -327,7 +329,7 @@ class WorkRuleControllerTest {
         // Arrange
         Long workRuleId = 1L;
         when(authentication.getName()).thenReturn("testuser");
-        doThrow(new IllegalArgumentException("この勤務ルールを削除する権限がありません"))
+        doThrow(new AuthorizationException("この勤務ルールを削除する権限がありません"))
             .when(deleteWorkRuleUseCase).execute(eq(workRuleId), anyString());
 
         // Act

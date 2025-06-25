@@ -63,16 +63,12 @@ public class ReportCreationRuleController {
      */
     @GetMapping
     public ResponseEntity<ReportCreationRuleResponse> findReportCreationRule(Authentication authentication) {
-        try {
-            String userId = authentication.getName();
-            ReportCreationRuleResponse response = findAllReportCreationRulesUseCase.execute(userId);
-            if (response == null) {
-                return ResponseEntity.notFound().build();
-            }
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().build();
+        String userId = authentication.getName();
+        ReportCreationRuleResponse response = findAllReportCreationRulesUseCase.execute(userId);
+        if (response == null) {
+            return ResponseEntity.notFound().build();
         }
+        return ResponseEntity.ok(response);
     }
     
     /**

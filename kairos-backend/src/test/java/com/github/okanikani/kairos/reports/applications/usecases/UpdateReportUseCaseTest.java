@@ -1,5 +1,6 @@
 package com.github.okanikani.kairos.reports.applications.usecases;
 
+import com.github.okanikani.kairos.commons.exceptions.ResourceNotFoundException;
 import com.github.okanikani.kairos.reports.applications.usecases.dto.DetailDto;
 import com.github.okanikani.kairos.reports.applications.usecases.dto.ReportResponse;
 import com.github.okanikani.kairos.reports.applications.usecases.dto.UpdateReportRequest;
@@ -124,8 +125,8 @@ class UpdateReportUseCaseTest {
         when(reportRepository.find(eq(yearMonth), eq(user))).thenReturn(null);
 
         // Act & Assert
-        IllegalArgumentException exception = assertThrows(
-            IllegalArgumentException.class,
+        ResourceNotFoundException exception = assertThrows(
+            ResourceNotFoundException.class,
             () -> updateReportUseCase.execute(request)
         );
         assertEquals("更新対象の勤怠表が存在しません: 2024-01", exception.getMessage());

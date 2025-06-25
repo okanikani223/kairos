@@ -1,5 +1,6 @@
 package com.github.okanikani.kairos.reports.applications.usecases;
 
+import com.github.okanikani.kairos.commons.exceptions.ResourceNotFoundException;
 import com.github.okanikani.kairos.reports.applications.usecases.dto.UpdateReportRequest;
 import com.github.okanikani.kairos.reports.applications.usecases.dto.ReportResponse;
 import com.github.okanikani.kairos.reports.applications.usecases.mapper.ReportMapper;
@@ -36,7 +37,7 @@ public class UpdateReportUseCase {
         // 存在しない場合は例外を発生させ、新規作成との混同を防ぐ
         Report existingReport = reportRepository.find(request.yearMonth(), user);
         if (existingReport == null) {
-            throw new IllegalArgumentException(
+            throw new ResourceNotFoundException(
                 String.format("更新対象の勤怠表が存在しません: %s", request.yearMonth())
             );
         }

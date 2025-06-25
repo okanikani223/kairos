@@ -15,7 +15,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Objects;
 
@@ -39,68 +38,30 @@ public class LocationController {
     
     @PostMapping
     public ResponseEntity<LocationResponse> registerLocation(@RequestBody RegisterLocationRequest request, Authentication authentication) {
-        try {
-            String userId = authentication.getName();
-            LocationResponse response = registerLocationUseCase.execute(request, userId);
-            return ResponseEntity.status(HttpStatus.CREATED).body(response);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().build();
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().build();
-        }
+        String userId = authentication.getName();
+        LocationResponse response = registerLocationUseCase.execute(request, userId);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
     
     @GetMapping
     public ResponseEntity<List<LocationResponse>> findAllLocations(Authentication authentication) {
-        try {
-            String userId = authentication.getName();
-            List<LocationResponse> response = findAllLocationsUseCase.execute(userId);
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().build();
-        }
+        String userId = authentication.getName();
+        List<LocationResponse> response = findAllLocationsUseCase.execute(userId);
+        return ResponseEntity.ok(response);
     }
     
     @GetMapping("/{id}")
     public ResponseEntity<LocationResponse> findLocationById(@PathVariable(name = "id") Long id, Authentication authentication) {
-        try {
-            String userId = authentication.getName();
-            LocationResponse response = findLocationByIdUseCase.execute(id, userId);
-            return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            // セキュリティエラー判定: 権限なしエラーと存在しないエラーを区別
-            // 理由: 適切なHTTPステータスコードを返すため
-            if (e.getMessage().contains("権限がありません")) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-            } else if (e.getMessage().contains("存在しません")) {
-                return ResponseEntity.notFound().build();
-            } else {
-                return ResponseEntity.badRequest().build();
-            }
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().build();
-        }
+        String userId = authentication.getName();
+        LocationResponse response = findLocationByIdUseCase.execute(id, userId);
+        return ResponseEntity.ok(response);
     }
     
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteLocation(@PathVariable(name = "id") Long id, Authentication authentication) {
-        try {
-            String userId = authentication.getName();
-            deleteLocationUseCase.execute(id, userId);
-            return ResponseEntity.noContent().build();
-        } catch (IllegalArgumentException e) {
-            // セキュリティエラー判定: 権限なしエラーと存在しないエラーを区別
-            // 理由: 適切なHTTPステータスコードを返すため
-            if (e.getMessage().contains("権限がありません")) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-            } else if (e.getMessage().contains("存在しません")) {
-                return ResponseEntity.notFound().build();
-            } else {
-                return ResponseEntity.badRequest().build();
-            }
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().build();
-        }
+        String userId = authentication.getName();
+        deleteLocationUseCase.execute(id, userId);
+        return ResponseEntity.noContent().build();
     }
     
     @GetMapping("/search")
@@ -108,29 +69,14 @@ public class LocationController {
             @RequestParam("startDateTime") String startDateTimeStr,
             @RequestParam("endDateTime") String endDateTimeStr,
             Authentication authentication) {
-        try {
-            // 日時文字列のパース処理
-            // フォーマット: "2024-01-01T09:00:00"
-            LocalDateTime startDateTime;
-            LocalDateTime endDateTime;
-            
-            try {
-                startDateTime = LocalDateTime.parse(startDateTimeStr, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
-                endDateTime = LocalDateTime.parse(endDateTimeStr, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
-            } catch (DateTimeParseException e) {
-                // 日時フォーマットエラー: ISO-8601形式（YYYY-MM-DDTHH:mm:ss）で入力する必要がある
-                // 理由: 不正な日時形式によるシステムエラーを防止するため
-                return ResponseEntity.badRequest().build();
-            }
-            
-            String userId = authentication.getName();
-            SearchLocationsRequest request = new SearchLocationsRequest(startDateTime, endDateTime);
-            List<LocationResponse> response = searchLocationsUseCase.execute(request, userId);
-            return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().build();
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().build();
-        }
+        // 日時文字列のパース処理
+        // フォーマット: "2024-01-01T09:00:00"
+        LocalDateTime startDateTime = LocalDateTime.parse(startDateTimeStr, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+        LocalDateTime endDateTime = LocalDateTime.parse(endDateTimeStr, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+        
+        String userId = authentication.getName();
+        SearchLocationsRequest request = new SearchLocationsRequest(startDateTime, endDateTime);
+        List<LocationResponse> response = searchLocationsUseCase.execute(request, userId);
+        return ResponseEntity.ok(response);
     }
 }

@@ -1,5 +1,6 @@
 package com.github.okanikani.kairos.reports.applications.usecases;
 
+import com.github.okanikani.kairos.commons.exceptions.ResourceNotFoundException;
 import com.github.okanikani.kairos.reports.applications.usecases.dto.DeleteReportRequest;
 import com.github.okanikani.kairos.reports.applications.usecases.dto.UserDto;
 import com.github.okanikani.kairos.reports.domains.models.constants.ReportStatus;
@@ -68,8 +69,8 @@ class DeleteReportUseCaseTest {
         when(reportRepository.find(eq(yearMonth), eq(user))).thenReturn(null);
 
         // Act & Assert
-        IllegalArgumentException exception = assertThrows(
-            IllegalArgumentException.class,
+        ResourceNotFoundException exception = assertThrows(
+            ResourceNotFoundException.class,
             () -> deleteReportUseCase.execute(request)
         );
         assertEquals("削除対象の勤怠表が存在しません: 2024-01", exception.getMessage());

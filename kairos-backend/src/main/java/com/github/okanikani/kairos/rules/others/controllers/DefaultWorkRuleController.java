@@ -70,13 +70,9 @@ public class DefaultWorkRuleController {
      */
     @GetMapping
     public ResponseEntity<List<DefaultWorkRuleResponse>> findAllDefaultWorkRules(Authentication authentication) {
-        try {
-            String userId = authentication.getName();
-            List<DefaultWorkRuleResponse> response = findAllDefaultWorkRulesUseCase.execute(userId);
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().build();
-        }
+        String userId = authentication.getName();
+        List<DefaultWorkRuleResponse> response = findAllDefaultWorkRulesUseCase.execute(userId);
+        return ResponseEntity.ok(response);
     }
     
     /**

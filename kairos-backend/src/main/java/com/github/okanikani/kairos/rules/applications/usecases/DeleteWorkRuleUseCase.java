@@ -1,5 +1,7 @@
 package com.github.okanikani.kairos.rules.applications.usecases;
 
+import com.github.okanikani.kairos.commons.exceptions.AuthorizationException;
+import com.github.okanikani.kairos.commons.exceptions.ResourceNotFoundException;
 import com.github.okanikani.kairos.rules.domains.models.entities.WorkRule;
 import com.github.okanikani.kairos.rules.domains.models.repositories.WorkRuleRepository;
 import org.springframework.stereotype.Service;
@@ -24,7 +26,8 @@ public class DeleteWorkRuleUseCase {
      * @param workRuleId 勤務ルールID
      * @param userId ユーザーID
      * @throws NullPointerException workRuleIdまたはuserIdがnullの場合
-     * @throws IllegalArgumentException 勤務ルールが存在しない場合または権限がない場合
+     * @throws ResourceNotFoundException 勤務ルールが存在しない場合
+     * @throws AuthorizationException 権限がない場合
      */
     public void execute(Long workRuleId, String userId) {
         Objects.requireNonNull(workRuleId, "workRuleIdは必須です");
@@ -32,12 +35,12 @@ public class DeleteWorkRuleUseCase {
         
         WorkRule workRule = workRuleRepository.findById(workRuleId);
         if (workRule == null) {
-            throw new IllegalArgumentException("指定された勤務ルールが存在しません");
+            throw new ResourceNotFoundException("指定された勤務ルールが存在しません");
         }
         
         // ユーザー権限チェック: 自分の勤務ルールのみ削除可能
         if (!workRule.user().userId().equals(userId)) {
-            throw new IllegalArgumentException("この勤務ルールを削除する権限がありません");
+            throw new AuthorizationException("この勤務ルールを削除する権限がありません");
         }
         
         workRuleRepository.deleteById(workRuleId);

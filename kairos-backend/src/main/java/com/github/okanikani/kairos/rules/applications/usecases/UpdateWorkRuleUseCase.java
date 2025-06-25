@@ -1,5 +1,7 @@
 package com.github.okanikani.kairos.rules.applications.usecases;
 
+import com.github.okanikani.kairos.commons.exceptions.AuthorizationException;
+import com.github.okanikani.kairos.commons.exceptions.ResourceNotFoundException;
 import com.github.okanikani.kairos.rules.applications.usecases.dto.UpdateWorkRuleRequest;
 import com.github.okanikani.kairos.rules.applications.usecases.dto.UserDto;
 import com.github.okanikani.kairos.rules.applications.usecases.dto.WorkRuleResponse;
@@ -30,7 +32,8 @@ public class UpdateWorkRuleUseCase {
      * @param userId ユーザーID
      * @return 更新された勤務ルールレスポンス
      * @throws NullPointerException workRuleId、request、またはuserIdがnullの場合
-     * @throws IllegalArgumentException 勤務ルールが存在しない場合または権限がない場合
+     * @throws ResourceNotFoundException 勤務ルールが存在しない場合
+     * @throws AuthorizationException 権限がない場合
      */
     public WorkRuleResponse execute(Long workRuleId, UpdateWorkRuleRequest request, String userId) {
         Objects.requireNonNull(workRuleId, "workRuleIdは必須です");
@@ -39,12 +42,12 @@ public class UpdateWorkRuleUseCase {
         
         WorkRule existingWorkRule = workRuleRepository.findById(workRuleId);
         if (existingWorkRule == null) {
-            throw new IllegalArgumentException("指定された勤務ルールが存在しません");
+            throw new ResourceNotFoundException("指定された勤務ルールが存在しません");
         }
         
         // ユーザー権限チェック: 自分の勤務ルールのみ更新可能
         if (!existingWorkRule.user().userId().equals(userId)) {
-            throw new IllegalArgumentException("この勤務ルールを更新する権限がありません");
+            throw new AuthorizationException("この勤務ルールを更新する権限がありません");
         }
         
         // 新しい勤務ルールエンティティを作成（リクエストの値で更新）
