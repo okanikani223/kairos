@@ -1,5 +1,6 @@
 package com.github.okanikani.kairos.reportcreationrules.applications.usecases;
 
+import com.github.okanikani.kairos.commons.exceptions.DuplicateResourceException;
 import com.github.okanikani.kairos.reportcreationrules.applications.usecases.dto.RegisterReportCreationRuleRequest;
 import com.github.okanikani.kairos.reportcreationrules.applications.usecases.dto.ReportCreationRuleResponse;
 import com.github.okanikani.kairos.reportcreationrules.applications.usecases.dto.UserDto;
@@ -75,8 +76,8 @@ class RegisterReportCreationRuleUseCaseTest {
         when(reportCreationRuleRepository.findByUser(user)).thenReturn(existingRule);
 
         // Act & Assert
-        IllegalArgumentException exception = assertThrows(
-            IllegalArgumentException.class,
+        DuplicateResourceException exception = assertThrows(
+            DuplicateResourceException.class,
             () -> registerReportCreationRuleUseCase.execute(request)
         );
         assertEquals("指定されたユーザーの勤怠作成ルールが既に存在します", exception.getMessage());

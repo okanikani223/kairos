@@ -2,6 +2,7 @@ package com.github.okanikani.kairos.reports.others.controllers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.github.okanikani.kairos.commons.controllers.GlobalExceptionHandler;
 import com.github.okanikani.kairos.commons.dto.ErrorResponse;
 import com.github.okanikani.kairos.commons.exceptions.AuthorizationException;
 import com.github.okanikani.kairos.commons.exceptions.ResourceNotFoundException;
@@ -16,6 +17,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
@@ -37,6 +39,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @WebMvcTest(ReportController.class)
+@Import(GlobalExceptionHandler.class)
 class ReportControllerTest {
 
     @Autowired

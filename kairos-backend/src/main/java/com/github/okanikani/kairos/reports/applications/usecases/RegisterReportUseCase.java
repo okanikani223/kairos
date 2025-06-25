@@ -1,5 +1,6 @@
 package com.github.okanikani.kairos.reports.applications.usecases;
 
+import com.github.okanikani.kairos.commons.exceptions.DuplicateResourceException;
 import com.github.okanikani.kairos.reports.applications.usecases.dto.RegisterReportRequest;
 import com.github.okanikani.kairos.reports.applications.usecases.dto.ReportResponse;
 import com.github.okanikani.kairos.reports.applications.usecases.mapper.ReportMapper;
@@ -45,7 +46,7 @@ public class RegisterReportUseCase {
         // 理由: 給与計算の二重処理やデータ不整合を防止するため
         Report existingReport = reportRepository.find(request.yearMonth(), user);
         if (existingReport != null) {
-            throw new IllegalArgumentException(
+            throw new DuplicateResourceException(
                 String.format("指定された年月(%s)の勤怠表は既に存在します", request.yearMonth())
             );
         }

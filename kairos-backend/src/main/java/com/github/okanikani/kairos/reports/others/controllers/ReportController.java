@@ -1,5 +1,6 @@
 package com.github.okanikani.kairos.reports.others.controllers;
 
+import com.github.okanikani.kairos.commons.exceptions.AuthorizationException;
 import com.github.okanikani.kairos.reports.applications.usecases.DeleteReportUseCase;
 import com.github.okanikani.kairos.reports.applications.usecases.FindReportUseCase;
 import com.github.okanikani.kairos.reports.applications.usecases.GenerateReportFromLocationUseCase;
@@ -17,6 +18,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.DateTimeException;
 import java.time.YearMonth;
 import java.util.Objects;
 
@@ -46,7 +48,7 @@ public class ReportController {
         // 理由: 他のユーザーの勤怠表を誤って操作することを防ぐため
         String authenticatedUserId = authentication.getName();
         if (!authenticatedUserId.equals(request.user().userId())) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            throw new AuthorizationException("認証されたユーザーとリクエストのユーザーが一致しません");
         }
         
         ReportResponse response = registerReportUseCase.execute(request);
@@ -60,7 +62,13 @@ public class ReportController {
             Authentication authentication) {
         String userId = authentication.getName();
         
-        YearMonth yearMonth = YearMonth.of(year, month);
+        YearMonth yearMonth;
+        try {
+            yearMonth = YearMonth.of(year, month);
+        } catch (DateTimeException e) {
+            throw new IllegalArgumentException("無効な年月が指定されました: " + year + "/" + month);
+        }
+        
         UserDto userDto = new UserDto(userId);
         FindReportRequest request = new FindReportRequest(yearMonth, userDto);
         
@@ -83,14 +91,20 @@ public class ReportController {
         
         // REST API設計原則: パスパラメータとボディの年月一致確認
         // 理由: URLとボディの不整合によるデータ破損を防止するため
-        YearMonth pathYearMonth = YearMonth.of(year, month);
+        YearMonth pathYearMonth;
+        try {
+            pathYearMonth = YearMonth.of(year, month);
+        } catch (DateTimeException e) {
+            throw new IllegalArgumentException("無効な年月が指定されました: " + year + "/" + month);
+        }
+        
         if (!pathYearMonth.equals(request.yearMonth())) {
-            return ResponseEntity.badRequest().build();
+            throw new IllegalArgumentException("パスパラメータとリクエストボディの年月が一致しません");
         }
         
         // セキュリティチェック: JWT認証ユーザーとリクエストユーザーIDの一致確認
         if (!authenticatedUserId.equals(request.user().userId())) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            throw new AuthorizationException("認証されたユーザーとリクエストのユーザーが一致しません");
         }
         
         ReportResponse response = updateReportUseCase.execute(request);
@@ -106,7 +120,13 @@ public class ReportController {
         // 理由: 他のユーザーの勤怠データを誤って削除することを防ぐため
         String authenticatedUserId = authentication.getName();
         
-        YearMonth yearMonth = YearMonth.of(year, month);
+        YearMonth yearMonth;
+        try {
+            yearMonth = YearMonth.of(year, month);
+        } catch (DateTimeException e) {
+            throw new IllegalArgumentException("無効な年月が指定されました: " + year + "/" + month);
+        }
+        
         UserDto userDto = new UserDto(authenticatedUserId);
         DeleteReportRequest request = new DeleteReportRequest(yearMonth, userDto);
         
@@ -122,7 +142,7 @@ public class ReportController {
         // 理由: 他のユーザーの位置情報から勤怠表を誤って生成することを防ぐため
         String authenticatedUserId = authentication.getName();
         if (!authenticatedUserId.equals(request.user().userId())) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+            throw new AuthorizationException("認証されたユーザーとリクエストのユーザーが一致しません");
         }
         
         ReportResponse response = generateReportFromLocationUseCase.execute(request);

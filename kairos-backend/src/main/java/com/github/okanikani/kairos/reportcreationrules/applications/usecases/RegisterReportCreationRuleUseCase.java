@@ -1,5 +1,6 @@
 package com.github.okanikani.kairos.reportcreationrules.applications.usecases;
 
+import com.github.okanikani.kairos.commons.exceptions.DuplicateResourceException;
 import com.github.okanikani.kairos.reportcreationrules.applications.usecases.dto.RegisterReportCreationRuleRequest;
 import com.github.okanikani.kairos.reportcreationrules.applications.usecases.dto.ReportCreationRuleResponse;
 import com.github.okanikani.kairos.reportcreationrules.applications.usecases.mapper.ReportCreationRuleMapper;
@@ -30,7 +31,7 @@ public class RegisterReportCreationRuleUseCase {
      * 勤怠作成ルールを登録する
      * @param request 登録リクエスト
      * @return 登録された勤怠作成ルール情報
-     * @throws IllegalArgumentException 指定されたユーザーの勤怠作成ルールが既に存在する場合
+     * @throws DuplicateResourceException 指定されたユーザーの勤怠作成ルールが既に存在する場合
      */
     public ReportCreationRuleResponse execute(RegisterReportCreationRuleRequest request) {
         Objects.requireNonNull(request, "リクエストは必須です");
@@ -42,7 +43,7 @@ public class RegisterReportCreationRuleUseCase {
         // 重複チェック：同一ユーザーの勤怠作成ルールが既に存在するかチェック
         ReportCreationRule existingRule = reportCreationRuleRepository.findByUser(user);
         if (existingRule != null) {
-            throw new IllegalArgumentException("指定されたユーザーの勤怠作成ルールが既に存在します");
+            throw new DuplicateResourceException("指定されたユーザーの勤怠作成ルールが既に存在します");
         }
         
         // 勤怠作成ルールを保存

@@ -1,5 +1,6 @@
 package com.github.okanikani.kairos.rules.applications.usecases;
 
+import com.github.okanikani.kairos.commons.exceptions.DuplicateResourceException;
 import com.github.okanikani.kairos.rules.applications.usecases.dto.DefaultWorkRuleResponse;
 import com.github.okanikani.kairos.rules.applications.usecases.dto.RegisterDefaultWorkRuleRequest;
 import com.github.okanikani.kairos.rules.applications.usecases.dto.UserDto;
@@ -94,8 +95,8 @@ class RegisterDefaultWorkRuleUseCaseTest {
         when(defaultWorkRuleRepository.findByUserAndWorkPlaceId(user, 1001L)).thenReturn(existingDefaultWorkRule);
 
         // Act & Assert
-        IllegalArgumentException exception = assertThrows(
-            IllegalArgumentException.class,
+        DuplicateResourceException exception = assertThrows(
+            DuplicateResourceException.class,
             () -> registerDefaultWorkRuleUseCase.execute(request)
         );
         assertEquals("指定されたユーザーと勤怠先の組み合わせでデフォルト勤怠ルールが既に存在します", exception.getMessage());

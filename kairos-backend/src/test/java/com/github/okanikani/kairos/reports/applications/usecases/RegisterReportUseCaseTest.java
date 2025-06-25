@@ -1,6 +1,7 @@
 package com.github.okanikani.kairos.reports.applications.usecases;
 
 import com.github.okanikani.kairos.TestSecurityConfig;
+import com.github.okanikani.kairos.commons.exceptions.DuplicateResourceException;
 import com.github.okanikani.kairos.reports.applications.usecases.dto.*;
 import com.github.okanikani.kairos.reports.domains.models.constants.ReportStatus;
 import com.github.okanikani.kairos.reports.domains.models.entities.Report;
@@ -90,8 +91,8 @@ class RegisterReportUseCaseTest {
         when(reportRepository.find(eq(yearMonth), any(User.class))).thenReturn(existingReport);
 
         // Act & Assert
-        IllegalArgumentException exception = assertThrows(
-            IllegalArgumentException.class,
+        DuplicateResourceException exception = assertThrows(
+            DuplicateResourceException.class,
             () -> usecase.execute(request)
         );
 

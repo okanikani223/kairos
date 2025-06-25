@@ -2,6 +2,8 @@ package com.github.okanikani.kairos.commons.controllers;
 
 import com.github.okanikani.kairos.commons.dto.ErrorResponse;
 import com.github.okanikani.kairos.commons.exceptions.AuthorizationException;
+import com.github.okanikani.kairos.commons.exceptions.BusinessRuleViolationException;
+import com.github.okanikani.kairos.commons.exceptions.DuplicateResourceException;
 import com.github.okanikani.kairos.commons.exceptions.ResourceNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -98,6 +100,46 @@ public class GlobalExceptionHandler {
         );
         
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
+    
+    /**
+     * 重複リソース例外のハンドリング
+     * 
+     * 既に存在するリソースを重複して登録しようとした場合の例外です。
+     * 
+     * @param ex DuplicateResourceException
+     * @return 409 Conflict レスポンス
+     */
+    @ExceptionHandler(DuplicateResourceException.class)
+    public ResponseEntity<ErrorResponse> handleDuplicateResource(DuplicateResourceException ex) {
+        logger.warn("リソース重複エラーが発生しました: {}", ex.getMessage());
+        
+        ErrorResponse errorResponse = ErrorResponse.of(
+            "DUPLICATE_RESOURCE",
+            ex.getMessage()
+        );
+        
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
+    }
+    
+    /**
+     * 業務ルール違反例外のハンドリング
+     * 
+     * アプリケーションの業務ルールに違反した操作を行おうとした場合の例外です。
+     * 
+     * @param ex BusinessRuleViolationException
+     * @return 422 Unprocessable Entity レスポンス
+     */
+    @ExceptionHandler(BusinessRuleViolationException.class)
+    public ResponseEntity<ErrorResponse> handleBusinessRuleViolation(BusinessRuleViolationException ex) {
+        logger.warn("業務ルール違反エラーが発生しました: {}", ex.getMessage());
+        
+        ErrorResponse errorResponse = ErrorResponse.of(
+            "BUSINESS_RULE_VIOLATION",
+            ex.getMessage()
+        );
+        
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(errorResponse);
     }
     
     /**

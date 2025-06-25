@@ -1,5 +1,6 @@
 package com.github.okanikani.kairos.rules.applications.usecases;
 
+import com.github.okanikani.kairos.commons.exceptions.DuplicateResourceException;
 import com.github.okanikani.kairos.rules.applications.usecases.dto.DefaultWorkRuleResponse;
 import com.github.okanikani.kairos.rules.applications.usecases.dto.RegisterDefaultWorkRuleRequest;
 import com.github.okanikani.kairos.rules.applications.usecases.mapper.DefaultWorkRuleMapper;
@@ -30,7 +31,7 @@ public class RegisterDefaultWorkRuleUseCase {
      * デフォルト勤怠ルールを登録する
      * @param request 登録リクエスト
      * @return 登録されたデフォルト勤怠ルール情報
-     * @throws IllegalArgumentException 同一ユーザー・同一勤怠先で既にデフォルト勤怠ルールが存在する場合
+     * @throws DuplicateResourceException 同一ユーザー・同一勤怠先で既にデフォルト勤怠ルールが存在する場合
      */
     public DefaultWorkRuleResponse execute(RegisterDefaultWorkRuleRequest request) {
         Objects.requireNonNull(request, "リクエストは必須です");
@@ -43,7 +44,7 @@ public class RegisterDefaultWorkRuleUseCase {
         // 重複チェック：同一ユーザー・同一勤怠先のデフォルト勤怠ルールが既に存在するかチェック
         DefaultWorkRule existingDefaultWorkRule = defaultWorkRuleRepository.findByUserAndWorkPlaceId(user, workPlaceId);
         if (existingDefaultWorkRule != null) {
-            throw new IllegalArgumentException("指定されたユーザーと勤怠先の組み合わせでデフォルト勤怠ルールが既に存在します");
+            throw new DuplicateResourceException("指定されたユーザーと勤怠先の組み合わせでデフォルト勤怠ルールが既に存在します");
         }
         
         // デフォルト勤怠ルールを保存

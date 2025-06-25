@@ -1,5 +1,6 @@
 package com.github.okanikani.kairos.rules.applications.usecases;
 
+import com.github.okanikani.kairos.commons.exceptions.DuplicateResourceException;
 import com.github.okanikani.kairos.rules.applications.usecases.dto.RegisterWorkRuleRequest;
 import com.github.okanikani.kairos.rules.applications.usecases.dto.WorkRuleResponse;
 import com.github.okanikani.kairos.rules.applications.usecases.mapper.WorkRuleMapper;
@@ -31,7 +32,7 @@ public class RegisterWorkRuleUseCase {
         // 業務ルール: 同一ユーザーの所属期間重複チェック
         List<WorkRule> existingRules = workRuleRepository.findByUser(user);
         if (workRuleDomainService.hasOverlappingPeriod(existingRules, request.membershipStartDate(), request.membershipEndDate())) {
-            throw new IllegalArgumentException("指定された所属期間は既存の勤怠ルールと重複しています");
+            throw new DuplicateResourceException("指定された所属期間は既存の勤怠ルールと重複しています");
         }
         
         // DTOからエンティティへ変換
