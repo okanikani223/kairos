@@ -5,6 +5,7 @@ import com.github.okanikani.kairos.commons.exceptions.AuthorizationException;
 import com.github.okanikani.kairos.commons.exceptions.BusinessRuleViolationException;
 import com.github.okanikani.kairos.commons.exceptions.DuplicateResourceException;
 import com.github.okanikani.kairos.commons.exceptions.ResourceNotFoundException;
+import com.github.okanikani.kairos.commons.exceptions.ValidationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -140,6 +141,26 @@ public class GlobalExceptionHandler {
         );
         
         return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(errorResponse);
+    }
+    
+    /**
+     * カスタムバリデーション例外のハンドリング
+     * 
+     * アプリケーション固有のバリデーションエラーです。
+     * 
+     * @param ex ValidationException
+     * @return 400 Bad Request レスポンス
+     */
+    @ExceptionHandler(ValidationException.class)
+    public ResponseEntity<ErrorResponse> handleValidation(ValidationException ex) {
+        logger.warn("バリデーションエラーが発生しました: {}", ex.getMessage());
+        
+        ErrorResponse errorResponse = ErrorResponse.of(
+            "VALIDATION_ERROR",
+            ex.getMessage()
+        );
+        
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
     }
     
     /**

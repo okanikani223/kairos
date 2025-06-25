@@ -1,5 +1,6 @@
 package com.github.okanikani.kairos.rules.domains.models.entities;
 
+import com.github.okanikani.kairos.commons.exceptions.ValidationException;
 import com.github.okanikani.kairos.rules.domains.models.vos.User;
 
 import java.time.LocalDate;
@@ -26,19 +27,19 @@ public record WorkRule(
     public WorkRule {
         // 業務ルール: 勤怠先IDは必須
         if (workPlaceId == null) {
-            throw new IllegalArgumentException("勤怠先IDは必須です");
+            throw new ValidationException("勤怠先IDは必須です");
         }
         
         // 業務ルール: 緯度は-90.0～90.0の範囲内である必要がある
         if (latitude < -90.0 || latitude > 90.0) {
-            throw new IllegalArgumentException(
+            throw new ValidationException(
                 String.format("緯度は-90.0～90.0の範囲で指定してください: %f", latitude)
             );
         }
         
         // 業務ルール: 経度は-180.0～180.0の範囲内である必要がある
         if (longitude < -180.0 || longitude > 180.0) {
-            throw new IllegalArgumentException(
+            throw new ValidationException(
                 String.format("経度は-180.0～180.0の範囲で指定してください: %f", longitude)
             );
         }
@@ -64,17 +65,17 @@ public record WorkRule(
         
         // 業務ルール: 所属開始日は所属終了日より前である必要がある
         if (membershipStartDate.isAfter(membershipEndDate)) {
-            throw new IllegalArgumentException("所属開始日は所属終了日より前である必要があります");
+            throw new ValidationException("所属開始日は所属終了日より前である必要があります");
         }
         
         // 業務ルール: 規定勤怠開始時刻は規定勤怠終了時刻より前である必要がある
         if (standardStartTime.isAfter(standardEndTime)) {
-            throw new IllegalArgumentException("規定勤怠開始時刻は規定勤怠終了時刻より前である必要があります");
+            throw new ValidationException("規定勤怠開始時刻は規定勤怠終了時刻より前である必要があります");
         }
         
         // 業務ルール: 規定休憩開始時刻は規定休憩終了時刻より前である必要がある
         if (breakStartTime != null && breakEndTime != null && breakStartTime.isAfter(breakEndTime)) {
-            throw new IllegalArgumentException("規定休憩開始時刻は規定休憩終了時刻より前である必要があります");
+            throw new ValidationException("規定休憩開始時刻は規定休憩終了時刻より前である必要があります");
         }
     }
 }

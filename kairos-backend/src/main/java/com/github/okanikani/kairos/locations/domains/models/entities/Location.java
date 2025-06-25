@@ -1,5 +1,6 @@
 package com.github.okanikani.kairos.locations.domains.models.entities;
 
+import com.github.okanikani.kairos.commons.exceptions.ValidationException;
 import com.github.okanikani.kairos.locations.domains.models.vos.User;
 
 import java.time.LocalDateTime;
@@ -21,14 +22,14 @@ public record Location(
         
         // 業務ルール: 緯度は-90.0～90.0の範囲内である必要がある
         if (latitude < -90.0 || latitude > 90.0) {
-            throw new IllegalArgumentException(
+            throw new ValidationException(
                 String.format("緯度は-90.0～90.0の範囲で指定してください: %f", latitude)
             );
         }
         
         // 業務ルール: 経度は-180.0～180.0の範囲内である必要がある
         if (longitude < -180.0 || longitude > 180.0) {
-            throw new IllegalArgumentException(
+            throw new ValidationException(
                 String.format("経度は-180.0～180.0の範囲で指定してください: %f", longitude)
             );
         }

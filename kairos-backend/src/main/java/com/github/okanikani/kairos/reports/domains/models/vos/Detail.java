@@ -1,5 +1,6 @@
 package com.github.okanikani.kairos.reports.domains.models.vos;
 
+import com.github.okanikani.kairos.commons.exceptions.ValidationException;
 import com.github.okanikani.kairos.reports.domains.models.constants.LeaveType;
 
 import java.time.LocalDate;
@@ -30,7 +31,7 @@ public record Detail(
 ) {
     public Detail {
         if (workDate == null) {
-            throw new IllegalArgumentException("勤務日付は必須です");
+            throw new ValidationException("勤務日付は必須です");
         }
 
         // null安全のための補正（recordは不変なので必ず補正してから代入）

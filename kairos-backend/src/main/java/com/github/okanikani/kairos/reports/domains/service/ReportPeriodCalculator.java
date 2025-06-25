@@ -1,5 +1,6 @@
 package com.github.okanikani.kairos.reports.domains.service;
 
+import com.github.okanikani.kairos.commons.exceptions.ValidationException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
@@ -27,7 +28,7 @@ public class ReportPeriodCalculator {
     public static ReportPeriod calculatePeriod(YearMonth reportYearMonth, int closingDay) {
         // バリデーション
         if (closingDay < 1 || closingDay > 31) {
-            throw new IllegalArgumentException("勤怠締め日は1-31の範囲で指定してください");
+            throw new ValidationException("勤怠締め日は1-31の範囲で指定してください");
         }
         
         // 勤怠年月の前月の勤怠締め日+1が期間開始
@@ -53,10 +54,10 @@ public class ReportPeriodCalculator {
         
         public ReportPeriod {
             if (startDate == null || endDate == null) {
-                throw new IllegalArgumentException("開始日と終了日は必須です");
+                throw new ValidationException("開始日と終了日は必須です");
             }
             if (startDate.isAfter(endDate)) {
-                throw new IllegalArgumentException("開始日は終了日以前である必要があります");
+                throw new ValidationException("開始日は終了日以前である必要があります");
             }
         }
         

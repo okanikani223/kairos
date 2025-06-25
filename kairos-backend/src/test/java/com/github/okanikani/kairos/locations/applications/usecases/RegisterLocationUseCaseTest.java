@@ -1,5 +1,6 @@
 package com.github.okanikani.kairos.locations.applications.usecases;
 
+import com.github.okanikani.kairos.commons.exceptions.ValidationException;
 import com.github.okanikani.kairos.locations.applications.usecases.dto.RegisterLocationRequest;
 import com.github.okanikani.kairos.locations.applications.usecases.dto.LocationResponse;
 import com.github.okanikani.kairos.locations.domains.models.entities.Location;
@@ -83,8 +84,8 @@ class RegisterLocationUseCaseTest {
         );
 
         // Act & Assert
-        IllegalArgumentException exception = assertThrows(
-            IllegalArgumentException.class,
+        ValidationException exception = assertThrows(
+            ValidationException.class,
             () -> registerLocationUseCase.execute(request, "testuser")
         );
         assertTrue(exception.getMessage().contains("緯度は-90.0～90.0の範囲で指定してください"));
@@ -101,8 +102,8 @@ class RegisterLocationUseCaseTest {
         );
 
         // Act & Assert
-        IllegalArgumentException exception = assertThrows(
-            IllegalArgumentException.class,
+        ValidationException exception = assertThrows(
+            ValidationException.class,
             () -> registerLocationUseCase.execute(request, "testuser")
         );
         assertTrue(exception.getMessage().contains("経度は-180.0～180.0の範囲で指定してください"));

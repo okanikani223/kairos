@@ -1,5 +1,6 @@
 package com.github.okanikani.kairos.rules.domains.models.entities;
 
+import com.github.okanikani.kairos.commons.exceptions.ValidationException;
 import com.github.okanikani.kairos.rules.domains.models.vos.User;
 import org.junit.jupiter.api.Test;
 
@@ -76,8 +77,8 @@ class DefaultWorkRuleTest {
     @Test
     void constructor_緯度範囲外_例外が発生する() {
         // Act & Assert
-        IllegalArgumentException exception = assertThrows(
-            IllegalArgumentException.class,
+        ValidationException exception = assertThrows(
+            ValidationException.class,
             () -> new DefaultWorkRule(
                 1L, 1001L, -91.0, 139.6503,
                 new User("testuser"),
@@ -91,8 +92,8 @@ class DefaultWorkRuleTest {
     @Test
     void constructor_経度範囲外_例外が発生する() {
         // Act & Assert
-        IllegalArgumentException exception = assertThrows(
-            IllegalArgumentException.class,
+        ValidationException exception = assertThrows(
+            ValidationException.class,
             () -> new DefaultWorkRule(
                 1L, 1001L, 35.6762, 181.0,
                 new User("testuser"),
@@ -150,8 +151,8 @@ class DefaultWorkRuleTest {
     @Test
     void constructor_規定勤怠時刻の順序不正_例外が発生する() {
         // Act & Assert
-        IllegalArgumentException exception = assertThrows(
-            IllegalArgumentException.class,
+        ValidationException exception = assertThrows(
+            ValidationException.class,
             () -> new DefaultWorkRule(
                 1L, 1001L, 35.6762, 139.6503,
                 new User("testuser"),
@@ -165,8 +166,8 @@ class DefaultWorkRuleTest {
     @Test
     void constructor_休憩時刻の順序不正_例外が発生する() {
         // Act & Assert
-        IllegalArgumentException exception = assertThrows(
-            IllegalArgumentException.class,
+        ValidationException exception = assertThrows(
+            ValidationException.class,
             () -> new DefaultWorkRule(
                 1L, 1001L, 35.6762, 139.6503,
                 new User("testuser"),
@@ -180,8 +181,8 @@ class DefaultWorkRuleTest {
     @Test
     void constructor_休憩開始時刻のみnull_例外が発生する() {
         // Act & Assert
-        IllegalArgumentException exception = assertThrows(
-            IllegalArgumentException.class,
+        ValidationException exception = assertThrows(
+            ValidationException.class,
             () -> new DefaultWorkRule(
                 1L, 1001L, 35.6762, 139.6503,
                 new User("testuser"),
@@ -195,8 +196,8 @@ class DefaultWorkRuleTest {
     @Test
     void constructor_休憩終了時刻のみnull_例外が発生する() {
         // Act & Assert
-        IllegalArgumentException exception = assertThrows(
-            IllegalArgumentException.class,
+        ValidationException exception = assertThrows(
+            ValidationException.class,
             () -> new DefaultWorkRule(
                 1L, 1001L, 35.6762, 139.6503,
                 new User("testuser"),

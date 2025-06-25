@@ -1,5 +1,6 @@
 package com.github.okanikani.kairos.reportcreationrules.domains.models.entities;
 
+import com.github.okanikani.kairos.commons.exceptions.ValidationException;
 import com.github.okanikani.kairos.reportcreationrules.domains.models.vos.User;
 import org.junit.jupiter.api.Test;
 
@@ -55,8 +56,8 @@ class ReportCreationRuleTest {
     @Test
     void constructor_勤怠締め日が1未満_例外が発生する() {
         // Act & Assert
-        IllegalArgumentException exception = assertThrows(
-            IllegalArgumentException.class,
+        ValidationException exception = assertThrows(
+            ValidationException.class,
             () -> new ReportCreationRule(1L, new User("testuser"), 0, 15)
         );
         assertEquals("勤怠締め日は1日から31日までの範囲で指定してください", exception.getMessage());
@@ -65,8 +66,8 @@ class ReportCreationRuleTest {
     @Test
     void constructor_勤怠締め日が31超過_例外が発生する() {
         // Act & Assert
-        IllegalArgumentException exception = assertThrows(
-            IllegalArgumentException.class,
+        ValidationException exception = assertThrows(
+            ValidationException.class,
             () -> new ReportCreationRule(1L, new User("testuser"), 32, 15)
         );
         assertEquals("勤怠締め日は1日から31日までの範囲で指定してください", exception.getMessage());
@@ -75,8 +76,8 @@ class ReportCreationRuleTest {
     @Test
     void constructor_勤怠時間計算単位が1未満_例外が発生する() {
         // Act & Assert
-        IllegalArgumentException exception = assertThrows(
-            IllegalArgumentException.class,
+        ValidationException exception = assertThrows(
+            ValidationException.class,
             () -> new ReportCreationRule(1L, new User("testuser"), 15, 0)
         );
         assertEquals("勤怠時間計算単位は1分以上である必要があります", exception.getMessage());
@@ -85,8 +86,8 @@ class ReportCreationRuleTest {
     @Test
     void constructor_勤怠時間計算単位が60を超過_例外が発生する() {
         // Act & Assert
-        IllegalArgumentException exception = assertThrows(
-            IllegalArgumentException.class,
+        ValidationException exception = assertThrows(
+            ValidationException.class,
             () -> new ReportCreationRule(1L, new User("testuser"), 15, 61)
         );
         assertEquals("勤怠時間計算単位は60分以下である必要があります", exception.getMessage());

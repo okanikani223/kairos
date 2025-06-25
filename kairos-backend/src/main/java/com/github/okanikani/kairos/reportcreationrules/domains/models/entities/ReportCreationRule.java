@@ -1,5 +1,6 @@
 package com.github.okanikani.kairos.reportcreationrules.domains.models.entities;
 
+import com.github.okanikani.kairos.commons.exceptions.ValidationException;
 import com.github.okanikani.kairos.reportcreationrules.domains.models.vos.User;
 
 import java.util.Objects;
@@ -28,15 +29,15 @@ public record ReportCreationRule(
         
         // 勤怠締め日の範囲チェック
         if (closingDay < 1 || closingDay > 31) {
-            throw new IllegalArgumentException("勤怠締め日は1日から31日までの範囲で指定してください");
+            throw new ValidationException("勤怠締め日は1日から31日までの範囲で指定してください");
         }
         
         // 勤怠時間計算単位の範囲チェック
         if (timeCalculationUnitMinutes < 1) {
-            throw new IllegalArgumentException("勤怠時間計算単位は1分以上である必要があります");
+            throw new ValidationException("勤怠時間計算単位は1分以上である必要があります");
         }
         if (timeCalculationUnitMinutes > 60) {
-            throw new IllegalArgumentException("勤怠時間計算単位は60分以下である必要があります");
+            throw new ValidationException("勤怠時間計算単位は60分以下である必要があります");
         }
     }
 }

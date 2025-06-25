@@ -1,5 +1,6 @@
 package com.github.okanikani.kairos.rules.domains.models.entities;
 
+import com.github.okanikani.kairos.commons.exceptions.ValidationException;
 import com.github.okanikani.kairos.rules.domains.models.vos.User;
 
 import java.time.LocalTime;
@@ -37,15 +38,15 @@ public record DefaultWorkRule(
         
         // GPS座標の範囲チェック
         if (latitude < -90.0 || latitude > 90.0) {
-            throw new IllegalArgumentException("緯度は-90.0から90.0の範囲で指定してください");
+            throw new ValidationException("緯度は-90.0から90.0の範囲で指定してください");
         }
         if (longitude < -180.0 || longitude > 180.0) {
-            throw new IllegalArgumentException("経度は-180.0から180.0の範囲で指定してください");
+            throw new ValidationException("経度は-180.0から180.0の範囲で指定してください");
         }
         
         // 勤怠時刻の論理チェック
         if (!standardStartTime.isBefore(standardEndTime)) {
-            throw new IllegalArgumentException("規定勤怠開始時刻は規定勤怠終了時刻より前である必要があります");
+            throw new ValidationException("規定勤怠開始時刻は規定勤怠終了時刻より前である必要があります");
         }
         
         // 休憩時刻のバリデーション
@@ -61,13 +62,13 @@ public record DefaultWorkRule(
     private void validateBreakTimes(LocalTime breakStartTime, LocalTime breakEndTime) {
         // 休憩時刻は両方nullか両方non-nullである必要がある
         if ((breakStartTime == null) != (breakEndTime == null)) {
-            throw new IllegalArgumentException("休憩時刻は開始時刻と終了時刻の両方を設定するか、両方ともnullにしてください");
+            throw new ValidationException("休憩時刻は開始時刻と終了時刻の両方を設定するか、両方ともnullにしてください");
         }
         
         // 両方non-nullの場合、開始時刻が終了時刻より前である必要がある
         if (breakStartTime != null && breakEndTime != null) {
             if (!breakStartTime.isBefore(breakEndTime)) {
-                throw new IllegalArgumentException("規定休憩開始時刻は規定休憩終了時刻より前である必要があります");
+                throw new ValidationException("規定休憩開始時刻は規定休憩終了時刻より前である必要があります");
             }
         }
     }

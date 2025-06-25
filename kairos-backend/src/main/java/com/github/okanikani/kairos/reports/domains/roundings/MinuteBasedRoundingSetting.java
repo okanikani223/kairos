@@ -1,5 +1,6 @@
 package com.github.okanikani.kairos.reports.domains.roundings;
 
+import com.github.okanikani.kairos.commons.exceptions.ValidationException;
 import java.time.LocalDateTime;
 
 /**
@@ -16,7 +17,7 @@ public class MinuteBasedRoundingSetting implements RoundingSetting {
      */
     public MinuteBasedRoundingSetting(int unitMinutes) {
         if (unitMinutes < 1 || unitMinutes > 60) {
-            throw new IllegalArgumentException("時間計算単位は1-60分の範囲で指定してください");
+            throw new ValidationException("時間計算単位は1-60分の範囲で指定してください");
         }
         this.unitMinutes = unitMinutes;
     }

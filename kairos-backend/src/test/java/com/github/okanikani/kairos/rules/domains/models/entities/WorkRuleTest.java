@@ -1,5 +1,6 @@
 package com.github.okanikani.kairos.rules.domains.models.entities;
 
+import com.github.okanikani.kairos.commons.exceptions.ValidationException;
 import com.github.okanikani.kairos.rules.domains.models.vos.User;
 import org.junit.jupiter.api.Test;
 
@@ -56,8 +57,8 @@ class WorkRuleTest {
     @Test
     void constructor_null勤怠先ID_例外が発生する() {
         // Act & Assert
-        IllegalArgumentException exception = assertThrows(
-            IllegalArgumentException.class,
+        ValidationException exception = assertThrows(
+            ValidationException.class,
             () -> new WorkRule(
                 null,
                 null,
@@ -100,8 +101,8 @@ class WorkRuleTest {
     @Test
     void constructor_無効な緯度_例外が発生する() {
         // Act & Assert
-        IllegalArgumentException exception = assertThrows(
-            IllegalArgumentException.class,
+        ValidationException exception = assertThrows(
+            ValidationException.class,
             () -> new WorkRule(
                 null,
                 1L,
@@ -122,8 +123,8 @@ class WorkRuleTest {
     @Test
     void constructor_無効な経度_例外が発生する() {
         // Act & Assert
-        IllegalArgumentException exception = assertThrows(
-            IllegalArgumentException.class,
+        ValidationException exception = assertThrows(
+            ValidationException.class,
             () -> new WorkRule(
                 null,
                 1L,
@@ -232,8 +233,8 @@ class WorkRuleTest {
     @Test
     void constructor_所属期間が無効_例外が発生する() {
         // Act & Assert
-        IllegalArgumentException exception = assertThrows(
-            IllegalArgumentException.class,
+        ValidationException exception = assertThrows(
+            ValidationException.class,
             () -> new WorkRule(
                 null,
                 1L,
@@ -254,8 +255,8 @@ class WorkRuleTest {
     @Test
     void constructor_勤務時間が無効_例外が発生する() {
         // Act & Assert
-        IllegalArgumentException exception = assertThrows(
-            IllegalArgumentException.class,
+        ValidationException exception = assertThrows(
+            ValidationException.class,
             () -> new WorkRule(
                 null,
                 1L,
@@ -276,8 +277,8 @@ class WorkRuleTest {
     @Test
     void constructor_休憩時間が無効_例外が発生する() {
         // Act & Assert
-        IllegalArgumentException exception = assertThrows(
-            IllegalArgumentException.class,
+        ValidationException exception = assertThrows(
+            ValidationException.class,
             () -> new WorkRule(
                 null,
                 1L,
