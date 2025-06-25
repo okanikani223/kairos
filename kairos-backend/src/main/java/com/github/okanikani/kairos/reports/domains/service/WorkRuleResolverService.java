@@ -19,13 +19,13 @@ import java.time.LocalTime;
 public interface WorkRuleResolverService {
     
     /**
-     * ユーザーの勤怠計算開始日を取得
+     * ユーザーの勤怠締め日を取得
      * ReportCreationRuleから取得し、未設定の場合はシステムデフォルト値を返す
      * 
      * @param user ユーザー
-     * @return 勤怠計算開始日（1-31）
+     * @return 勤怠締め日（1-31）
      */
-    int getCalculationStartDay(User user);
+    int getClosingDay(User user);
     
     /**
      * ユーザーの時刻丸め設定を作成

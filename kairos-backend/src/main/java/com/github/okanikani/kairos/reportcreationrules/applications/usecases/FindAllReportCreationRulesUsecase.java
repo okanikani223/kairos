@@ -54,7 +54,7 @@ public class FindAllReportCreationRulesUsecase {
         return new ReportCreationRuleResponse(
             reportCreationRule.id(),
             userDto,
-            reportCreationRule.calculationStartDay(),
+            reportCreationRule.closingDay(),
             reportCreationRule.timeCalculationUnitMinutes()
         );
     }

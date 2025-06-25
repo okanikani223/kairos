@@ -23,7 +23,7 @@ public class ReportCreationRuleMapper {
         return new ReportCreationRule(
             null, // 新規作成時はIDはnull
             user,
-            request.calculationStartDay(),
+            request.closingDay(),
             request.timeCalculationUnitMinutes()
         );
     }
@@ -39,7 +39,7 @@ public class ReportCreationRuleMapper {
         return new ReportCreationRuleResponse(
             reportCreationRule.id(),
             userDto,
-            reportCreationRule.calculationStartDay(),
+            reportCreationRule.closingDay(),
             reportCreationRule.timeCalculationUnitMinutes()
         );
     }

@@ -30,7 +30,7 @@ public class InMemoryReportCreationRuleRepository implements ReportCreationRuleR
             reportCreationRule = new ReportCreationRule(
                 id,
                 reportCreationRule.user(),
-                reportCreationRule.calculationStartDay(),
+                reportCreationRule.closingDay(),
                 reportCreationRule.timeCalculationUnitMinutes()
             );
         }

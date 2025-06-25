@@ -42,17 +42,17 @@ public class WorkRuleResolverServiceImpl implements WorkRuleResolverService {
     }
     
     @Override
-    public int getCalculationStartDay(User user) {
+    public int getClosingDay(User user) {
         Objects.requireNonNull(user, "userは必須です");
         
-        // ReportCreationRuleから勤怠計算開始日を取得
+        // ReportCreationRuleから勤怠締め日を取得
         com.github.okanikani.kairos.reportcreationrules.domains.models.vos.User ruleUser = 
             convertToReportCreationRuleUser(user);
         
         ReportCreationRule rule = reportCreationRuleRepository.findByUser(ruleUser);
         
         if (rule != null) {
-            return rule.calculationStartDay();
+            return rule.closingDay();
         }
         
         // デフォルト：1日（月の初日から計算）

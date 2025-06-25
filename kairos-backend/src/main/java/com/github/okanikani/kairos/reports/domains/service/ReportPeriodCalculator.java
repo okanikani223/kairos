@@ -6,40 +6,40 @@ import java.time.YearMonth;
 
 /**
  * 勤怠表の計算期間を算出するユーティリティクラス
- * 勤怠計算開始日を考慮した正確な期間計算を提供する
+ * 勤怠締め日を考慮した正確な期間計算を提供する
  */
 public class ReportPeriodCalculator {
     
     /**
-     * 勤怠年月と計算開始日から実際の勤怠計算期間を算出
+     * 勤怠年月と勤怠締め日から実際の勤怠計算期間を算出
      * 
      * 計算ロジック：
-     * - 期間開始日：前月の計算開始日の翌日
-     * - 期間終了日：当月の計算開始日
+     * - 期間開始日：前月の勤怠締め日の翌日
+     * - 期間終了日：当月の勤怠締め日
      * 
-     * 例：勤怠年月=2025/06、計算開始日=15の場合
+     * 例：勤怠年月=2025/06、勤怠締め日=15の場合
      * → 期間：2025/05/16〜2025/06/15
      * 
      * @param reportYearMonth 勤怠年月（例：2025/06）
-     * @param calculationStartDay 計算開始日（例：15）
+     * @param closingDay 勤怠締め日（例：15）
      * @return 勤怠計算期間
      */
-    public static ReportPeriod calculatePeriod(YearMonth reportYearMonth, int calculationStartDay) {
+    public static ReportPeriod calculatePeriod(YearMonth reportYearMonth, int closingDay) {
         // バリデーション
-        if (calculationStartDay < 1 || calculationStartDay > 31) {
-            throw new IllegalArgumentException("勤怠計算開始日は1-31の範囲で指定してください");
+        if (closingDay < 1 || closingDay > 31) {
+            throw new IllegalArgumentException("勤怠締め日は1-31の範囲で指定してください");
         }
         
-        // 勤怠年月の前月の計算開始日+1が期間開始
-        LocalDate periodStart = reportYearMonth.minusMonths(1).atDay(calculationStartDay).plusDays(1);
+        // 勤怠年月の前月の勤怠締め日+1が期間開始
+        LocalDate periodStart = reportYearMonth.minusMonths(1).atDay(closingDay).plusDays(1);
         
-        // 勤怠年月の計算開始日が期間終了（月末調整考慮）
+        // 勤怠年月の勤怠締め日が期間終了（月末調整考慮）
         LocalDate periodEnd;
-        if (calculationStartDay > reportYearMonth.lengthOfMonth()) {
-            // 計算開始日が月の日数を超える場合は月末に調整
+        if (closingDay > reportYearMonth.lengthOfMonth()) {
+            // 勤怠締め日が月の日数を超える場合は月末に調整
             periodEnd = reportYearMonth.atEndOfMonth();
         } else {
-            periodEnd = reportYearMonth.atDay(calculationStartDay);
+            periodEnd = reportYearMonth.atDay(closingDay);
         }
         
         return new ReportPeriod(periodStart, periodEnd);

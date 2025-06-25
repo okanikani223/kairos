@@ -48,7 +48,7 @@ public class ReportCreationRuleController {
         // リクエストを構築
         RegisterReportCreationRuleRequest request = new RegisterReportCreationRuleRequest(
             userDto,
-            requestBody.calculationStartDay(),
+            requestBody.closingDay(),
             requestBody.timeCalculationUnitMinutes()
         );
         
@@ -80,7 +80,7 @@ public class ReportCreationRuleController {
      * ユーザー情報はJWTから取得するため、リクエストボディには含めない
      */
     public record RegisterReportCreationRuleRequestBody(
-            int calculationStartDay,              // 勤怠計算開始日（月の日：1-31）
+            int closingDay,                       // 勤怠締め日（月の日：1-31）
             int timeCalculationUnitMinutes        // 勤怠時間計算単位（分：1-60）
     ) {}
 }

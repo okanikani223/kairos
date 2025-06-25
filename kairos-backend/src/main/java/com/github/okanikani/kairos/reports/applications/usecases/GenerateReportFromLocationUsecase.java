@@ -47,12 +47,12 @@ public class GenerateReportFromLocationUsecase {
         
         User user = ReportMapper.toUser(request.user());
         
-        // 勤怠計算開始日を取得
-        int calculationStartDay = workRuleResolverService.getCalculationStartDay(user);
+        // 勤怠締め日を取得
+        int closingDay = workRuleResolverService.getClosingDay(user);
         
         // 実際の勤怠計算期間を算出
         ReportPeriodCalculator.ReportPeriod period = 
-            ReportPeriodCalculator.calculatePeriod(request.yearMonth(), calculationStartDay);
+            ReportPeriodCalculator.calculatePeriod(request.yearMonth(), closingDay);
         
         // 期間内の位置情報記録日時を取得
         List<LocalDateTime> locationTimes = locationService.getLocationRecordTimes(period, user);
