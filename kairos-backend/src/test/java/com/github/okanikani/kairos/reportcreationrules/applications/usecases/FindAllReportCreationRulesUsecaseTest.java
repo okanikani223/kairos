@@ -47,7 +47,7 @@ class FindAllReportCreationRulesUsecaseTest {
         assertNotNull(response);
         assertEquals(1L, response.id());
         assertEquals(userId, response.user().userId());
-        assertEquals(1, response.calculationStartDay());
+        assertEquals(1, response.closingDay());
         assertEquals(15, response.timeCalculationUnitMinutes());
         
         verify(reportCreationRuleRepository, times(1)).findByUser(eq(user));

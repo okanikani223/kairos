@@ -55,7 +55,7 @@ class ReportCreationRuleControllerTest {
         assertNotNull(response.getBody());
         assertEquals(1L, response.getBody().id());
         assertEquals("testuser", response.getBody().user().userId());
-        assertEquals(1, response.getBody().calculationStartDay());
+        assertEquals(1, response.getBody().closingDay());
         assertEquals(15, response.getBody().timeCalculationUnitMinutes());
         verify(findAllReportCreationRulesUsecase, times(1)).execute(eq("testuser"));
     }

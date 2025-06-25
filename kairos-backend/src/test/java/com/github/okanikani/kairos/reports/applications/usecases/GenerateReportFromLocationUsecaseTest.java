@@ -51,7 +51,7 @@ class GenerateReportFromLocationUsecaseTest {
     }
     
     private void setupDefaultWorkRuleMocks(User user) {
-        when(workRuleResolverService.getCalculationStartDay(eq(user))).thenReturn(1);
+        when(workRuleResolverService.getClosingDay(eq(user))).thenReturn(1);
         when(workRuleResolverService.createRoundingSetting(eq(user))).thenReturn(new MinuteBasedRoundingSetting(15));
         when(workRuleResolverService.resolveWorkRule(eq(user), any())).thenReturn(WorkRuleResolverService.WorkRuleInfo.createDefault());
     }
@@ -72,7 +72,7 @@ class GenerateReportFromLocationUsecaseTest {
         );
 
         // モックの設定
-        when(workRuleResolverService.getCalculationStartDay(eq(user))).thenReturn(1);
+        when(workRuleResolverService.getClosingDay(eq(user))).thenReturn(1);
         when(workRuleResolverService.createRoundingSetting(eq(user))).thenReturn(new MinuteBasedRoundingSetting(15));
         when(workRuleResolverService.resolveWorkRule(eq(user), any())).thenReturn(WorkRuleResolverService.WorkRuleInfo.createDefault());
         

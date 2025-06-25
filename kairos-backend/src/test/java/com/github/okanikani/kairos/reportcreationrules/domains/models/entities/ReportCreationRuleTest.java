@@ -15,18 +15,18 @@ class ReportCreationRuleTest {
         // Arrange
         Long id = 1L;
         User user = new User("testuser");
-        int calculationStartDay = 15;
+        int closingDay = 15;
         int timeCalculationUnitMinutes = 15;
 
         // Act
         ReportCreationRule reportCreationRule = new ReportCreationRule(
-            id, user, calculationStartDay, timeCalculationUnitMinutes
+            id, user, closingDay, timeCalculationUnitMinutes
         );
 
         // Assert
         assertEquals(id, reportCreationRule.id());
         assertEquals(user, reportCreationRule.user());
-        assertEquals(calculationStartDay, reportCreationRule.calculationStartDay());
+        assertEquals(closingDay, reportCreationRule.closingDay());
         assertEquals(timeCalculationUnitMinutes, reportCreationRule.timeCalculationUnitMinutes());
     }
 
@@ -53,23 +53,23 @@ class ReportCreationRuleTest {
     }
 
     @Test
-    void constructor_勤怠計算開始日が1未満_例外が発生する() {
+    void constructor_勤怠締め日が1未満_例外が発生する() {
         // Act & Assert
         IllegalArgumentException exception = assertThrows(
             IllegalArgumentException.class,
             () -> new ReportCreationRule(1L, new User("testuser"), 0, 15)
         );
-        assertEquals("勤怠計算開始日は1日から31日までの範囲で指定してください", exception.getMessage());
+        assertEquals("勤怠締め日は1日から31日までの範囲で指定してください", exception.getMessage());
     }
 
     @Test
-    void constructor_勤怠計算開始日が31超過_例外が発生する() {
+    void constructor_勤怠締め日が31超過_例外が発生する() {
         // Act & Assert
         IllegalArgumentException exception = assertThrows(
             IllegalArgumentException.class,
             () -> new ReportCreationRule(1L, new User("testuser"), 32, 15)
         );
-        assertEquals("勤怠計算開始日は1日から31日までの範囲で指定してください", exception.getMessage());
+        assertEquals("勤怠締め日は1日から31日までの範囲で指定してください", exception.getMessage());
     }
 
     @Test
@@ -100,7 +100,7 @@ class ReportCreationRuleTest {
         );
 
         // Assert
-        assertEquals(1, reportCreationRule.calculationStartDay());
+        assertEquals(1, reportCreationRule.closingDay());
     }
 
     @Test
@@ -111,7 +111,7 @@ class ReportCreationRuleTest {
         );
 
         // Assert
-        assertEquals(31, reportCreationRule.calculationStartDay());
+        assertEquals(31, reportCreationRule.closingDay());
     }
 
     @Test
@@ -140,18 +140,18 @@ class ReportCreationRuleTest {
     void constructor_一般的な値_勤怠作成ルールが作成される() {
         // Arrange
         User user = new User("businessuser");
-        int calculationStartDay = 21;  // 21日締め
+        int closingDay = 21;  // 21日締め
         int timeCalculationUnitMinutes = 30;  // 30分単位
 
         // Act
         ReportCreationRule reportCreationRule = new ReportCreationRule(
-            2L, user, calculationStartDay, timeCalculationUnitMinutes
+            2L, user, closingDay, timeCalculationUnitMinutes
         );
 
         // Assert
         assertEquals(2L, reportCreationRule.id());
         assertEquals("businessuser", reportCreationRule.user().userId());
-        assertEquals(21, reportCreationRule.calculationStartDay());
+        assertEquals(21, reportCreationRule.closingDay());
         assertEquals(30, reportCreationRule.timeCalculationUnitMinutes());
     }
 }

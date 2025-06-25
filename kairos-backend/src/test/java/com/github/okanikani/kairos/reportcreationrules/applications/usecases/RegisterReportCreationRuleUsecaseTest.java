@@ -51,7 +51,7 @@ class RegisterReportCreationRuleUsecaseTest {
         // Assert
         assertNotNull(response);
         assertEquals("testuser", response.user().userId());
-        assertEquals(15, response.calculationStartDay());
+        assertEquals(15, response.closingDay());
         assertEquals(15, response.timeCalculationUnitMinutes());
 
         verify(reportCreationRuleRepository, times(1)).findByUser(user);
@@ -104,7 +104,7 @@ class RegisterReportCreationRuleUsecaseTest {
 
         // Assert
         assertNotNull(response);
-        assertEquals(31, response.calculationStartDay());
+        assertEquals(31, response.closingDay());
         assertEquals(30, response.timeCalculationUnitMinutes());
 
         verify(reportCreationRuleRepository, times(1)).save(any(ReportCreationRule.class));
@@ -129,7 +129,7 @@ class RegisterReportCreationRuleUsecaseTest {
 
         // Assert
         assertNotNull(response);
-        assertEquals(1, response.calculationStartDay());
+        assertEquals(1, response.closingDay());
         assertEquals(1, response.timeCalculationUnitMinutes());
 
         verify(reportCreationRuleRepository, times(1)).save(any(ReportCreationRule.class));
