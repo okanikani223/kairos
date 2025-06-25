@@ -48,6 +48,13 @@ public interface LocationRepository {
     List<Location> findAll();
 
     /**
+     * 指定したユーザーの位置情報を全て取得する
+     * @param user 対象ユーザー
+     * @return 指定ユーザーの位置情報リスト（記録日時の昇順）
+     */
+    List<Location> findByUser(User user);
+
+    /**
      * IDで位置情報を取得する
      * @param id 位置情報のID
      * @return 位置情報（存在しない場合はnull）

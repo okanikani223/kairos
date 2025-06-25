@@ -214,14 +214,19 @@ public class GenerateReportFromLocationUsecase {
         WorkRuleResolverService.WorkRuleInfo effectiveRule = workRule.isValid() ? 
             workRule : WorkRuleResolverService.WorkRuleInfo.createDefault();
         
-        // 休憩時間を除いた実労働時間を計算
-        Duration effectiveWorkTime = totalWorkTime.minus(effectiveRule.breakTime());
-        
         if (isHoliday) {
-            // 休日勤務: 実労働時間を休出時間として扱う
-            return new WorkTimeCalculation(Duration.ZERO, effectiveWorkTime);
+            // 休日勤務: 総勤務時間をそのまま休出時間として扱う（休憩時間は控除しない）
+            return new WorkTimeCalculation(Duration.ZERO, totalWorkTime);
         } else {
-            // 平日勤務: 標準勤務時間を超えた分を残業時間として扱う
+            // 平日勤務: 休憩時間を除いた実労働時間を計算
+            Duration effectiveWorkTime = totalWorkTime.minus(effectiveRule.breakTime());
+            
+            // 実労働時間が負になった場合は0とする
+            if (effectiveWorkTime.isNegative()) {
+                effectiveWorkTime = Duration.ZERO;
+            }
+            
+            // 標準勤務時間を超えた分を残業時間として扱う
             Duration overtimeHours = effectiveWorkTime.compareTo(effectiveRule.standardWorkTime()) > 0 
                 ? effectiveWorkTime.minus(effectiveRule.standardWorkTime()) 
                 : Duration.ZERO;

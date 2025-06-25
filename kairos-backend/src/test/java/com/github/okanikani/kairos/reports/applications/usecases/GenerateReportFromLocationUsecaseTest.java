@@ -313,7 +313,7 @@ class GenerateReportFromLocationUsecaseTest {
         
         var workDay = response.workDays().get(0);
         assertFalse(workDay.isHoliday()); // 平日フラグ
-        assertEquals(Duration.ofMinutes(90), workDay.overtimeHours()); // 1.5時間の残業（9h - 7.5h）
+        assertEquals(Duration.ofMinutes(30), workDay.overtimeHours()); // 0.5時間の残業（9h - 1h休憩 - 7.5h標準 = 0.5h）
         assertEquals(Duration.ZERO, workDay.holidayWorkHours()); // 休出時間は0
         assertEquals(Duration.ofHours(9), workDay.workingHours()); // 総勤務時間9時間
         
@@ -472,9 +472,9 @@ class GenerateReportFromLocationUsecaseTest {
         assertEquals(LocalDateTime.of(2024, 1, 1, 9, 0), workDay1.startDateTime().value());
         assertEquals(LocalDateTime.of(2024, 1, 1, 9, 0), workDay1.endDateTime().value());
         
-        // グループ2: 10:01-11:00
+        // グループ2: 10:01-11:00（15分切り上げ丸めにより10:15-11:00に調整される）
         var workDay2 = response.workDays().get(1);
-        assertEquals(LocalDateTime.of(2024, 1, 1, 10, 1), workDay2.startDateTime().value());
+        assertEquals(LocalDateTime.of(2024, 1, 1, 10, 15), workDay2.startDateTime().value());
         assertEquals(LocalDateTime.of(2024, 1, 1, 11, 0), workDay2.endDateTime().value());
         
         verify(locationService, times(1)).getLocationRecordTimes(any(ReportPeriodCalculator.ReportPeriod.class), eq(user));

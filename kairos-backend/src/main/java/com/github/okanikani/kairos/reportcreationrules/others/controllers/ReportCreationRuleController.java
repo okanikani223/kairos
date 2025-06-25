@@ -1,5 +1,6 @@
 package com.github.okanikani.kairos.reportcreationrules.others.controllers;
 
+import com.github.okanikani.kairos.reportcreationrules.applications.usecases.FindAllReportCreationRulesUsecase;
 import com.github.okanikani.kairos.reportcreationrules.applications.usecases.RegisterReportCreationRuleUsecase;
 import com.github.okanikani.kairos.reportcreationrules.applications.usecases.dto.RegisterReportCreationRuleRequest;
 import com.github.okanikani.kairos.reportcreationrules.applications.usecases.dto.ReportCreationRuleResponse;
@@ -7,10 +8,7 @@ import com.github.okanikani.kairos.reportcreationrules.applications.usecases.dto
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 /**
  * 勤怠作成ルール管理のREST APIコントローラー
@@ -20,13 +18,16 @@ import org.springframework.web.bind.annotation.RestController;
 public class ReportCreationRuleController {
     
     private final RegisterReportCreationRuleUsecase registerReportCreationRuleUsecase;
+    private final FindAllReportCreationRulesUsecase findAllReportCreationRulesUsecase;
     
     /**
      * コンストラクタ
      * @param registerReportCreationRuleUsecase 勤怠作成ルール登録ユースケース
+     * @param findAllReportCreationRulesUsecase レポート作成ルール取得ユースケース
      */
-    public ReportCreationRuleController(RegisterReportCreationRuleUsecase registerReportCreationRuleUsecase) {
-        this.registerReportCreationRuleUsecase = registerReportCreationRuleUsecase;
+    public ReportCreationRuleController(RegisterReportCreationRuleUsecase registerReportCreationRuleUsecase, FindAllReportCreationRulesUsecase findAllReportCreationRulesUsecase) {
+        this.registerReportCreationRuleUsecase = java.util.Objects.requireNonNull(registerReportCreationRuleUsecase, "registerReportCreationRuleUsecaseは必須です");
+        this.findAllReportCreationRulesUsecase = java.util.Objects.requireNonNull(findAllReportCreationRulesUsecase, "findAllReportCreationRulesUsecaseは必須です");
     }
     
     /**
@@ -55,6 +56,23 @@ public class ReportCreationRuleController {
         ReportCreationRuleResponse response = registerReportCreationRuleUsecase.execute(request);
         
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+    
+    /**
+     * レポート作成ルール取得
+     */
+    @GetMapping
+    public ResponseEntity<ReportCreationRuleResponse> findReportCreationRule(Authentication authentication) {
+        try {
+            String userId = authentication.getName();
+            ReportCreationRuleResponse response = findAllReportCreationRulesUsecase.execute(userId);
+            if (response == null) {
+                return ResponseEntity.notFound().build();
+            }
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
     }
     
     /**

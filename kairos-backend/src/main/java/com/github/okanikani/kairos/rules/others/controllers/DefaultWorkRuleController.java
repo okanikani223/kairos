@@ -1,5 +1,6 @@
 package com.github.okanikani.kairos.rules.others.controllers;
 
+import com.github.okanikani.kairos.rules.applications.usecases.FindAllDefaultWorkRulesUsecase;
 import com.github.okanikani.kairos.rules.applications.usecases.RegisterDefaultWorkRuleUsecase;
 import com.github.okanikani.kairos.rules.applications.usecases.dto.DefaultWorkRuleResponse;
 import com.github.okanikani.kairos.rules.applications.usecases.dto.RegisterDefaultWorkRuleRequest;
@@ -7,10 +8,9 @@ import com.github.okanikani.kairos.rules.applications.usecases.dto.UserDto;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 /**
  * デフォルト勤怠ルール管理のREST APIコントローラー
@@ -20,13 +20,16 @@ import org.springframework.web.bind.annotation.RestController;
 public class DefaultWorkRuleController {
     
     private final RegisterDefaultWorkRuleUsecase registerDefaultWorkRuleUsecase;
+    private final FindAllDefaultWorkRulesUsecase findAllDefaultWorkRulesUsecase;
     
     /**
      * コンストラクタ
      * @param registerDefaultWorkRuleUsecase デフォルト勤怠ルール登録ユースケース
+     * @param findAllDefaultWorkRulesUsecase 全デフォルト勤務ルール取得ユースケース
      */
-    public DefaultWorkRuleController(RegisterDefaultWorkRuleUsecase registerDefaultWorkRuleUsecase) {
-        this.registerDefaultWorkRuleUsecase = registerDefaultWorkRuleUsecase;
+    public DefaultWorkRuleController(RegisterDefaultWorkRuleUsecase registerDefaultWorkRuleUsecase, FindAllDefaultWorkRulesUsecase findAllDefaultWorkRulesUsecase) {
+        this.registerDefaultWorkRuleUsecase = java.util.Objects.requireNonNull(registerDefaultWorkRuleUsecase, "registerDefaultWorkRuleUsecaseは必須です");
+        this.findAllDefaultWorkRulesUsecase = java.util.Objects.requireNonNull(findAllDefaultWorkRulesUsecase, "findAllDefaultWorkRulesUsecaseは必須です");
     }
     
     /**
@@ -60,6 +63,20 @@ public class DefaultWorkRuleController {
         DefaultWorkRuleResponse response = registerDefaultWorkRuleUsecase.execute(request);
         
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+    
+    /**
+     * デフォルト勤務ルール一覧取得
+     */
+    @GetMapping
+    public ResponseEntity<List<DefaultWorkRuleResponse>> findAllDefaultWorkRules(Authentication authentication) {
+        try {
+            String userId = authentication.getName();
+            List<DefaultWorkRuleResponse> response = findAllDefaultWorkRulesUsecase.execute(userId);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
     }
     
     /**

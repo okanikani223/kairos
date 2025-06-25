@@ -82,4 +82,12 @@ public class InMemoryLocationRepository implements LocationRepository {
             .sorted((l1, l2) -> l1.recordedAt().compareTo(l2.recordedAt()))
             .toList();
     }
+
+    @Override
+    public List<Location> findByUser(User user) {
+        return locations.values().stream()
+            .filter(location -> location.user().equals(user))
+            .sorted((l1, l2) -> l1.recordedAt().compareTo(l2.recordedAt()))
+            .toList();
+    }
 }
