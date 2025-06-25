@@ -1,7 +1,7 @@
 package com.github.okanikani.kairos.reportcreationrules.others.controllers;
 
-import com.github.okanikani.kairos.reportcreationrules.applications.usecases.FindAllReportCreationRulesUsecase;
-import com.github.okanikani.kairos.reportcreationrules.applications.usecases.RegisterReportCreationRuleUsecase;
+import com.github.okanikani.kairos.reportcreationrules.applications.usecases.FindAllReportCreationRulesUseCase;
+import com.github.okanikani.kairos.reportcreationrules.applications.usecases.RegisterReportCreationRuleUseCase;
 import com.github.okanikani.kairos.reportcreationrules.applications.usecases.dto.ReportCreationRuleResponse;
 import com.github.okanikani.kairos.reportcreationrules.applications.usecases.dto.UserDto;
 import org.junit.jupiter.api.BeforeEach;
@@ -22,10 +22,10 @@ class ReportCreationRuleControllerTest {
     private ReportCreationRuleController reportCreationRuleController;
 
     @Mock
-    private RegisterReportCreationRuleUsecase registerReportCreationRuleUsecase;
+    private RegisterReportCreationRuleUseCase registerReportCreationRuleUseCase;
     
     @Mock
-    private FindAllReportCreationRulesUsecase findAllReportCreationRulesUsecase;
+    private FindAllReportCreationRulesUseCase findAllReportCreationRulesUseCase;
     
     @Mock
     private Authentication authentication;
@@ -33,7 +33,7 @@ class ReportCreationRuleControllerTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        reportCreationRuleController = new ReportCreationRuleController(registerReportCreationRuleUsecase, findAllReportCreationRulesUsecase);
+        reportCreationRuleController = new ReportCreationRuleController(registerReportCreationRuleUseCase, findAllReportCreationRulesUseCase);
     }
 
     @Test
@@ -45,7 +45,7 @@ class ReportCreationRuleControllerTest {
             1L, new UserDto("testuser"), 1, 15
         );
         
-        when(findAllReportCreationRulesUsecase.execute(anyString())).thenReturn(expectedResponse);
+        when(findAllReportCreationRulesUseCase.execute(anyString())).thenReturn(expectedResponse);
 
         // Act
         ResponseEntity<ReportCreationRuleResponse> response = reportCreationRuleController.findReportCreationRule(authentication);
@@ -57,28 +57,28 @@ class ReportCreationRuleControllerTest {
         assertEquals("testuser", response.getBody().user().userId());
         assertEquals(1, response.getBody().closingDay());
         assertEquals(15, response.getBody().timeCalculationUnitMinutes());
-        verify(findAllReportCreationRulesUsecase, times(1)).execute(eq("testuser"));
+        verify(findAllReportCreationRulesUseCase, times(1)).execute(eq("testuser"));
     }
 
     @Test
     void findReportCreationRule_レポート作成ルールが存在しない場合_404ステータスを返す() {
         // Arrange
         when(authentication.getName()).thenReturn("testuser");
-        when(findAllReportCreationRulesUsecase.execute(anyString())).thenReturn(null);
+        when(findAllReportCreationRulesUseCase.execute(anyString())).thenReturn(null);
 
         // Act
         ResponseEntity<ReportCreationRuleResponse> response = reportCreationRuleController.findReportCreationRule(authentication);
 
         // Assert
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
-        verify(findAllReportCreationRulesUsecase, times(1)).execute(eq("testuser"));
+        verify(findAllReportCreationRulesUseCase, times(1)).execute(eq("testuser"));
     }
 
     @Test
     void findReportCreationRule_ユースケースで例外発生_500ステータスを返す() {
         // Arrange
         when(authentication.getName()).thenReturn("testuser");
-        when(findAllReportCreationRulesUsecase.execute(anyString()))
+        when(findAllReportCreationRulesUseCase.execute(anyString()))
             .thenThrow(new RuntimeException("データベースエラー"));
 
         // Act
@@ -86,26 +86,26 @@ class ReportCreationRuleControllerTest {
 
         // Assert
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
-        verify(findAllReportCreationRulesUsecase, times(1)).execute(eq("testuser"));
+        verify(findAllReportCreationRulesUseCase, times(1)).execute(eq("testuser"));
     }
 
     @Test
-    void constructor_nullRegisterUsecase_例外が発生する() {
+    void constructor_nullRegisterUseCase_例外が発生する() {
         // Act & Assert
         NullPointerException exception = assertThrows(
             NullPointerException.class,
-            () -> new ReportCreationRuleController(null, findAllReportCreationRulesUsecase)
+            () -> new ReportCreationRuleController(null, findAllReportCreationRulesUseCase)
         );
-        assertEquals("registerReportCreationRuleUsecaseは必須です", exception.getMessage());
+        assertEquals("registerReportCreationRuleUseCaseは必須です", exception.getMessage());
     }
 
     @Test
-    void constructor_nullFindAllUsecase_例外が発生する() {
+    void constructor_nullFindAllUseCase_例外が発生する() {
         // Act & Assert
         NullPointerException exception = assertThrows(
             NullPointerException.class,
-            () -> new ReportCreationRuleController(registerReportCreationRuleUsecase, null)
+            () -> new ReportCreationRuleController(registerReportCreationRuleUseCase, null)
         );
-        assertEquals("findAllReportCreationRulesUsecaseは必須です", exception.getMessage());
+        assertEquals("findAllReportCreationRulesUseCaseは必須です", exception.getMessage());
     }
 }

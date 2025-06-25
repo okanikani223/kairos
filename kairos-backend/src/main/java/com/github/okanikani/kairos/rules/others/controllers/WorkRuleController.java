@@ -1,10 +1,10 @@
 package com.github.okanikani.kairos.rules.others.controllers;
 
-import com.github.okanikani.kairos.rules.applications.usecases.DeleteWorkRuleUsecase;
-import com.github.okanikani.kairos.rules.applications.usecases.FindAllWorkRulesUsecase;
-import com.github.okanikani.kairos.rules.applications.usecases.FindWorkRuleByIdUsecase;
-import com.github.okanikani.kairos.rules.applications.usecases.RegisterWorkRuleUsecase;
-import com.github.okanikani.kairos.rules.applications.usecases.UpdateWorkRuleUsecase;
+import com.github.okanikani.kairos.rules.applications.usecases.DeleteWorkRuleUseCase;
+import com.github.okanikani.kairos.rules.applications.usecases.FindAllWorkRulesUseCase;
+import com.github.okanikani.kairos.rules.applications.usecases.FindWorkRuleByIdUseCase;
+import com.github.okanikani.kairos.rules.applications.usecases.RegisterWorkRuleUseCase;
+import com.github.okanikani.kairos.rules.applications.usecases.UpdateWorkRuleUseCase;
 import com.github.okanikani.kairos.rules.applications.usecases.dto.RegisterWorkRuleRequest;
 import com.github.okanikani.kairos.rules.applications.usecases.dto.UpdateWorkRuleRequest;
 import com.github.okanikani.kairos.rules.applications.usecases.dto.UserDto;
@@ -22,18 +22,18 @@ import java.util.List;
 @RequestMapping("/api/work-rules")
 public class WorkRuleController {
     
-    private final RegisterWorkRuleUsecase registerWorkRuleUsecase;
-    private final FindAllWorkRulesUsecase findAllWorkRulesUsecase;
-    private final FindWorkRuleByIdUsecase findWorkRuleByIdUsecase;
-    private final UpdateWorkRuleUsecase updateWorkRuleUsecase;
-    private final DeleteWorkRuleUsecase deleteWorkRuleUsecase;
+    private final RegisterWorkRuleUseCase registerWorkRuleUseCase;
+    private final FindAllWorkRulesUseCase findAllWorkRulesUseCase;
+    private final FindWorkRuleByIdUseCase findWorkRuleByIdUseCase;
+    private final UpdateWorkRuleUseCase updateWorkRuleUseCase;
+    private final DeleteWorkRuleUseCase deleteWorkRuleUseCase;
     
-    public WorkRuleController(RegisterWorkRuleUsecase registerWorkRuleUsecase, FindAllWorkRulesUsecase findAllWorkRulesUsecase, FindWorkRuleByIdUsecase findWorkRuleByIdUsecase, UpdateWorkRuleUsecase updateWorkRuleUsecase, DeleteWorkRuleUsecase deleteWorkRuleUsecase) {
-        this.registerWorkRuleUsecase = java.util.Objects.requireNonNull(registerWorkRuleUsecase, "registerWorkRuleUsecaseは必須です");
-        this.findAllWorkRulesUsecase = java.util.Objects.requireNonNull(findAllWorkRulesUsecase, "findAllWorkRulesUsecaseは必須です");
-        this.findWorkRuleByIdUsecase = java.util.Objects.requireNonNull(findWorkRuleByIdUsecase, "findWorkRuleByIdUsecaseは必須です");
-        this.updateWorkRuleUsecase = java.util.Objects.requireNonNull(updateWorkRuleUsecase, "updateWorkRuleUsecaseは必須です");
-        this.deleteWorkRuleUsecase = java.util.Objects.requireNonNull(deleteWorkRuleUsecase, "deleteWorkRuleUsecaseは必須です");
+    public WorkRuleController(RegisterWorkRuleUseCase registerWorkRuleUseCase, FindAllWorkRulesUseCase findAllWorkRulesUseCase, FindWorkRuleByIdUseCase findWorkRuleByIdUseCase, UpdateWorkRuleUseCase updateWorkRuleUseCase, DeleteWorkRuleUseCase deleteWorkRuleUseCase) {
+        this.registerWorkRuleUseCase = java.util.Objects.requireNonNull(registerWorkRuleUseCase, "registerWorkRuleUseCaseは必須です");
+        this.findAllWorkRulesUseCase = java.util.Objects.requireNonNull(findAllWorkRulesUseCase, "findAllWorkRulesUseCaseは必須です");
+        this.findWorkRuleByIdUseCase = java.util.Objects.requireNonNull(findWorkRuleByIdUseCase, "findWorkRuleByIdUseCaseは必須です");
+        this.updateWorkRuleUseCase = java.util.Objects.requireNonNull(updateWorkRuleUseCase, "updateWorkRuleUseCaseは必須です");
+        this.deleteWorkRuleUseCase = java.util.Objects.requireNonNull(deleteWorkRuleUseCase, "deleteWorkRuleUseCaseは必須です");
     }
     
     /**
@@ -60,7 +60,7 @@ public class WorkRuleController {
             requestBody.membershipEndDate()
         );
         
-        WorkRuleResponse response = registerWorkRuleUsecase.execute(request);
+        WorkRuleResponse response = registerWorkRuleUseCase.execute(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
     
@@ -71,7 +71,7 @@ public class WorkRuleController {
     public ResponseEntity<List<WorkRuleResponse>> findAllWorkRules(Authentication authentication) {
         try {
             String userId = authentication.getName();
-            List<WorkRuleResponse> response = findAllWorkRulesUsecase.execute(userId);
+            List<WorkRuleResponse> response = findAllWorkRulesUseCase.execute(userId);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             return ResponseEntity.internalServerError().build();
@@ -85,7 +85,7 @@ public class WorkRuleController {
     public ResponseEntity<WorkRuleResponse> findWorkRuleById(@PathVariable(name = "id") Long id, Authentication authentication) {
         try {
             String userId = authentication.getName();
-            WorkRuleResponse response = findWorkRuleByIdUsecase.execute(id, userId);
+            WorkRuleResponse response = findWorkRuleByIdUseCase.execute(id, userId);
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
             // セキュリティエラー判定: 権限なしエラーと存在しないエラーを区別
@@ -127,7 +127,7 @@ public class WorkRuleController {
                 requestBody.membershipEndDate()
             );
             
-            WorkRuleResponse response = updateWorkRuleUsecase.execute(id, request, userId);
+            WorkRuleResponse response = updateWorkRuleUseCase.execute(id, request, userId);
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
             // セキュリティエラー判定: 権限なしエラーと存在しないエラーを区別
@@ -151,7 +151,7 @@ public class WorkRuleController {
     public ResponseEntity<Void> deleteWorkRule(@PathVariable(name = "id") Long id, Authentication authentication) {
         try {
             String userId = authentication.getName();
-            deleteWorkRuleUsecase.execute(id, userId);
+            deleteWorkRuleUseCase.execute(id, userId);
             return ResponseEntity.noContent().build();
         } catch (IllegalArgumentException e) {
             // セキュリティエラー判定: 権限なしエラーと存在しないエラーを区別

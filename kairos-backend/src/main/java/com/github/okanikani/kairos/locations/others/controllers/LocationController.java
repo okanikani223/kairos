@@ -1,10 +1,10 @@
 package com.github.okanikani.kairos.locations.others.controllers;
 
-import com.github.okanikani.kairos.locations.applications.usecases.DeleteLocationUsecase;
-import com.github.okanikani.kairos.locations.applications.usecases.FindAllLocationsUsecase;
-import com.github.okanikani.kairos.locations.applications.usecases.FindLocationByIdUsecase;
-import com.github.okanikani.kairos.locations.applications.usecases.RegisterLocationUsecase;
-import com.github.okanikani.kairos.locations.applications.usecases.SearchLocationsUsecase;
+import com.github.okanikani.kairos.locations.applications.usecases.DeleteLocationUseCase;
+import com.github.okanikani.kairos.locations.applications.usecases.FindAllLocationsUseCase;
+import com.github.okanikani.kairos.locations.applications.usecases.FindLocationByIdUseCase;
+import com.github.okanikani.kairos.locations.applications.usecases.RegisterLocationUseCase;
+import com.github.okanikani.kairos.locations.applications.usecases.SearchLocationsUseCase;
 import com.github.okanikani.kairos.locations.applications.usecases.dto.RegisterLocationRequest;
 import com.github.okanikani.kairos.locations.applications.usecases.dto.LocationResponse;
 import com.github.okanikani.kairos.locations.applications.usecases.dto.SearchLocationsRequest;
@@ -23,25 +23,25 @@ import java.util.Objects;
 @RequestMapping("/api/locations")
 public class LocationController {
     
-    private final RegisterLocationUsecase registerLocationUsecase;
-    private final FindAllLocationsUsecase findAllLocationsUsecase;
-    private final FindLocationByIdUsecase findLocationByIdUsecase;
-    private final DeleteLocationUsecase deleteLocationUsecase;
-    private final SearchLocationsUsecase searchLocationsUsecase;
+    private final RegisterLocationUseCase registerLocationUseCase;
+    private final FindAllLocationsUseCase findAllLocationsUseCase;
+    private final FindLocationByIdUseCase findLocationByIdUseCase;
+    private final DeleteLocationUseCase deleteLocationUseCase;
+    private final SearchLocationsUseCase searchLocationsUseCase;
     
-    public LocationController(RegisterLocationUsecase registerLocationUsecase, FindAllLocationsUsecase findAllLocationsUsecase, FindLocationByIdUsecase findLocationByIdUsecase, DeleteLocationUsecase deleteLocationUsecase, SearchLocationsUsecase searchLocationsUsecase) {
-        this.registerLocationUsecase = Objects.requireNonNull(registerLocationUsecase, "registerLocationUsecaseは必須です");
-        this.findAllLocationsUsecase = Objects.requireNonNull(findAllLocationsUsecase, "findAllLocationsUsecaseは必須です");
-        this.findLocationByIdUsecase = Objects.requireNonNull(findLocationByIdUsecase, "findLocationByIdUsecaseは必須です");
-        this.deleteLocationUsecase = Objects.requireNonNull(deleteLocationUsecase, "deleteLocationUsecaseは必須です");
-        this.searchLocationsUsecase = Objects.requireNonNull(searchLocationsUsecase, "searchLocationsUsecaseは必須です");
+    public LocationController(RegisterLocationUseCase registerLocationUseCase, FindAllLocationsUseCase findAllLocationsUseCase, FindLocationByIdUseCase findLocationByIdUseCase, DeleteLocationUseCase deleteLocationUseCase, SearchLocationsUseCase searchLocationsUseCase) {
+        this.registerLocationUseCase = Objects.requireNonNull(registerLocationUseCase, "registerLocationUseCaseは必須です");
+        this.findAllLocationsUseCase = Objects.requireNonNull(findAllLocationsUseCase, "findAllLocationsUseCaseは必須です");
+        this.findLocationByIdUseCase = Objects.requireNonNull(findLocationByIdUseCase, "findLocationByIdUseCaseは必須です");
+        this.deleteLocationUseCase = Objects.requireNonNull(deleteLocationUseCase, "deleteLocationUseCaseは必須です");
+        this.searchLocationsUseCase = Objects.requireNonNull(searchLocationsUseCase, "searchLocationsUseCaseは必須です");
     }
     
     @PostMapping
     public ResponseEntity<LocationResponse> registerLocation(@RequestBody RegisterLocationRequest request, Authentication authentication) {
         try {
             String userId = authentication.getName();
-            LocationResponse response = registerLocationUsecase.execute(request, userId);
+            LocationResponse response = registerLocationUseCase.execute(request, userId);
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
@@ -54,7 +54,7 @@ public class LocationController {
     public ResponseEntity<List<LocationResponse>> findAllLocations(Authentication authentication) {
         try {
             String userId = authentication.getName();
-            List<LocationResponse> response = findAllLocationsUsecase.execute(userId);
+            List<LocationResponse> response = findAllLocationsUseCase.execute(userId);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             return ResponseEntity.internalServerError().build();
@@ -65,7 +65,7 @@ public class LocationController {
     public ResponseEntity<LocationResponse> findLocationById(@PathVariable(name = "id") Long id, Authentication authentication) {
         try {
             String userId = authentication.getName();
-            LocationResponse response = findLocationByIdUsecase.execute(id, userId);
+            LocationResponse response = findLocationByIdUseCase.execute(id, userId);
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
             // セキュリティエラー判定: 権限なしエラーと存在しないエラーを区別
@@ -86,7 +86,7 @@ public class LocationController {
     public ResponseEntity<Void> deleteLocation(@PathVariable(name = "id") Long id, Authentication authentication) {
         try {
             String userId = authentication.getName();
-            deleteLocationUsecase.execute(id, userId);
+            deleteLocationUseCase.execute(id, userId);
             return ResponseEntity.noContent().build();
         } catch (IllegalArgumentException e) {
             // セキュリティエラー判定: 権限なしエラーと存在しないエラーを区別
@@ -125,7 +125,7 @@ public class LocationController {
             
             String userId = authentication.getName();
             SearchLocationsRequest request = new SearchLocationsRequest(startDateTime, endDateTime);
-            List<LocationResponse> response = searchLocationsUsecase.execute(request, userId);
+            List<LocationResponse> response = searchLocationsUseCase.execute(request, userId);
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();

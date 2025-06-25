@@ -1,7 +1,7 @@
 package com.github.okanikani.kairos.rules.others.controllers;
 
-import com.github.okanikani.kairos.rules.applications.usecases.FindAllDefaultWorkRulesUsecase;
-import com.github.okanikani.kairos.rules.applications.usecases.RegisterDefaultWorkRuleUsecase;
+import com.github.okanikani.kairos.rules.applications.usecases.FindAllDefaultWorkRulesUseCase;
+import com.github.okanikani.kairos.rules.applications.usecases.RegisterDefaultWorkRuleUseCase;
 import com.github.okanikani.kairos.rules.applications.usecases.dto.DefaultWorkRuleResponse;
 import com.github.okanikani.kairos.rules.applications.usecases.dto.RegisterDefaultWorkRuleRequest;
 import com.github.okanikani.kairos.rules.applications.usecases.dto.UserDto;
@@ -19,17 +19,17 @@ import java.util.List;
 @RequestMapping("/api/default-work-rules")
 public class DefaultWorkRuleController {
     
-    private final RegisterDefaultWorkRuleUsecase registerDefaultWorkRuleUsecase;
-    private final FindAllDefaultWorkRulesUsecase findAllDefaultWorkRulesUsecase;
+    private final RegisterDefaultWorkRuleUseCase registerDefaultWorkRuleUseCase;
+    private final FindAllDefaultWorkRulesUseCase findAllDefaultWorkRulesUseCase;
     
     /**
      * コンストラクタ
-     * @param registerDefaultWorkRuleUsecase デフォルト勤怠ルール登録ユースケース
-     * @param findAllDefaultWorkRulesUsecase 全デフォルト勤務ルール取得ユースケース
+     * @param registerDefaultWorkRuleUseCase デフォルト勤怠ルール登録ユースケース
+     * @param findAllDefaultWorkRulesUseCase 全デフォルト勤務ルール取得ユースケース
      */
-    public DefaultWorkRuleController(RegisterDefaultWorkRuleUsecase registerDefaultWorkRuleUsecase, FindAllDefaultWorkRulesUsecase findAllDefaultWorkRulesUsecase) {
-        this.registerDefaultWorkRuleUsecase = java.util.Objects.requireNonNull(registerDefaultWorkRuleUsecase, "registerDefaultWorkRuleUsecaseは必須です");
-        this.findAllDefaultWorkRulesUsecase = java.util.Objects.requireNonNull(findAllDefaultWorkRulesUsecase, "findAllDefaultWorkRulesUsecaseは必須です");
+    public DefaultWorkRuleController(RegisterDefaultWorkRuleUseCase registerDefaultWorkRuleUseCase, FindAllDefaultWorkRulesUseCase findAllDefaultWorkRulesUseCase) {
+        this.registerDefaultWorkRuleUseCase = java.util.Objects.requireNonNull(registerDefaultWorkRuleUseCase, "registerDefaultWorkRuleUseCaseは必須です");
+        this.findAllDefaultWorkRulesUseCase = java.util.Objects.requireNonNull(findAllDefaultWorkRulesUseCase, "findAllDefaultWorkRulesUseCaseは必須です");
     }
     
     /**
@@ -60,7 +60,7 @@ public class DefaultWorkRuleController {
         );
         
         // ユースケースを実行
-        DefaultWorkRuleResponse response = registerDefaultWorkRuleUsecase.execute(request);
+        DefaultWorkRuleResponse response = registerDefaultWorkRuleUseCase.execute(request);
         
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
@@ -72,7 +72,7 @@ public class DefaultWorkRuleController {
     public ResponseEntity<List<DefaultWorkRuleResponse>> findAllDefaultWorkRules(Authentication authentication) {
         try {
             String userId = authentication.getName();
-            List<DefaultWorkRuleResponse> response = findAllDefaultWorkRulesUsecase.execute(userId);
+            List<DefaultWorkRuleResponse> response = findAllDefaultWorkRulesUseCase.execute(userId);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             return ResponseEntity.internalServerError().build();

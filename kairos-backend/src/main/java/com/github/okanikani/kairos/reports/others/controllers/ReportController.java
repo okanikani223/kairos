@@ -1,10 +1,10 @@
 package com.github.okanikani.kairos.reports.others.controllers;
 
-import com.github.okanikani.kairos.reports.applications.usecases.DeleteReportUsecase;
-import com.github.okanikani.kairos.reports.applications.usecases.FindReportUsecase;
-import com.github.okanikani.kairos.reports.applications.usecases.GenerateReportFromLocationUsecase;
-import com.github.okanikani.kairos.reports.applications.usecases.RegisterReportUsecase;
-import com.github.okanikani.kairos.reports.applications.usecases.UpdateReportUsecase;
+import com.github.okanikani.kairos.reports.applications.usecases.DeleteReportUseCase;
+import com.github.okanikani.kairos.reports.applications.usecases.FindReportUseCase;
+import com.github.okanikani.kairos.reports.applications.usecases.GenerateReportFromLocationUseCase;
+import com.github.okanikani.kairos.reports.applications.usecases.RegisterReportUseCase;
+import com.github.okanikani.kairos.reports.applications.usecases.UpdateReportUseCase;
 import com.github.okanikani.kairos.reports.applications.usecases.dto.DeleteReportRequest;
 import com.github.okanikani.kairos.reports.applications.usecases.dto.FindReportRequest;
 import com.github.okanikani.kairos.reports.applications.usecases.dto.GenerateReportFromLocationRequest;
@@ -24,18 +24,18 @@ import java.util.Objects;
 @RequestMapping("/api/reports")
 public class ReportController {
     
-    private final RegisterReportUsecase registerReportUsecase;
-    private final FindReportUsecase findReportUsecase;
-    private final UpdateReportUsecase updateReportUsecase;
-    private final DeleteReportUsecase deleteReportUsecase;
-    private final GenerateReportFromLocationUsecase generateReportFromLocationUsecase;
+    private final RegisterReportUseCase registerReportUseCase;
+    private final FindReportUseCase findReportUseCase;
+    private final UpdateReportUseCase updateReportUseCase;
+    private final DeleteReportUseCase deleteReportUseCase;
+    private final GenerateReportFromLocationUseCase generateReportFromLocationUseCase;
     
-    public ReportController(RegisterReportUsecase registerReportUsecase, FindReportUsecase findReportUsecase, UpdateReportUsecase updateReportUsecase, DeleteReportUsecase deleteReportUsecase, GenerateReportFromLocationUsecase generateReportFromLocationUsecase) {
-        this.registerReportUsecase = Objects.requireNonNull(registerReportUsecase, "registerReportUsecaseは必須です");
-        this.findReportUsecase = Objects.requireNonNull(findReportUsecase, "findReportUsecaseは必須です");
-        this.updateReportUsecase = Objects.requireNonNull(updateReportUsecase, "updateReportUsecaseは必須です");
-        this.deleteReportUsecase = Objects.requireNonNull(deleteReportUsecase, "deleteReportUsecaseは必須です");
-        this.generateReportFromLocationUsecase = Objects.requireNonNull(generateReportFromLocationUsecase, "generateReportFromLocationUsecaseは必須です");
+    public ReportController(RegisterReportUseCase registerReportUseCase, FindReportUseCase findReportUseCase, UpdateReportUseCase updateReportUseCase, DeleteReportUseCase deleteReportUseCase, GenerateReportFromLocationUseCase generateReportFromLocationUseCase) {
+        this.registerReportUseCase = Objects.requireNonNull(registerReportUseCase, "registerReportUseCaseは必須です");
+        this.findReportUseCase = Objects.requireNonNull(findReportUseCase, "findReportUseCaseは必須です");
+        this.updateReportUseCase = Objects.requireNonNull(updateReportUseCase, "updateReportUseCaseは必須です");
+        this.deleteReportUseCase = Objects.requireNonNull(deleteReportUseCase, "deleteReportUseCaseは必須です");
+        this.generateReportFromLocationUseCase = Objects.requireNonNull(generateReportFromLocationUseCase, "generateReportFromLocationUseCaseは必須です");
     }
     
     @PostMapping
@@ -50,7 +50,7 @@ public class ReportController {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
             }
             
-            ReportResponse response = registerReportUsecase.execute(request);
+            ReportResponse response = registerReportUseCase.execute(request);
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
@@ -71,7 +71,7 @@ public class ReportController {
             UserDto userDto = new UserDto(userId);
             FindReportRequest request = new FindReportRequest(yearMonth, userDto);
             
-            ReportResponse response = findReportUsecase.execute(request);
+            ReportResponse response = findReportUseCase.execute(request);
             
             if (response == null) {
                 return ResponseEntity.notFound().build();
@@ -104,7 +104,7 @@ public class ReportController {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
             }
             
-            ReportResponse response = updateReportUsecase.execute(request);
+            ReportResponse response = updateReportUseCase.execute(request);
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
@@ -127,7 +127,7 @@ public class ReportController {
             UserDto userDto = new UserDto(authenticatedUserId);
             DeleteReportRequest request = new DeleteReportRequest(yearMonth, userDto);
             
-            deleteReportUsecase.execute(request);
+            deleteReportUseCase.execute(request);
             return ResponseEntity.noContent().build();
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();
@@ -148,7 +148,7 @@ public class ReportController {
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
             }
             
-            ReportResponse response = generateReportFromLocationUsecase.execute(request);
+            ReportResponse response = generateReportFromLocationUseCase.execute(request);
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().build();

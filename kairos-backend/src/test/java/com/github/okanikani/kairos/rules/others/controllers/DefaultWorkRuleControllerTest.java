@@ -1,7 +1,7 @@
 package com.github.okanikani.kairos.rules.others.controllers;
 
-import com.github.okanikani.kairos.rules.applications.usecases.FindAllDefaultWorkRulesUsecase;
-import com.github.okanikani.kairos.rules.applications.usecases.RegisterDefaultWorkRuleUsecase;
+import com.github.okanikani.kairos.rules.applications.usecases.FindAllDefaultWorkRulesUseCase;
+import com.github.okanikani.kairos.rules.applications.usecases.RegisterDefaultWorkRuleUseCase;
 import com.github.okanikani.kairos.rules.applications.usecases.dto.DefaultWorkRuleResponse;
 import com.github.okanikani.kairos.rules.applications.usecases.dto.UserDto;
 import org.junit.jupiter.api.BeforeEach;
@@ -26,10 +26,10 @@ class DefaultWorkRuleControllerTest {
     private DefaultWorkRuleController defaultWorkRuleController;
 
     @Mock
-    private RegisterDefaultWorkRuleUsecase registerDefaultWorkRuleUsecase;
+    private RegisterDefaultWorkRuleUseCase registerDefaultWorkRuleUseCase;
     
     @Mock
-    private FindAllDefaultWorkRulesUsecase findAllDefaultWorkRulesUsecase;
+    private FindAllDefaultWorkRulesUseCase findAllDefaultWorkRulesUseCase;
     
     @Mock
     private Authentication authentication;
@@ -37,7 +37,7 @@ class DefaultWorkRuleControllerTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        defaultWorkRuleController = new DefaultWorkRuleController(registerDefaultWorkRuleUsecase, findAllDefaultWorkRulesUsecase);
+        defaultWorkRuleController = new DefaultWorkRuleController(registerDefaultWorkRuleUseCase, findAllDefaultWorkRulesUseCase);
     }
 
     @Test
@@ -54,7 +54,7 @@ class DefaultWorkRuleControllerTest {
                 null, null)
         );
         
-        when(findAllDefaultWorkRulesUsecase.execute(anyString())).thenReturn(expectedDefaultWorkRules);
+        when(findAllDefaultWorkRulesUseCase.execute(anyString())).thenReturn(expectedDefaultWorkRules);
 
         // Act
         ResponseEntity<List<DefaultWorkRuleResponse>> response = defaultWorkRuleController.findAllDefaultWorkRules(authentication);
@@ -65,14 +65,14 @@ class DefaultWorkRuleControllerTest {
         assertEquals(2, response.getBody().size());
         assertEquals(1L, response.getBody().get(0).id());
         assertEquals(100L, response.getBody().get(0).workPlaceId());
-        verify(findAllDefaultWorkRulesUsecase, times(1)).execute(eq("testuser"));
+        verify(findAllDefaultWorkRulesUseCase, times(1)).execute(eq("testuser"));
     }
 
     @Test
     void findAllDefaultWorkRules_デフォルト勤務ルールが存在しない場合_200ステータスと空リストを返す() {
         // Arrange
         when(authentication.getName()).thenReturn("testuser");
-        when(findAllDefaultWorkRulesUsecase.execute(anyString())).thenReturn(List.of());
+        when(findAllDefaultWorkRulesUseCase.execute(anyString())).thenReturn(List.of());
 
         // Act
         ResponseEntity<List<DefaultWorkRuleResponse>> response = defaultWorkRuleController.findAllDefaultWorkRules(authentication);
@@ -81,14 +81,14 @@ class DefaultWorkRuleControllerTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
         assertTrue(response.getBody().isEmpty());
-        verify(findAllDefaultWorkRulesUsecase, times(1)).execute(eq("testuser"));
+        verify(findAllDefaultWorkRulesUseCase, times(1)).execute(eq("testuser"));
     }
 
     @Test
     void findAllDefaultWorkRules_ユースケースで例外発生_500ステータスを返す() {
         // Arrange
         when(authentication.getName()).thenReturn("testuser");
-        when(findAllDefaultWorkRulesUsecase.execute(anyString()))
+        when(findAllDefaultWorkRulesUseCase.execute(anyString()))
             .thenThrow(new RuntimeException("データベースエラー"));
 
         // Act
@@ -96,26 +96,26 @@ class DefaultWorkRuleControllerTest {
 
         // Assert
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
-        verify(findAllDefaultWorkRulesUsecase, times(1)).execute(eq("testuser"));
+        verify(findAllDefaultWorkRulesUseCase, times(1)).execute(eq("testuser"));
     }
 
     @Test
-    void constructor_nullRegisterUsecase_例外が発生する() {
+    void constructor_nullRegisterUseCase_例外が発生する() {
         // Act & Assert
         NullPointerException exception = assertThrows(
             NullPointerException.class,
-            () -> new DefaultWorkRuleController(null, findAllDefaultWorkRulesUsecase)
+            () -> new DefaultWorkRuleController(null, findAllDefaultWorkRulesUseCase)
         );
-        assertEquals("registerDefaultWorkRuleUsecaseは必須です", exception.getMessage());
+        assertEquals("registerDefaultWorkRuleUseCaseは必須です", exception.getMessage());
     }
 
     @Test
-    void constructor_nullFindAllUsecase_例外が発生する() {
+    void constructor_nullFindAllUseCase_例外が発生する() {
         // Act & Assert
         NullPointerException exception = assertThrows(
             NullPointerException.class,
-            () -> new DefaultWorkRuleController(registerDefaultWorkRuleUsecase, null)
+            () -> new DefaultWorkRuleController(registerDefaultWorkRuleUseCase, null)
         );
-        assertEquals("findAllDefaultWorkRulesUsecaseは必須です", exception.getMessage());
+        assertEquals("findAllDefaultWorkRulesUseCaseは必須です", exception.getMessage());
     }
 }

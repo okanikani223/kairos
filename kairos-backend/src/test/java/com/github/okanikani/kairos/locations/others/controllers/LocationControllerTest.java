@@ -1,10 +1,10 @@
 package com.github.okanikani.kairos.locations.others.controllers;
 
-import com.github.okanikani.kairos.locations.applications.usecases.DeleteLocationUsecase;
-import com.github.okanikani.kairos.locations.applications.usecases.FindAllLocationsUsecase;
-import com.github.okanikani.kairos.locations.applications.usecases.FindLocationByIdUsecase;
-import com.github.okanikani.kairos.locations.applications.usecases.RegisterLocationUsecase;
-import com.github.okanikani.kairos.locations.applications.usecases.SearchLocationsUsecase;
+import com.github.okanikani.kairos.locations.applications.usecases.DeleteLocationUseCase;
+import com.github.okanikani.kairos.locations.applications.usecases.FindAllLocationsUseCase;
+import com.github.okanikani.kairos.locations.applications.usecases.FindLocationByIdUseCase;
+import com.github.okanikani.kairos.locations.applications.usecases.RegisterLocationUseCase;
+import com.github.okanikani.kairos.locations.applications.usecases.SearchLocationsUseCase;
 import com.github.okanikani.kairos.locations.applications.usecases.dto.RegisterLocationRequest;
 import com.github.okanikani.kairos.locations.applications.usecases.dto.LocationResponse;
 import org.junit.jupiter.api.BeforeEach;
@@ -30,19 +30,19 @@ class LocationControllerTest {
     private LocationController locationController;
 
     @Mock
-    private RegisterLocationUsecase registerLocationUsecase;
+    private RegisterLocationUseCase registerLocationUseCase;
     
     @Mock
-    private FindAllLocationsUsecase findAllLocationsUsecase;
+    private FindAllLocationsUseCase findAllLocationsUseCase;
     
     @Mock
-    private FindLocationByIdUsecase findLocationByIdUsecase;
+    private FindLocationByIdUseCase findLocationByIdUseCase;
     
     @Mock
-    private DeleteLocationUsecase deleteLocationUsecase;
+    private DeleteLocationUseCase deleteLocationUseCase;
     
     @Mock
-    private SearchLocationsUsecase searchLocationsUsecase;
+    private SearchLocationsUseCase searchLocationsUseCase;
     
     @Mock
     private Authentication authentication;
@@ -50,7 +50,7 @@ class LocationControllerTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        locationController = new LocationController(registerLocationUsecase, findAllLocationsUsecase, findLocationByIdUsecase, deleteLocationUsecase, searchLocationsUsecase);
+        locationController = new LocationController(registerLocationUseCase, findAllLocationsUseCase, findLocationByIdUseCase, deleteLocationUseCase, searchLocationsUseCase);
     }
 
     @Test
@@ -70,7 +70,7 @@ class LocationControllerTest {
             recordedAt
         );
 
-        when(registerLocationUsecase.execute(any(RegisterLocationRequest.class), anyString())).thenReturn(expectedResponse);
+        when(registerLocationUseCase.execute(any(RegisterLocationRequest.class), anyString())).thenReturn(expectedResponse);
         when(authentication.getName()).thenReturn("testuser");
 
         // Act
@@ -83,7 +83,7 @@ class LocationControllerTest {
         assertEquals(35.6812, response.getBody().latitude());
         assertEquals(139.7671, response.getBody().longitude());
         assertEquals(recordedAt, response.getBody().recordedAt());
-        verify(registerLocationUsecase, times(1)).execute(any(RegisterLocationRequest.class), eq("testuser"));
+        verify(registerLocationUseCase, times(1)).execute(any(RegisterLocationRequest.class), eq("testuser"));
     }
 
     @Test
@@ -95,7 +95,7 @@ class LocationControllerTest {
             LocalDateTime.now()
         );
 
-        when(registerLocationUsecase.execute(any(RegisterLocationRequest.class), anyString()))
+        when(registerLocationUseCase.execute(any(RegisterLocationRequest.class), anyString()))
             .thenThrow(new IllegalArgumentException("緯度は-90.0～90.0の範囲で指定してください"));
         when(authentication.getName()).thenReturn("testuser");
 
@@ -105,7 +105,7 @@ class LocationControllerTest {
         // Assert
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         assertNull(response.getBody());
-        verify(registerLocationUsecase, times(1)).execute(any(RegisterLocationRequest.class), eq("testuser"));
+        verify(registerLocationUseCase, times(1)).execute(any(RegisterLocationRequest.class), eq("testuser"));
     }
 
     @Test
@@ -117,7 +117,7 @@ class LocationControllerTest {
             LocalDateTime.now()
         );
 
-        when(registerLocationUsecase.execute(any(RegisterLocationRequest.class), anyString()))
+        when(registerLocationUseCase.execute(any(RegisterLocationRequest.class), anyString()))
             .thenThrow(new RuntimeException("データベースエラー"));
         when(authentication.getName()).thenReturn("testuser");
 
@@ -127,57 +127,57 @@ class LocationControllerTest {
         // Assert
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
         assertNull(response.getBody());
-        verify(registerLocationUsecase, times(1)).execute(any(RegisterLocationRequest.class), eq("testuser"));
+        verify(registerLocationUseCase, times(1)).execute(any(RegisterLocationRequest.class), eq("testuser"));
     }
 
     @Test
-    void constructor_nullRegisterUsecase_例外が発生する() {
+    void constructor_nullRegisterUseCase_例外が発生する() {
         // Act & Assert
         NullPointerException exception = assertThrows(
             NullPointerException.class,
-            () -> new LocationController(null, findAllLocationsUsecase, findLocationByIdUsecase, deleteLocationUsecase, searchLocationsUsecase)
+            () -> new LocationController(null, findAllLocationsUseCase, findLocationByIdUseCase, deleteLocationUseCase, searchLocationsUseCase)
         );
-        assertEquals("registerLocationUsecaseは必須です", exception.getMessage());
+        assertEquals("registerLocationUseCaseは必須です", exception.getMessage());
     }
 
     @Test
-    void constructor_nullFindAllUsecase_例外が発生する() {
+    void constructor_nullFindAllUseCase_例外が発生する() {
         // Act & Assert
         NullPointerException exception = assertThrows(
             NullPointerException.class,
-            () -> new LocationController(registerLocationUsecase, null, findLocationByIdUsecase, deleteLocationUsecase, searchLocationsUsecase)
+            () -> new LocationController(registerLocationUseCase, null, findLocationByIdUseCase, deleteLocationUseCase, searchLocationsUseCase)
         );
-        assertEquals("findAllLocationsUsecaseは必須です", exception.getMessage());
+        assertEquals("findAllLocationsUseCaseは必須です", exception.getMessage());
     }
 
     @Test
-    void constructor_nullFindByIdUsecase_例外が発生する() {
+    void constructor_nullFindByIdUseCase_例外が発生する() {
         // Act & Assert
         NullPointerException exception = assertThrows(
             NullPointerException.class,
-            () -> new LocationController(registerLocationUsecase, findAllLocationsUsecase, null, deleteLocationUsecase, searchLocationsUsecase)
+            () -> new LocationController(registerLocationUseCase, findAllLocationsUseCase, null, deleteLocationUseCase, searchLocationsUseCase)
         );
-        assertEquals("findLocationByIdUsecaseは必須です", exception.getMessage());
+        assertEquals("findLocationByIdUseCaseは必須です", exception.getMessage());
     }
 
     @Test
-    void constructor_nullDeleteUsecase_例外が発生する() {
+    void constructor_nullDeleteUseCase_例外が発生する() {
         // Act & Assert
         NullPointerException exception = assertThrows(
             NullPointerException.class,
-            () -> new LocationController(registerLocationUsecase, findAllLocationsUsecase, findLocationByIdUsecase, null, searchLocationsUsecase)
+            () -> new LocationController(registerLocationUseCase, findAllLocationsUseCase, findLocationByIdUseCase, null, searchLocationsUseCase)
         );
-        assertEquals("deleteLocationUsecaseは必須です", exception.getMessage());
+        assertEquals("deleteLocationUseCaseは必須です", exception.getMessage());
     }
 
     @Test
-    void constructor_nullSearchUsecase_例外が発生する() {
+    void constructor_nullSearchUseCase_例外が発生する() {
         // Act & Assert
         NullPointerException exception = assertThrows(
             NullPointerException.class,
-            () -> new LocationController(registerLocationUsecase, findAllLocationsUsecase, findLocationByIdUsecase, deleteLocationUsecase, null)
+            () -> new LocationController(registerLocationUseCase, findAllLocationsUseCase, findLocationByIdUseCase, deleteLocationUseCase, null)
         );
-        assertEquals("searchLocationsUsecaseは必須です", exception.getMessage());
+        assertEquals("searchLocationsUseCaseは必須です", exception.getMessage());
     }
     
     @Test
@@ -191,7 +191,7 @@ class LocationControllerTest {
             new LocationResponse(3L, 35.6814, 139.7673, LocalDateTime.of(2024, 1, 1, 18, 0))
         );
         
-        when(findAllLocationsUsecase.execute(anyString())).thenReturn(expectedLocations);
+        when(findAllLocationsUseCase.execute(anyString())).thenReturn(expectedLocations);
 
         // Act
         ResponseEntity<List<LocationResponse>> response = locationController.findAllLocations(authentication);
@@ -202,14 +202,14 @@ class LocationControllerTest {
         assertEquals(3, response.getBody().size());
         assertEquals(1L, response.getBody().get(0).id());
         assertEquals(35.6812, response.getBody().get(0).latitude());
-        verify(findAllLocationsUsecase, times(1)).execute(eq("testuser"));
+        verify(findAllLocationsUseCase, times(1)).execute(eq("testuser"));
     }
 
     @Test
     void findAllLocations_位置情報が存在しない場合_200ステータスと空リストを返す() {
         // Arrange
         when(authentication.getName()).thenReturn("testuser");
-        when(findAllLocationsUsecase.execute(anyString())).thenReturn(List.of());
+        when(findAllLocationsUseCase.execute(anyString())).thenReturn(List.of());
 
         // Act
         ResponseEntity<List<LocationResponse>> response = locationController.findAllLocations(authentication);
@@ -218,14 +218,14 @@ class LocationControllerTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
         assertTrue(response.getBody().isEmpty());
-        verify(findAllLocationsUsecase, times(1)).execute(eq("testuser"));
+        verify(findAllLocationsUseCase, times(1)).execute(eq("testuser"));
     }
 
     @Test
     void findAllLocations_ユースケースで例外発生_500ステータスを返す() {
         // Arrange
         when(authentication.getName()).thenReturn("testuser");
-        when(findAllLocationsUsecase.execute(anyString()))
+        when(findAllLocationsUseCase.execute(anyString()))
             .thenThrow(new RuntimeException("データベースエラー"));
 
         // Act
@@ -233,7 +233,7 @@ class LocationControllerTest {
 
         // Assert
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
-        verify(findAllLocationsUsecase, times(1)).execute(eq("testuser"));
+        verify(findAllLocationsUseCase, times(1)).execute(eq("testuser"));
     }
 
     @Test
@@ -246,7 +246,7 @@ class LocationControllerTest {
             locationId, 35.6812, 139.7671, LocalDateTime.of(2024, 1, 1, 9, 0)
         );
         
-        when(findLocationByIdUsecase.execute(eq(locationId), anyString())).thenReturn(expectedLocation);
+        when(findLocationByIdUseCase.execute(eq(locationId), anyString())).thenReturn(expectedLocation);
 
         // Act
         ResponseEntity<LocationResponse> response = locationController.findLocationById(locationId, authentication);
@@ -256,7 +256,7 @@ class LocationControllerTest {
         assertNotNull(response.getBody());
         assertEquals(locationId, response.getBody().id());
         assertEquals(35.6812, response.getBody().latitude());
-        verify(findLocationByIdUsecase, times(1)).execute(eq(locationId), eq("testuser"));
+        verify(findLocationByIdUseCase, times(1)).execute(eq(locationId), eq("testuser"));
     }
 
     @Test
@@ -264,7 +264,7 @@ class LocationControllerTest {
         // Arrange
         Long locationId = 999L;
         when(authentication.getName()).thenReturn("testuser");
-        when(findLocationByIdUsecase.execute(eq(locationId), anyString()))
+        when(findLocationByIdUseCase.execute(eq(locationId), anyString()))
             .thenThrow(new IllegalArgumentException("指定された位置情報が存在しません"));
 
         // Act
@@ -272,7 +272,7 @@ class LocationControllerTest {
 
         // Assert
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
-        verify(findLocationByIdUsecase, times(1)).execute(eq(locationId), eq("testuser"));
+        verify(findLocationByIdUseCase, times(1)).execute(eq(locationId), eq("testuser"));
     }
 
     @Test
@@ -280,7 +280,7 @@ class LocationControllerTest {
         // Arrange
         Long locationId = 1L;
         when(authentication.getName()).thenReturn("testuser");
-        when(findLocationByIdUsecase.execute(eq(locationId), anyString()))
+        when(findLocationByIdUseCase.execute(eq(locationId), anyString()))
             .thenThrow(new IllegalArgumentException("この位置情報にアクセスする権限がありません"));
 
         // Act
@@ -288,7 +288,7 @@ class LocationControllerTest {
 
         // Assert
         assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
-        verify(findLocationByIdUsecase, times(1)).execute(eq(locationId), eq("testuser"));
+        verify(findLocationByIdUseCase, times(1)).execute(eq(locationId), eq("testuser"));
     }
 
     @Test
@@ -296,7 +296,7 @@ class LocationControllerTest {
         // Arrange
         Long locationId = 1L;
         when(authentication.getName()).thenReturn("testuser");
-        when(findLocationByIdUsecase.execute(eq(locationId), anyString()))
+        when(findLocationByIdUseCase.execute(eq(locationId), anyString()))
             .thenThrow(new RuntimeException("データベースエラー"));
 
         // Act
@@ -304,7 +304,7 @@ class LocationControllerTest {
 
         // Assert
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
-        verify(findLocationByIdUsecase, times(1)).execute(eq(locationId), eq("testuser"));
+        verify(findLocationByIdUseCase, times(1)).execute(eq(locationId), eq("testuser"));
     }
 
     @Test
@@ -312,14 +312,14 @@ class LocationControllerTest {
         // Arrange
         Long locationId = 1L;
         when(authentication.getName()).thenReturn("testuser");
-        doNothing().when(deleteLocationUsecase).execute(eq(locationId), anyString());
+        doNothing().when(deleteLocationUseCase).execute(eq(locationId), anyString());
 
         // Act
         ResponseEntity<Void> response = locationController.deleteLocation(locationId, authentication);
 
         // Assert
         assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
-        verify(deleteLocationUsecase, times(1)).execute(eq(locationId), eq("testuser"));
+        verify(deleteLocationUseCase, times(1)).execute(eq(locationId), eq("testuser"));
     }
 
     @Test
@@ -328,14 +328,14 @@ class LocationControllerTest {
         Long locationId = 999L;
         when(authentication.getName()).thenReturn("testuser");
         doThrow(new IllegalArgumentException("指定された位置情報が存在しません"))
-            .when(deleteLocationUsecase).execute(eq(locationId), anyString());
+            .when(deleteLocationUseCase).execute(eq(locationId), anyString());
 
         // Act
         ResponseEntity<Void> response = locationController.deleteLocation(locationId, authentication);
 
         // Assert
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
-        verify(deleteLocationUsecase, times(1)).execute(eq(locationId), eq("testuser"));
+        verify(deleteLocationUseCase, times(1)).execute(eq(locationId), eq("testuser"));
     }
 
     @Test
@@ -344,14 +344,14 @@ class LocationControllerTest {
         Long locationId = 1L;
         when(authentication.getName()).thenReturn("testuser");
         doThrow(new IllegalArgumentException("この位置情報を削除する権限がありません"))
-            .when(deleteLocationUsecase).execute(eq(locationId), anyString());
+            .when(deleteLocationUseCase).execute(eq(locationId), anyString());
 
         // Act
         ResponseEntity<Void> response = locationController.deleteLocation(locationId, authentication);
 
         // Assert
         assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
-        verify(deleteLocationUsecase, times(1)).execute(eq(locationId), eq("testuser"));
+        verify(deleteLocationUseCase, times(1)).execute(eq(locationId), eq("testuser"));
     }
 
     @Test
@@ -360,14 +360,14 @@ class LocationControllerTest {
         Long locationId = 1L;
         when(authentication.getName()).thenReturn("testuser");
         doThrow(new RuntimeException("データベースエラー"))
-            .when(deleteLocationUsecase).execute(eq(locationId), anyString());
+            .when(deleteLocationUseCase).execute(eq(locationId), anyString());
 
         // Act
         ResponseEntity<Void> response = locationController.deleteLocation(locationId, authentication);
 
         // Assert
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
-        verify(deleteLocationUsecase, times(1)).execute(eq(locationId), eq("testuser"));
+        verify(deleteLocationUseCase, times(1)).execute(eq(locationId), eq("testuser"));
     }
 
     @Test
@@ -382,7 +382,7 @@ class LocationControllerTest {
             new LocationResponse(2L, 35.6813, 139.7672, LocalDateTime.of(2024, 1, 1, 12, 0))
         );
         
-        when(searchLocationsUsecase.execute(any(), anyString())).thenReturn(expectedLocations);
+        when(searchLocationsUseCase.execute(any(), anyString())).thenReturn(expectedLocations);
 
         // Act
         ResponseEntity<List<LocationResponse>> response = locationController.searchLocations(
@@ -393,7 +393,7 @@ class LocationControllerTest {
         assertNotNull(response.getBody());
         assertEquals(2, response.getBody().size());
         assertEquals(1L, response.getBody().get(0).id());
-        verify(searchLocationsUsecase, times(1)).execute(any(), eq("testuser"));
+        verify(searchLocationsUseCase, times(1)).execute(any(), eq("testuser"));
     }
 
     @Test
@@ -403,7 +403,7 @@ class LocationControllerTest {
         String startDateTime = "2024-01-01T09:00:00";
         String endDateTime = "2024-01-01T18:00:00";
         
-        when(searchLocationsUsecase.execute(any(), anyString())).thenReturn(List.of());
+        when(searchLocationsUseCase.execute(any(), anyString())).thenReturn(List.of());
 
         // Act
         ResponseEntity<List<LocationResponse>> response = locationController.searchLocations(
@@ -413,7 +413,7 @@ class LocationControllerTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
         assertTrue(response.getBody().isEmpty());
-        verify(searchLocationsUsecase, times(1)).execute(any(), eq("testuser"));
+        verify(searchLocationsUseCase, times(1)).execute(any(), eq("testuser"));
     }
 
     @Test
@@ -429,7 +429,7 @@ class LocationControllerTest {
 
         // Assert
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        verify(searchLocationsUsecase, never()).execute(any(), any());
+        verify(searchLocationsUseCase, never()).execute(any(), any());
     }
 
     @Test
@@ -446,7 +446,7 @@ class LocationControllerTest {
         // Assert
         // SearchLocationsRequestコンストラクタで例外が発生するため、usecaseは呼び出されない
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        verify(searchLocationsUsecase, never()).execute(any(), any());
+        verify(searchLocationsUseCase, never()).execute(any(), any());
     }
 
     @Test
@@ -456,7 +456,7 @@ class LocationControllerTest {
         String startDateTime = "2024-01-01T09:00:00";
         String endDateTime = "2024-01-01T18:00:00";
         
-        when(searchLocationsUsecase.execute(any(), anyString()))
+        when(searchLocationsUseCase.execute(any(), anyString()))
             .thenThrow(new RuntimeException("データベースエラー"));
 
         // Act
@@ -465,6 +465,6 @@ class LocationControllerTest {
 
         // Assert
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
-        verify(searchLocationsUsecase, times(1)).execute(any(), eq("testuser"));
+        verify(searchLocationsUseCase, times(1)).execute(any(), eq("testuser"));
     }
 }

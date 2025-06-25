@@ -1,10 +1,10 @@
 package com.github.okanikani.kairos.rules.others.controllers;
 
-import com.github.okanikani.kairos.rules.applications.usecases.DeleteWorkRuleUsecase;
-import com.github.okanikani.kairos.rules.applications.usecases.FindAllWorkRulesUsecase;
-import com.github.okanikani.kairos.rules.applications.usecases.FindWorkRuleByIdUsecase;
-import com.github.okanikani.kairos.rules.applications.usecases.RegisterWorkRuleUsecase;
-import com.github.okanikani.kairos.rules.applications.usecases.UpdateWorkRuleUsecase;
+import com.github.okanikani.kairos.rules.applications.usecases.DeleteWorkRuleUseCase;
+import com.github.okanikani.kairos.rules.applications.usecases.FindAllWorkRulesUseCase;
+import com.github.okanikani.kairos.rules.applications.usecases.FindWorkRuleByIdUseCase;
+import com.github.okanikani.kairos.rules.applications.usecases.RegisterWorkRuleUseCase;
+import com.github.okanikani.kairos.rules.applications.usecases.UpdateWorkRuleUseCase;
 import com.github.okanikani.kairos.rules.applications.usecases.dto.UserDto;
 import com.github.okanikani.kairos.rules.applications.usecases.dto.WorkRuleResponse;
 import org.junit.jupiter.api.BeforeEach;
@@ -31,19 +31,19 @@ class WorkRuleControllerTest {
     private WorkRuleController workRuleController;
 
     @Mock
-    private RegisterWorkRuleUsecase registerWorkRuleUsecase;
+    private RegisterWorkRuleUseCase registerWorkRuleUseCase;
     
     @Mock
-    private FindAllWorkRulesUsecase findAllWorkRulesUsecase;
+    private FindAllWorkRulesUseCase findAllWorkRulesUseCase;
     
     @Mock
-    private FindWorkRuleByIdUsecase findWorkRuleByIdUsecase;
+    private FindWorkRuleByIdUseCase findWorkRuleByIdUseCase;
     
     @Mock
-    private UpdateWorkRuleUsecase updateWorkRuleUsecase;
+    private UpdateWorkRuleUseCase updateWorkRuleUseCase;
     
     @Mock
-    private DeleteWorkRuleUsecase deleteWorkRuleUsecase;
+    private DeleteWorkRuleUseCase deleteWorkRuleUseCase;
     
     @Mock
     private Authentication authentication;
@@ -51,7 +51,7 @@ class WorkRuleControllerTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        workRuleController = new WorkRuleController(registerWorkRuleUsecase, findAllWorkRulesUsecase, findWorkRuleByIdUsecase, updateWorkRuleUsecase, deleteWorkRuleUsecase);
+        workRuleController = new WorkRuleController(registerWorkRuleUseCase, findAllWorkRulesUseCase, findWorkRuleByIdUseCase, updateWorkRuleUseCase, deleteWorkRuleUseCase);
     }
 
     @Test
@@ -70,7 +70,7 @@ class WorkRuleControllerTest {
                 LocalDate.of(2024, 1, 1), LocalDate.of(2024, 12, 31))
         );
         
-        when(findAllWorkRulesUsecase.execute(anyString())).thenReturn(expectedWorkRules);
+        when(findAllWorkRulesUseCase.execute(anyString())).thenReturn(expectedWorkRules);
 
         // Act
         ResponseEntity<List<WorkRuleResponse>> response = workRuleController.findAllWorkRules(authentication);
@@ -81,14 +81,14 @@ class WorkRuleControllerTest {
         assertEquals(2, response.getBody().size());
         assertEquals(1L, response.getBody().get(0).id());
         assertEquals(100L, response.getBody().get(0).workPlaceId());
-        verify(findAllWorkRulesUsecase, times(1)).execute(eq("testuser"));
+        verify(findAllWorkRulesUseCase, times(1)).execute(eq("testuser"));
     }
 
     @Test
     void findAllWorkRules_勤務ルールが存在しない場合_200ステータスと空リストを返す() {
         // Arrange
         when(authentication.getName()).thenReturn("testuser");
-        when(findAllWorkRulesUsecase.execute(anyString())).thenReturn(List.of());
+        when(findAllWorkRulesUseCase.execute(anyString())).thenReturn(List.of());
 
         // Act
         ResponseEntity<List<WorkRuleResponse>> response = workRuleController.findAllWorkRules(authentication);
@@ -97,14 +97,14 @@ class WorkRuleControllerTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
         assertTrue(response.getBody().isEmpty());
-        verify(findAllWorkRulesUsecase, times(1)).execute(eq("testuser"));
+        verify(findAllWorkRulesUseCase, times(1)).execute(eq("testuser"));
     }
 
     @Test
     void findAllWorkRules_ユースケースで例外発生_500ステータスを返す() {
         // Arrange
         when(authentication.getName()).thenReturn("testuser");
-        when(findAllWorkRulesUsecase.execute(anyString()))
+        when(findAllWorkRulesUseCase.execute(anyString()))
             .thenThrow(new RuntimeException("データベースエラー"));
 
         // Act
@@ -112,7 +112,7 @@ class WorkRuleControllerTest {
 
         // Assert
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
-        verify(findAllWorkRulesUsecase, times(1)).execute(eq("testuser"));
+        verify(findAllWorkRulesUseCase, times(1)).execute(eq("testuser"));
     }
 
     @Test
@@ -126,7 +126,7 @@ class WorkRuleControllerTest {
             LocalTime.of(12, 0), LocalTime.of(13, 0),
             LocalDate.of(2024, 1, 1), LocalDate.of(2024, 12, 31));
         
-        when(findWorkRuleByIdUsecase.execute(eq(workRuleId), anyString())).thenReturn(expectedWorkRule);
+        when(findWorkRuleByIdUseCase.execute(eq(workRuleId), anyString())).thenReturn(expectedWorkRule);
 
         // Act
         ResponseEntity<WorkRuleResponse> response = workRuleController.findWorkRuleById(workRuleId, authentication);
@@ -136,7 +136,7 @@ class WorkRuleControllerTest {
         assertNotNull(response.getBody());
         assertEquals(workRuleId, response.getBody().id());
         assertEquals(100L, response.getBody().workPlaceId());
-        verify(findWorkRuleByIdUsecase, times(1)).execute(eq(workRuleId), eq("testuser"));
+        verify(findWorkRuleByIdUseCase, times(1)).execute(eq(workRuleId), eq("testuser"));
     }
 
     @Test
@@ -144,7 +144,7 @@ class WorkRuleControllerTest {
         // Arrange
         Long workRuleId = 999L;
         when(authentication.getName()).thenReturn("testuser");
-        when(findWorkRuleByIdUsecase.execute(eq(workRuleId), anyString()))
+        when(findWorkRuleByIdUseCase.execute(eq(workRuleId), anyString()))
             .thenThrow(new IllegalArgumentException("指定された勤務ルールが存在しません"));
 
         // Act
@@ -152,7 +152,7 @@ class WorkRuleControllerTest {
 
         // Assert
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
-        verify(findWorkRuleByIdUsecase, times(1)).execute(eq(workRuleId), eq("testuser"));
+        verify(findWorkRuleByIdUseCase, times(1)).execute(eq(workRuleId), eq("testuser"));
     }
 
     @Test
@@ -160,7 +160,7 @@ class WorkRuleControllerTest {
         // Arrange
         Long workRuleId = 1L;
         when(authentication.getName()).thenReturn("testuser");
-        when(findWorkRuleByIdUsecase.execute(eq(workRuleId), anyString()))
+        when(findWorkRuleByIdUseCase.execute(eq(workRuleId), anyString()))
             .thenThrow(new IllegalArgumentException("この勤務ルールにアクセスする権限がありません"));
 
         // Act
@@ -168,7 +168,7 @@ class WorkRuleControllerTest {
 
         // Assert
         assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
-        verify(findWorkRuleByIdUsecase, times(1)).execute(eq(workRuleId), eq("testuser"));
+        verify(findWorkRuleByIdUseCase, times(1)).execute(eq(workRuleId), eq("testuser"));
     }
 
     @Test
@@ -176,7 +176,7 @@ class WorkRuleControllerTest {
         // Arrange
         Long workRuleId = 1L;
         when(authentication.getName()).thenReturn("testuser");
-        when(findWorkRuleByIdUsecase.execute(eq(workRuleId), anyString()))
+        when(findWorkRuleByIdUseCase.execute(eq(workRuleId), anyString()))
             .thenThrow(new RuntimeException("データベースエラー"));
 
         // Act
@@ -184,7 +184,7 @@ class WorkRuleControllerTest {
 
         // Assert
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
-        verify(findWorkRuleByIdUsecase, times(1)).execute(eq(workRuleId), eq("testuser"));
+        verify(findWorkRuleByIdUseCase, times(1)).execute(eq(workRuleId), eq("testuser"));
     }
 
     @Test
@@ -205,7 +205,7 @@ class WorkRuleControllerTest {
             LocalTime.of(12, 30), LocalTime.of(13, 30),
             LocalDate.of(2024, 2, 1), LocalDate.of(2024, 11, 30));
         
-        when(updateWorkRuleUsecase.execute(eq(workRuleId), any(), anyString())).thenReturn(expectedResponse);
+        when(updateWorkRuleUseCase.execute(eq(workRuleId), any(), anyString())).thenReturn(expectedResponse);
 
         // Act
         ResponseEntity<WorkRuleResponse> response = workRuleController.updateWorkRule(workRuleId, requestBody, authentication);
@@ -216,7 +216,7 @@ class WorkRuleControllerTest {
         assertEquals(workRuleId, response.getBody().id());
         assertEquals(200L, response.getBody().workPlaceId());
         assertEquals(35.6900, response.getBody().latitude());
-        verify(updateWorkRuleUsecase, times(1)).execute(eq(workRuleId), any(), eq("testuser"));
+        verify(updateWorkRuleUseCase, times(1)).execute(eq(workRuleId), any(), eq("testuser"));
     }
 
     @Test
@@ -232,7 +232,7 @@ class WorkRuleControllerTest {
             LocalDate.of(2024, 2, 1), LocalDate.of(2024, 11, 30)
         );
         
-        when(updateWorkRuleUsecase.execute(eq(workRuleId), any(), anyString()))
+        when(updateWorkRuleUseCase.execute(eq(workRuleId), any(), anyString()))
             .thenThrow(new IllegalArgumentException("指定された勤務ルールが存在しません"));
 
         // Act
@@ -240,7 +240,7 @@ class WorkRuleControllerTest {
 
         // Assert
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
-        verify(updateWorkRuleUsecase, times(1)).execute(eq(workRuleId), any(), eq("testuser"));
+        verify(updateWorkRuleUseCase, times(1)).execute(eq(workRuleId), any(), eq("testuser"));
     }
 
     @Test
@@ -256,7 +256,7 @@ class WorkRuleControllerTest {
             LocalDate.of(2024, 2, 1), LocalDate.of(2024, 11, 30)
         );
         
-        when(updateWorkRuleUsecase.execute(eq(workRuleId), any(), anyString()))
+        when(updateWorkRuleUseCase.execute(eq(workRuleId), any(), anyString()))
             .thenThrow(new IllegalArgumentException("この勤務ルールを更新する権限がありません"));
 
         // Act
@@ -264,7 +264,7 @@ class WorkRuleControllerTest {
 
         // Assert
         assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
-        verify(updateWorkRuleUsecase, times(1)).execute(eq(workRuleId), any(), eq("testuser"));
+        verify(updateWorkRuleUseCase, times(1)).execute(eq(workRuleId), any(), eq("testuser"));
     }
 
     @Test
@@ -280,7 +280,7 @@ class WorkRuleControllerTest {
             LocalDate.of(2024, 2, 1), LocalDate.of(2024, 11, 30)
         );
         
-        when(updateWorkRuleUsecase.execute(eq(workRuleId), any(), anyString()))
+        when(updateWorkRuleUseCase.execute(eq(workRuleId), any(), anyString()))
             .thenThrow(new RuntimeException("データベースエラー"));
 
         // Act
@@ -288,7 +288,7 @@ class WorkRuleControllerTest {
 
         // Assert
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
-        verify(updateWorkRuleUsecase, times(1)).execute(eq(workRuleId), any(), eq("testuser"));
+        verify(updateWorkRuleUseCase, times(1)).execute(eq(workRuleId), any(), eq("testuser"));
     }
 
     @Test
@@ -296,14 +296,14 @@ class WorkRuleControllerTest {
         // Arrange
         Long workRuleId = 1L;
         when(authentication.getName()).thenReturn("testuser");
-        doNothing().when(deleteWorkRuleUsecase).execute(eq(workRuleId), anyString());
+        doNothing().when(deleteWorkRuleUseCase).execute(eq(workRuleId), anyString());
 
         // Act
         ResponseEntity<Void> response = workRuleController.deleteWorkRule(workRuleId, authentication);
 
         // Assert
         assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
-        verify(deleteWorkRuleUsecase, times(1)).execute(eq(workRuleId), eq("testuser"));
+        verify(deleteWorkRuleUseCase, times(1)).execute(eq(workRuleId), eq("testuser"));
     }
 
     @Test
@@ -312,14 +312,14 @@ class WorkRuleControllerTest {
         Long workRuleId = 999L;
         when(authentication.getName()).thenReturn("testuser");
         doThrow(new IllegalArgumentException("指定された勤務ルールが存在しません"))
-            .when(deleteWorkRuleUsecase).execute(eq(workRuleId), anyString());
+            .when(deleteWorkRuleUseCase).execute(eq(workRuleId), anyString());
 
         // Act
         ResponseEntity<Void> response = workRuleController.deleteWorkRule(workRuleId, authentication);
 
         // Assert
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
-        verify(deleteWorkRuleUsecase, times(1)).execute(eq(workRuleId), eq("testuser"));
+        verify(deleteWorkRuleUseCase, times(1)).execute(eq(workRuleId), eq("testuser"));
     }
 
     @Test
@@ -328,14 +328,14 @@ class WorkRuleControllerTest {
         Long workRuleId = 1L;
         when(authentication.getName()).thenReturn("testuser");
         doThrow(new IllegalArgumentException("この勤務ルールを削除する権限がありません"))
-            .when(deleteWorkRuleUsecase).execute(eq(workRuleId), anyString());
+            .when(deleteWorkRuleUseCase).execute(eq(workRuleId), anyString());
 
         // Act
         ResponseEntity<Void> response = workRuleController.deleteWorkRule(workRuleId, authentication);
 
         // Assert
         assertEquals(HttpStatus.FORBIDDEN, response.getStatusCode());
-        verify(deleteWorkRuleUsecase, times(1)).execute(eq(workRuleId), eq("testuser"));
+        verify(deleteWorkRuleUseCase, times(1)).execute(eq(workRuleId), eq("testuser"));
     }
 
     @Test
@@ -344,63 +344,217 @@ class WorkRuleControllerTest {
         Long workRuleId = 1L;
         when(authentication.getName()).thenReturn("testuser");
         doThrow(new RuntimeException("データベースエラー"))
-            .when(deleteWorkRuleUsecase).execute(eq(workRuleId), anyString());
+            .when(deleteWorkRuleUseCase).execute(eq(workRuleId), anyString());
 
         // Act
         ResponseEntity<Void> response = workRuleController.deleteWorkRule(workRuleId, authentication);
 
         // Assert
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
-        verify(deleteWorkRuleUsecase, times(1)).execute(eq(workRuleId), eq("testuser"));
+        verify(deleteWorkRuleUseCase, times(1)).execute(eq(workRuleId), eq("testuser"));
     }
 
     @Test
-    void constructor_nullRegisterUsecase_例外が発生する() {
+    void constructor_nullRegisterUseCase_例外が発生する() {
         // Act & Assert
         NullPointerException exception = assertThrows(
             NullPointerException.class,
-            () -> new WorkRuleController(null, findAllWorkRulesUsecase, findWorkRuleByIdUsecase, updateWorkRuleUsecase, deleteWorkRuleUsecase)
+            () -> new WorkRuleController(null, findAllWorkRulesUseCase, findWorkRuleByIdUseCase, updateWorkRuleUseCase, deleteWorkRuleUseCase)
         );
-        assertEquals("registerWorkRuleUsecaseは必須です", exception.getMessage());
+        assertEquals("registerWorkRuleUseCaseは必須です", exception.getMessage());
     }
 
     @Test
-    void constructor_nullFindAllUsecase_例外が発生する() {
+    void constructor_nullFindAllUseCase_例外が発生する() {
         // Act & Assert
         NullPointerException exception = assertThrows(
             NullPointerException.class,
-            () -> new WorkRuleController(registerWorkRuleUsecase, null, findWorkRuleByIdUsecase, updateWorkRuleUsecase, deleteWorkRuleUsecase)
+            () -> new WorkRuleController(registerWorkRuleUseCase, null, findWorkRuleByIdUseCase, updateWorkRuleUseCase, deleteWorkRuleUseCase)
         );
-        assertEquals("findAllWorkRulesUsecaseは必須です", exception.getMessage());
+        assertEquals("findAllWorkRulesUseCaseは必須です", exception.getMessage());
     }
 
     @Test
-    void constructor_nullFindByIdUsecase_例外が発生する() {
+    void constructor_nullFindByIdUseCase_例外が発生する() {
         // Act & Assert
         NullPointerException exception = assertThrows(
             NullPointerException.class,
-            () -> new WorkRuleController(registerWorkRuleUsecase, findAllWorkRulesUsecase, null, updateWorkRuleUsecase, deleteWorkRuleUsecase)
+            () -> new WorkRuleController(registerWorkRuleUseCase, findAllWorkRulesUseCase, null, updateWorkRuleUseCase, deleteWorkRuleUseCase)
         );
-        assertEquals("findWorkRuleByIdUsecaseは必須です", exception.getMessage());
+        assertEquals("findWorkRuleByIdUseCaseは必須です", exception.getMessage());
     }
 
     @Test
-    void constructor_nullUpdateUsecase_例外が発生する() {
+    void constructor_nullUpdateUseCase_例外が発生する() {
         // Act & Assert
         NullPointerException exception = assertThrows(
             NullPointerException.class,
-            () -> new WorkRuleController(registerWorkRuleUsecase, findAllWorkRulesUsecase, findWorkRuleByIdUsecase, null, deleteWorkRuleUsecase)
+            () -> new WorkRuleController(registerWorkRuleUseCase, findAllWorkRulesUseCase, findWorkRuleByIdUseCase, null, deleteWorkRuleUseCase)
         );
-        assertEquals("updateWorkRuleUsecaseは必須です", exception.getMessage());
+        assertEquals("updateWorkRuleUseCaseは必須です", exception.getMessage());
     }
 
     @Test
-    void constructor_nullDeleteUsecase_例外が発生する() {
+    void constructor_nullDeleteUseCase_例外が発生する() {
         // Act & Assert
         NullPointerException exception = assertThrows(
             NullPointerException.class,
-            () -> new WorkRuleController(registerWorkRuleUsecase, findAllWorkRulesUsecase, findWorkRuleByIdUsecase, updateWorkRuleUsecase, null)
+            () -> new WorkRuleController(registerWorkRuleUseCase, findAllWorkRulesUseCase, findWorkRuleByIdUseCase, updateWorkRuleUseCase, null)
         );
-        assertEquals("deleteWorkRuleUsecaseは必須です", exception.getMessage());
+        assertEquals("deleteWorkRuleUseCaseは必須です", exception.getMessage());
+    }
+
+    @Test
+    void registerWorkRule_正常ケース_201ステータスと勤務ルールを返す() {
+        // Arrange
+        when(authentication.getName()).thenReturn("testuser");
+
+        WorkRuleController.RegisterWorkRuleRequestBody requestBody = new WorkRuleController.RegisterWorkRuleRequestBody(
+            100L, 35.6812, 139.7671,
+            LocalTime.of(9, 0), LocalTime.of(18, 0),
+            LocalTime.of(12, 0), LocalTime.of(13, 0),
+            LocalDate.of(2024, 1, 1), LocalDate.of(2024, 12, 31)
+        );
+
+        WorkRuleResponse expectedResponse = new WorkRuleResponse(
+            1L, 100L, 35.6812, 139.7671, new UserDto("testuser"),
+            LocalTime.of(9, 0), LocalTime.of(18, 0),
+            LocalTime.of(12, 0), LocalTime.of(13, 0),
+            LocalDate.of(2024, 1, 1), LocalDate.of(2024, 12, 31)
+        );
+
+        when(registerWorkRuleUseCase.execute(any())).thenReturn(expectedResponse);
+
+        // Act
+        ResponseEntity<WorkRuleResponse> response = workRuleController.registerWorkRule(requestBody, authentication);
+
+        // Assert
+        assertEquals(HttpStatus.CREATED, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals("testuser", response.getBody().user().userId());
+        assertEquals(100L, response.getBody().workPlaceId());
+
+        verify(registerWorkRuleUseCase, times(1)).execute(any());
+    }
+
+    @Test
+    void registerWorkRule_バリデーションエラー_例外が発生する() {
+        // Arrange
+        when(authentication.getName()).thenReturn("testuser");
+
+        WorkRuleController.RegisterWorkRuleRequestBody requestBody = new WorkRuleController.RegisterWorkRuleRequestBody(
+            100L, 91.0, 139.7671, // 無効な緯度（範囲外）
+            LocalTime.of(9, 0), LocalTime.of(18, 0),
+            LocalTime.of(12, 0), LocalTime.of(13, 0),
+            LocalDate.of(2024, 1, 1), LocalDate.of(2024, 12, 31)
+        );
+
+        when(registerWorkRuleUseCase.execute(any()))
+            .thenThrow(new IllegalArgumentException("緯度は-90.0から90.0の範囲で指定してください"));
+
+        // Act & Assert
+        assertThrows(IllegalArgumentException.class, () -> {
+            workRuleController.registerWorkRule(requestBody, authentication);
+        });
+        verify(registerWorkRuleUseCase, times(1)).execute(any());
+    }
+
+    @Test
+    void registerWorkRule_時間順序違反_例外が発生する() {
+        // Arrange
+        when(authentication.getName()).thenReturn("testuser");
+
+        WorkRuleController.RegisterWorkRuleRequestBody requestBody = new WorkRuleController.RegisterWorkRuleRequestBody(
+            100L, 35.6812, 139.7671,
+            LocalTime.of(18, 0), LocalTime.of(9, 0), // 開始時刻が終了時刻より後
+            LocalTime.of(12, 0), LocalTime.of(13, 0),
+            LocalDate.of(2024, 1, 1), LocalDate.of(2024, 12, 31)
+        );
+
+        when(registerWorkRuleUseCase.execute(any()))
+            .thenThrow(new IllegalArgumentException("標準開始時刻は標準終了時刻より前である必要があります"));
+
+        // Act & Assert
+        assertThrows(IllegalArgumentException.class, () -> {
+            workRuleController.registerWorkRule(requestBody, authentication);
+        });
+        verify(registerWorkRuleUseCase, times(1)).execute(any());
+    }
+
+    @Test
+    void registerWorkRule_期間重複エラー_例外が発生する() {
+        // Arrange
+        when(authentication.getName()).thenReturn("testuser");
+
+        WorkRuleController.RegisterWorkRuleRequestBody requestBody = new WorkRuleController.RegisterWorkRuleRequestBody(
+            100L, 35.6812, 139.7671,
+            LocalTime.of(9, 0), LocalTime.of(18, 0),
+            LocalTime.of(12, 0), LocalTime.of(13, 0),
+            LocalDate.of(2024, 1, 1), LocalDate.of(2024, 12, 31)
+        );
+
+        when(registerWorkRuleUseCase.execute(any()))
+            .thenThrow(new IllegalArgumentException("同一ユーザーの勤務ルール期間が重複しています"));
+
+        // Act & Assert
+        assertThrows(IllegalArgumentException.class, () -> {
+            workRuleController.registerWorkRule(requestBody, authentication);
+        });
+        verify(registerWorkRuleUseCase, times(1)).execute(any());
+    }
+
+    @Test
+    void registerWorkRule_予期しない例外発生_例外が発生する() {
+        // Arrange
+        when(authentication.getName()).thenReturn("testuser");
+
+        WorkRuleController.RegisterWorkRuleRequestBody requestBody = new WorkRuleController.RegisterWorkRuleRequestBody(
+            100L, 35.6812, 139.7671,
+            LocalTime.of(9, 0), LocalTime.of(18, 0),
+            LocalTime.of(12, 0), LocalTime.of(13, 0),
+            LocalDate.of(2024, 1, 1), LocalDate.of(2024, 12, 31)
+        );
+
+        when(registerWorkRuleUseCase.execute(any()))
+            .thenThrow(new RuntimeException("データベース接続エラー"));
+
+        // Act & Assert
+        assertThrows(RuntimeException.class, () -> {
+            workRuleController.registerWorkRule(requestBody, authentication);
+        });
+        verify(registerWorkRuleUseCase, times(1)).execute(any());
+    }
+
+    @Test
+    void registerWorkRule_休憩時間なし_正常登録される() {
+        // Arrange
+        when(authentication.getName()).thenReturn("testuser");
+
+        WorkRuleController.RegisterWorkRuleRequestBody requestBody = new WorkRuleController.RegisterWorkRuleRequestBody(
+            100L, 35.6812, 139.7671,
+            LocalTime.of(9, 0), LocalTime.of(18, 0),
+            null, null, // 休憩時間なし
+            LocalDate.of(2024, 1, 1), LocalDate.of(2024, 12, 31)
+        );
+
+        WorkRuleResponse expectedResponse = new WorkRuleResponse(
+            1L, 100L, 35.6812, 139.7671, new UserDto("testuser"),
+            LocalTime.of(9, 0), LocalTime.of(18, 0),
+            null, null, // 休憩時間なし
+            LocalDate.of(2024, 1, 1), LocalDate.of(2024, 12, 31)
+        );
+
+        when(registerWorkRuleUseCase.execute(any())).thenReturn(expectedResponse);
+
+        // Act
+        ResponseEntity<WorkRuleResponse> response = workRuleController.registerWorkRule(requestBody, authentication);
+
+        // Assert
+        assertEquals(HttpStatus.CREATED, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertNull(response.getBody().breakStartTime());
+        assertNull(response.getBody().breakEndTime());
+
+        verify(registerWorkRuleUseCase, times(1)).execute(any());
     }
 }
