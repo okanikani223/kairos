@@ -1,5 +1,6 @@
 package com.github.okanikani.kairos.reports.applications.usecases.dto;
 
+import com.github.okanikani.kairos.commons.exceptions.ValidationException;
 import java.time.LocalDate;
 import java.time.Duration;
 
@@ -28,7 +29,7 @@ public record DetailDto(
 ) {
     public DetailDto {
         if (workDate == null) {
-            throw new IllegalArgumentException("勤務日付は必須です");
+            throw new ValidationException("勤務日付は必須です");
         }
         
         // null安全のための補正

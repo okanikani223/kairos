@@ -1,5 +1,6 @@
 package com.github.okanikani.kairos.reports.applications.usecases;
 
+import com.github.okanikani.kairos.commons.exceptions.BusinessRuleViolationException;
 import com.github.okanikani.kairos.commons.exceptions.ResourceNotFoundException;
 import com.github.okanikani.kairos.reports.applications.usecases.dto.UpdateReportRequest;
 import com.github.okanikani.kairos.reports.applications.usecases.dto.ReportResponse;
@@ -46,7 +47,7 @@ public class UpdateReportUseCase {
         // 理由: 給与計算処理後の変更は労務管理上問題となるため
         if (existingReport.status() == ReportStatus.SUBMITTED || 
             existingReport.status() == ReportStatus.APPROVED) {
-            throw new IllegalArgumentException(
+            throw new BusinessRuleViolationException(
                 String.format("ステータスが%sの勤怠表は更新できません", existingReport.status())
             );
         }

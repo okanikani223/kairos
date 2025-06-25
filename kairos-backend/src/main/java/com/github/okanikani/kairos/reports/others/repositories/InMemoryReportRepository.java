@@ -1,5 +1,6 @@
 package com.github.okanikani.kairos.reports.others.repositories;
 
+import com.github.okanikani.kairos.commons.exceptions.ResourceNotFoundException;
 import com.github.okanikani.kairos.reports.domains.models.entities.Report;
 import com.github.okanikani.kairos.reports.domains.models.repositories.ReportRepository;
 import com.github.okanikani.kairos.reports.domains.models.vos.User;
@@ -48,7 +49,7 @@ public class InMemoryReportRepository implements ReportRepository {
         Objects.requireNonNull(report, "reportは必須です");
         String key = generateKey(report.yearMonth(), report.owner());
         if (!storage.containsKey(key)) {
-            throw new IllegalArgumentException("更新対象の勤怠表が存在しません: " + key);
+            throw new ResourceNotFoundException("更新対象の勤怠表が存在しません: " + key);
         }
         storage.put(key, report);
     }

@@ -1,5 +1,6 @@
 package com.github.okanikani.kairos.locations.domains.models.vos;
 
+import com.github.okanikani.kairos.commons.exceptions.ValidationException;
 import java.util.Objects;
 
 /**
@@ -10,7 +11,7 @@ public record User(String userId) {
     public User {
         Objects.requireNonNull(userId, "userIdは必須です");
         if (userId.isBlank()) {
-            throw new IllegalArgumentException("userIdは空文字列にできません");
+            throw new ValidationException("userIdは空文字列にできません");
         }
     }
 }

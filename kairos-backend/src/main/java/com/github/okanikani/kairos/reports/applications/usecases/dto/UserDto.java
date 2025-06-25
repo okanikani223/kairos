@@ -1,5 +1,6 @@
 package com.github.okanikani.kairos.reports.applications.usecases.dto;
 
+import com.github.okanikani.kairos.commons.exceptions.ValidationException;
 import java.util.Objects;
 
 /**
@@ -10,7 +11,7 @@ public record UserDto(String userId) {
     public UserDto {
         Objects.requireNonNull(userId, "userIdは必須です");
         if (userId.isBlank()) {
-            throw new IllegalArgumentException("userIdは空文字列にできません");
+            throw new ValidationException("userIdは空文字列にできません");
         }
     }
 }

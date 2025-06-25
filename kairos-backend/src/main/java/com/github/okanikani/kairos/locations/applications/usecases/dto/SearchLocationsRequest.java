@@ -1,5 +1,6 @@
 package com.github.okanikani.kairos.locations.applications.usecases.dto;
 
+import com.github.okanikani.kairos.commons.exceptions.ValidationException;
 import java.time.LocalDateTime;
 
 /**
@@ -26,7 +27,7 @@ public record SearchLocationsRequest(
         
         // 開始日時が終了日時より後の場合はエラー
         if (startDateTime.isAfter(endDateTime)) {
-            throw new IllegalArgumentException("開始日時は終了日時より前である必要があります");
+            throw new ValidationException("開始日時は終了日時より前である必要があります");
         }
     }
 }

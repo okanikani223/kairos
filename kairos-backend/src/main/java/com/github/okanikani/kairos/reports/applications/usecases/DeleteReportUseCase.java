@@ -1,5 +1,6 @@
 package com.github.okanikani.kairos.reports.applications.usecases;
 
+import com.github.okanikani.kairos.commons.exceptions.BusinessRuleViolationException;
 import com.github.okanikani.kairos.commons.exceptions.ResourceNotFoundException;
 import com.github.okanikani.kairos.reports.applications.usecases.dto.DeleteReportRequest;
 import com.github.okanikani.kairos.reports.applications.usecases.mapper.ReportMapper;
@@ -37,7 +38,7 @@ public class DeleteReportUseCase {
         // 理由: 承認フローを経た勤怠表は労務管理上削除してはならない
         if (existingReport.status() == ReportStatus.SUBMITTED || 
             existingReport.status() == ReportStatus.APPROVED) {
-            throw new IllegalArgumentException(
+            throw new BusinessRuleViolationException(
                 String.format("ステータスが%sの勤怠表は削除できません", existingReport.status())
             );
         }

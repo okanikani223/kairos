@@ -1,6 +1,7 @@
 package com.github.okanikani.kairos.reports.others.controllers;
 
 import com.github.okanikani.kairos.commons.exceptions.AuthorizationException;
+import com.github.okanikani.kairos.commons.exceptions.ValidationException;
 import com.github.okanikani.kairos.reports.applications.usecases.DeleteReportUseCase;
 import com.github.okanikani.kairos.reports.applications.usecases.FindReportUseCase;
 import com.github.okanikani.kairos.reports.applications.usecases.GenerateReportFromLocationUseCase;
@@ -66,7 +67,7 @@ public class ReportController {
         try {
             yearMonth = YearMonth.of(year, month);
         } catch (DateTimeException e) {
-            throw new IllegalArgumentException("無効な年月が指定されました: " + year + "/" + month);
+            throw new ValidationException("無効な年月が指定されました: " + year + "/" + month);
         }
         
         UserDto userDto = new UserDto(userId);
@@ -95,11 +96,11 @@ public class ReportController {
         try {
             pathYearMonth = YearMonth.of(year, month);
         } catch (DateTimeException e) {
-            throw new IllegalArgumentException("無効な年月が指定されました: " + year + "/" + month);
+            throw new ValidationException("無効な年月が指定されました: " + year + "/" + month);
         }
         
         if (!pathYearMonth.equals(request.yearMonth())) {
-            throw new IllegalArgumentException("パスパラメータとリクエストボディの年月が一致しません");
+            throw new ValidationException("パスパラメータとリクエストボディの年月が一致しません");
         }
         
         // セキュリティチェック: JWT認証ユーザーとリクエストユーザーIDの一致確認
@@ -124,7 +125,7 @@ public class ReportController {
         try {
             yearMonth = YearMonth.of(year, month);
         } catch (DateTimeException e) {
-            throw new IllegalArgumentException("無効な年月が指定されました: " + year + "/" + month);
+            throw new ValidationException("無効な年月が指定されました: " + year + "/" + month);
         }
         
         UserDto userDto = new UserDto(authenticatedUserId);
