@@ -1,5 +1,6 @@
 package com.github.okanikani.kairos.reports.others.adapters;
 
+import com.github.okanikani.kairos.commons.service.LocationFilteringService.WorkplaceLocation;
 import com.github.okanikani.kairos.reports.domains.models.vos.User;
 import com.github.okanikani.kairos.reports.domains.roundings.MinuteBasedRoundingSetting;
 import com.github.okanikani.kairos.reports.domains.roundings.RoundingSetting;
@@ -17,6 +18,7 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * WorkRuleResolverServiceの実装クラス
@@ -101,6 +103,40 @@ public class WorkRuleResolverServiceImpl implements WorkRuleResolverService {
         
         // 3. システムデフォルト
         return WorkRuleInfo.createDefault();
+    }
+    
+    @Override
+    public Optional<WorkplaceLocation> resolveWorkplaceLocation(User user, LocalDate workDate) {
+        Objects.requireNonNull(user, "userは必須です");
+        Objects.requireNonNull(workDate, "workDateは必須です");
+        
+        // 1. 有効なWorkRuleを検索（最優先）
+        com.github.okanikani.kairos.rules.domains.models.vos.User ruleUser = 
+            convertToRuleUser(user);
+        
+        List<WorkRule> activeRules = workRuleRepository.findActiveByUserAndDate(ruleUser, workDate);
+        if (!activeRules.isEmpty()) {
+            WorkRule rule = activeRules.get(0);
+            return Optional.of(new WorkplaceLocation(
+                rule.latitude(),
+                rule.longitude(),
+                100.0  // デフォルトの許容半径100メートル
+            ));
+        }
+        
+        // 2. DefaultWorkRuleをフォールバック
+        List<DefaultWorkRule> defaultRules = defaultWorkRuleRepository.findByUser(ruleUser);
+        if (!defaultRules.isEmpty()) {
+            DefaultWorkRule rule = defaultRules.get(0);
+            return Optional.of(new WorkplaceLocation(
+                rule.latitude(),
+                rule.longitude(),
+                100.0  // デフォルトの許容半径100メートル
+            ));
+        }
+        
+        // 3. 作業場所が設定されていない場合
+        return Optional.empty();
     }
     
     /**

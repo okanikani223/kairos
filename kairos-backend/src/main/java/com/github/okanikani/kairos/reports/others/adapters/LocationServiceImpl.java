@@ -1,5 +1,7 @@
 package com.github.okanikani.kairos.reports.others.adapters;
 
+import com.github.okanikani.kairos.commons.service.LocationFilteringService;
+import com.github.okanikani.kairos.commons.service.LocationFilteringService.WorkplaceLocation;
 import com.github.okanikani.kairos.locations.domains.models.entities.Location;
 import com.github.okanikani.kairos.locations.domains.models.repositories.LocationRepository;
 import com.github.okanikani.kairos.reports.domains.service.LocationService;
@@ -21,9 +23,11 @@ import java.util.Objects;
 public class LocationServiceImpl implements LocationService {
     
     private final LocationRepository locationRepository;
+    private final LocationFilteringService locationFilteringService;
     
-    public LocationServiceImpl(LocationRepository locationRepository) {
+    public LocationServiceImpl(LocationRepository locationRepository, LocationFilteringService locationFilteringService) {
         this.locationRepository = Objects.requireNonNull(locationRepository, "locationRepositoryは必須です");
+        this.locationFilteringService = Objects.requireNonNull(locationFilteringService, "locationFilteringServiceは必須です");
     }
     
     @Override
@@ -44,6 +48,41 @@ public class LocationServiceImpl implements LocationService {
         
         // 記録日時を抽出してソート
         return locations.stream()
+            .map(Location::recordedAt)
+            .sorted()
+            .toList();
+    }
+    
+    @Override
+    public List<LocalDateTime> getLocationRecordTimesNearWorkplace(
+            ReportPeriodCalculator.ReportPeriod period, 
+            User user, 
+            WorkplaceLocation workplace) {
+        
+        Objects.requireNonNull(period, "periodは必須です");
+        Objects.requireNonNull(user, "userは必須です");
+        Objects.requireNonNull(workplace, "workplaceは必須です");
+        
+        // 位置情報ドメインのユーザー情報に変換（Anti-Corruption Layer）
+        com.github.okanikani.kairos.locations.domains.models.vos.User locationUser = 
+            convertToLocationUser(user);
+        
+        // ユーザー・期間指定で位置情報を取得
+        List<Location> locations = locationRepository.findByUserAndDateTimeRange(
+            locationUser,
+            period.startDateTime(), 
+            period.endDateTime()
+        );
+        
+        // 作業場所からの距離に基づいてフィルタリング
+        List<Location> filteredLocations = locationFilteringService.filterByWorkplaceDistance(
+            locations, 
+            workplace, 
+            workplace.radiusMeters()
+        );
+        
+        // 記録日時を抽出してソート
+        return filteredLocations.stream()
             .map(Location::recordedAt)
             .sorted()
             .toList();

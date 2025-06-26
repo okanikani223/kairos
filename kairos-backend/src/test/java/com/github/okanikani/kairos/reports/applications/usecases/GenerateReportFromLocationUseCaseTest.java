@@ -1,5 +1,6 @@
 package com.github.okanikani.kairos.reports.applications.usecases;
 
+import com.github.okanikani.kairos.commons.config.LocationFilteringProperties;
 import com.github.okanikani.kairos.reports.applications.usecases.dto.GenerateReportFromLocationRequest;
 import com.github.okanikani.kairos.reports.applications.usecases.dto.ReportResponse;
 import com.github.okanikani.kairos.reports.applications.usecases.dto.UserDto;
@@ -40,13 +41,23 @@ class GenerateReportFromLocationUseCaseTest {
     @Mock
     private WorkRuleResolverService workRuleResolverService;
 
+    @Mock
+    private LocationFilteringProperties locationFilteringProperties;
+
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
+        
+        // デフォルトで位置情報フィルタリングを無効に設定（後方互換性テスト）
+        when(locationFilteringProperties.enabled()).thenReturn(false);
+        when(locationFilteringProperties.defaultToleranceMeters()).thenReturn(100);
+        when(locationFilteringProperties.strictMode()).thenReturn(false);
+        
         generateReportFromLocationUseCase = new GenerateReportFromLocationUseCase(
             locationService, 
             reportRepository,
-            workRuleResolverService
+            workRuleResolverService,
+            locationFilteringProperties
         );
     }
     
@@ -181,7 +192,7 @@ class GenerateReportFromLocationUseCaseTest {
         // Act & Assert
         NullPointerException exception = assertThrows(
             NullPointerException.class,
-            () -> new GenerateReportFromLocationUseCase(null, reportRepository, workRuleResolverService)
+            () -> new GenerateReportFromLocationUseCase(null, reportRepository, workRuleResolverService, locationFilteringProperties)
         );
         assertEquals("locationServiceは必須です", exception.getMessage());
     }
@@ -191,9 +202,29 @@ class GenerateReportFromLocationUseCaseTest {
         // Act & Assert
         NullPointerException exception = assertThrows(
             NullPointerException.class,
-            () -> new GenerateReportFromLocationUseCase(locationService, null, workRuleResolverService)
+            () -> new GenerateReportFromLocationUseCase(locationService, null, workRuleResolverService, locationFilteringProperties)
         );
         assertEquals("reportRepositoryは必須です", exception.getMessage());
+    }
+
+    @Test
+    void constructor_nullWorkRuleResolverService_例外が発生する() {
+        // Act & Assert
+        NullPointerException exception = assertThrows(
+            NullPointerException.class,
+            () -> new GenerateReportFromLocationUseCase(locationService, reportRepository, null, locationFilteringProperties)
+        );
+        assertEquals("workRuleResolverServiceは必須です", exception.getMessage());
+    }
+
+    @Test
+    void constructor_nullLocationFilteringProperties_例外が発生する() {
+        // Act & Assert
+        NullPointerException exception = assertThrows(
+            NullPointerException.class,
+            () -> new GenerateReportFromLocationUseCase(locationService, reportRepository, workRuleResolverService, null)
+        );
+        assertEquals("locationFilteringPropertiesは必須です", exception.getMessage());
     }
 
     @Test
@@ -479,5 +510,116 @@ class GenerateReportFromLocationUseCaseTest {
         
         verify(locationService, times(1)).getLocationRecordTimes(any(ReportPeriodCalculator.ReportPeriod.class), eq(user));
         verify(reportRepository, times(1)).save(any(Report.class));
+    }
+
+    @Test
+    void execute_位置情報フィルタリング有効_作業場所フィルタリングが実行される() {
+        // Arrange
+        YearMonth yearMonth = YearMonth.of(2024, 1);
+        UserDto userDto = new UserDto("testuser");
+        User user = new User("testuser");
+        GenerateReportFromLocationRequest request = new GenerateReportFromLocationRequest(yearMonth, userDto);
+
+        // 位置情報フィルタリングを有効に設定
+        when(locationFilteringProperties.enabled()).thenReturn(true);
+        when(locationFilteringProperties.strictMode()).thenReturn(false);
+
+        // 作業場所情報をモック
+        com.github.okanikani.kairos.commons.service.LocationFilteringService.WorkplaceLocation workplace = 
+            new com.github.okanikani.kairos.commons.service.LocationFilteringService.WorkplaceLocation(35.6812, 139.7671, 100.0);
+        when(workRuleResolverService.resolveWorkplaceLocation(eq(user), any())).thenReturn(java.util.Optional.of(workplace));
+
+        List<LocalDateTime> filteredLocationTimes = Arrays.asList(
+            LocalDateTime.of(2024, 1, 1, 9, 0),
+            LocalDateTime.of(2024, 1, 1, 10, 0)
+        );
+
+        setupDefaultWorkRuleMocks(user);
+        when(locationService.getLocationRecordTimesNearWorkplace(any(ReportPeriodCalculator.ReportPeriod.class), eq(user), eq(workplace)))
+            .thenReturn(filteredLocationTimes);
+        doNothing().when(reportRepository).save(any(Report.class));
+
+        // Act
+        ReportResponse response = generateReportFromLocationUseCase.execute(request);
+
+        // Assert
+        assertNotNull(response);
+        assertEquals(1, response.workDays().size());
+        
+        // 作業場所フィルタリング用のメソッドが呼ばれること
+        verify(locationService, times(1)).getLocationRecordTimesNearWorkplace(any(ReportPeriodCalculator.ReportPeriod.class), eq(user), eq(workplace));
+        verify(locationService, never()).getLocationRecordTimes(any(ReportPeriodCalculator.ReportPeriod.class), eq(user));
+        verify(workRuleResolverService, times(1)).resolveWorkplaceLocation(eq(user), any());
+        verify(reportRepository, times(1)).save(any(Report.class));
+    }
+
+    @Test
+    void execute_位置情報フィルタリング有効_作業場所未設定_寛容モード_従来処理() {
+        // Arrange
+        YearMonth yearMonth = YearMonth.of(2024, 1);
+        UserDto userDto = new UserDto("testuser");
+        User user = new User("testuser");
+        GenerateReportFromLocationRequest request = new GenerateReportFromLocationRequest(yearMonth, userDto);
+
+        // 位置情報フィルタリングを有効、寛容モードに設定
+        when(locationFilteringProperties.enabled()).thenReturn(true);
+        when(locationFilteringProperties.strictMode()).thenReturn(false);
+
+        // 作業場所情報が取得できない場合
+        when(workRuleResolverService.resolveWorkplaceLocation(eq(user), any())).thenReturn(java.util.Optional.empty());
+
+        List<LocalDateTime> locationTimes = Arrays.asList(
+            LocalDateTime.of(2024, 1, 1, 9, 0),
+            LocalDateTime.of(2024, 1, 1, 10, 0)
+        );
+
+        setupDefaultWorkRuleMocks(user);
+        when(locationService.getLocationRecordTimes(any(ReportPeriodCalculator.ReportPeriod.class), eq(user)))
+            .thenReturn(locationTimes);
+        doNothing().when(reportRepository).save(any(Report.class));
+
+        // Act
+        ReportResponse response = generateReportFromLocationUseCase.execute(request);
+
+        // Assert
+        assertNotNull(response);
+        assertEquals(1, response.workDays().size());
+        
+        // 従来のメソッドが呼ばれること（フォールバック）
+        verify(locationService, times(1)).getLocationRecordTimes(any(ReportPeriodCalculator.ReportPeriod.class), eq(user));
+        verify(locationService, never()).getLocationRecordTimesNearWorkplace(any(), any(), any());
+        verify(workRuleResolverService, times(1)).resolveWorkplaceLocation(eq(user), any());
+        verify(reportRepository, times(1)).save(any(Report.class));
+    }
+
+    @Test
+    void execute_位置情報フィルタリング有効_作業場所未設定_厳密モード_例外発生() {
+        // Arrange
+        YearMonth yearMonth = YearMonth.of(2024, 1);
+        UserDto userDto = new UserDto("testuser");
+        User user = new User("testuser");
+        GenerateReportFromLocationRequest request = new GenerateReportFromLocationRequest(yearMonth, userDto);
+
+        // 位置情報フィルタリングを有効、厳密モードに設定
+        when(locationFilteringProperties.enabled()).thenReturn(true);
+        when(locationFilteringProperties.strictMode()).thenReturn(true);
+
+        // 作業場所情報が取得できない場合
+        when(workRuleResolverService.resolveWorkplaceLocation(eq(user), any())).thenReturn(java.util.Optional.empty());
+
+        setupDefaultWorkRuleMocks(user);
+
+        // Act & Assert
+        IllegalStateException exception = assertThrows(
+            IllegalStateException.class,
+            () -> generateReportFromLocationUseCase.execute(request)
+        );
+        
+        assertTrue(exception.getMessage().contains("厳密モードでは作業場所情報が必須です"));
+        
+        // サービスメソッドが呼ばれないこと
+        verify(locationService, never()).getLocationRecordTimes(any(), any());
+        verify(locationService, never()).getLocationRecordTimesNearWorkplace(any(), any(), any());
+        verify(reportRepository, never()).save(any());
     }
 }
