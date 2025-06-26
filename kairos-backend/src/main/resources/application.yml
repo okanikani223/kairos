@@ -1,0 +1,54 @@
+# アプリケーション設定
+spring:
+  application:
+    name: kairos
+  
+  # データソース設定
+  datasource:
+    url: jdbc:postgresql://localhost:5432/kairos_db
+    username: kairos_user
+    password: kairos_password
+    driver-class-name: org.postgresql.Driver
+    
+    # HikariCP設定（コネクションプール）
+    hikari:
+      connection-timeout: 20000
+      maximum-pool-size: 5
+  
+  # JPA/Hibernate設定
+  jpa:
+    hibernate:
+      ddl-auto: none
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+        default_schema: public
+    show-sql: true
+    open-in-view: false
+  
+  # エラーハンドリング設定
+  servlet:
+    encoding:
+      charset: UTF-8
+      force: true
+      enabled: true
+
+# JWT設定
+jwt:
+  secret: kairosSecretKeyForJWTGenerationThisShouldBeChangedInProduction
+  expiration: 86400000
+
+# サーバー設定
+server:
+  error:
+    include-message: always
+    include-binding-errors: always
+
+# ログ設定
+logging:
+  level:
+    root: INFO
+    com.github.okanikani.kairos: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE

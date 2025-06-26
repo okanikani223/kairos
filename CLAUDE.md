@@ -181,8 +181,10 @@ The project follows Clean Architecture with clear separation of concerns:
 
 ### Technology Stack
 - Java 21
-- Spring Boot 3.5.3 (Web, Security)
+- Spring Boot 3.5.3 (Web, Security, Data JPA, Validation)
 - PostgreSQL 42.7.3
+- Spring Data JPA for ORM and database access
+- Hibernate as JPA implementation provider
 - Maven for build management
 - JWT (JSON Web Token) for authentication using jjwt library 0.12.3
 - Spring Security for authorization and security configuration

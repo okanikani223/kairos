@@ -1,0 +1,74 @@
+package com.github.okanikani.kairos.locations.others.jpa.repositories;
+
+import com.github.okanikani.kairos.locations.others.jpa.entities.LocationJpaEntity;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+
+import java.time.LocalDateTime;
+import java.util.List;
+
+/**
+ * 位置情報のSpring Data JPAリポジトリ
+ * 
+ * 業務要件: 位置情報の永続化操作とクエリ機能を提供
+ */
+@Repository
+public interface LocationJpaRepository extends JpaRepository<LocationJpaEntity, Long> {
+
+    /**
+     * ユーザーIDで位置情報を検索（記録日時の降順）
+     * 
+     * @param userId ユーザーID
+     * @return 該当ユーザーの位置情報一覧
+     */
+    @Query("SELECT l FROM LocationJpaEntity l WHERE l.userId = :userId ORDER BY l.recordedAt DESC")
+    List<LocationJpaEntity> findByUserIdOrderByRecordedAtDesc(@Param("userId") String userId);
+
+    /**
+     * ユーザーIDと期間で位置情報を検索
+     * 
+     * @param userId ユーザーID
+     * @param startDateTime 開始日時
+     * @param endDateTime 終了日時
+     * @return 該当期間の位置情報一覧
+     */
+    @Query("SELECT l FROM LocationJpaEntity l WHERE l.userId = :userId AND l.recordedAt BETWEEN :startDateTime AND :endDateTime ORDER BY l.recordedAt")
+    List<LocationJpaEntity> findByUserIdAndRecordedAtBetween(@Param("userId") String userId,
+                                                             @Param("startDateTime") LocalDateTime startDateTime,
+                                                             @Param("endDateTime") LocalDateTime endDateTime);
+
+    /**
+     * ユーザーIDで記録日時のみを取得（勤怠表生成用）
+     * 
+     * @param userId ユーザーID
+     * @param startDateTime 開始日時
+     * @param endDateTime 終了日時
+     * @return 記録日時のリスト
+     */
+    @Query("SELECT l.recordedAt FROM LocationJpaEntity l WHERE l.userId = :userId AND l.recordedAt BETWEEN :startDateTime AND :endDateTime ORDER BY l.recordedAt")
+    List<LocalDateTime> findRecordedAtByUserIdAndPeriod(@Param("userId") String userId,
+                                                        @Param("startDateTime") LocalDateTime startDateTime,
+                                                        @Param("endDateTime") LocalDateTime endDateTime);
+
+    /**
+     * 期間で位置情報を検索（管理者用）
+     * 
+     * @param startDateTime 開始日時
+     * @param endDateTime 終了日時
+     * @return 該当期間の全位置情報一覧
+     */
+    @Query("SELECT l FROM LocationJpaEntity l WHERE l.recordedAt BETWEEN :startDateTime AND :endDateTime ORDER BY l.recordedAt, l.userId")
+    List<LocationJpaEntity> findByRecordedAtBetween(@Param("startDateTime") LocalDateTime startDateTime,
+                                                    @Param("endDateTime") LocalDateTime endDateTime);
+
+    /**
+     * ユーザーの最新位置情報を取得
+     * 
+     * @param userId ユーザーID
+     * @return 最新の位置情報（存在しない場合はnull）
+     */
+    @Query("SELECT l FROM LocationJpaEntity l WHERE l.userId = :userId ORDER BY l.recordedAt DESC LIMIT 1")
+    LocationJpaEntity findLatestByUserId(@Param("userId") String userId);
+}

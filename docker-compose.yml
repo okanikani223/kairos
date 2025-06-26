@@ -1,0 +1,60 @@
+services:
+  # PostgreSQLデータベースコンテナ
+  postgres:
+    image: postgres:latest
+    container_name: kairos-postgres
+    environment:
+      # データベース接続情報
+      POSTGRES_DB: kairos_db
+      POSTGRES_USER: kairos_user
+      POSTGRES_PASSWORD: kairos_password
+      # UTF-8環境設定
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --locale=C"
+      TZ: Asia/Tokyo
+    ports:
+      # ホストマシンのポート5432をコンテナのポート5432にマッピング
+      - "5432:5432"
+    volumes:
+      # データ永続化のためのボリュームマウント
+      - postgres_data:/var/lib/postgresql/data
+      # 初期化スクリプト用ディレクトリ（将来的にschema.sqlなどを配置）
+      - ./db/init:/docker-entrypoint-initdb.d
+    networks:
+      - kairos-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kairos_user -d kairos_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # pgAdmin4（PostgreSQL管理ツール）- 開発時の確認用
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: kairos-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@kairos.local
+      PGADMIN_DEFAULT_PASSWORD: admin_password
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+      TZ: Asia/Tokyo
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - kairos-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+# ボリューム定義
+volumes:
+  postgres_data:
+    name: kairos_postgres_data
+  pgadmin_data:
+    name: kairos_pgadmin_data
+
+# ネットワーク定義
+networks:
+  kairos-network:
+    name: kairos_network
+    driver: bridge
