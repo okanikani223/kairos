@@ -42,10 +42,21 @@ public class JwtService {
      * ユーザー名からJWTトークンを生成
      */
     public String generateToken(String username) {
+        return generateTokenWithExpiration(username, jwtExpiration);
+    }
+    
+    /**
+     * カスタム有効期限でJWTトークンを生成（テスト用）
+     * 
+     * @param username ユーザー名
+     * @param expirationMs 有効期限（ミリ秒）
+     * @return JWTトークン
+     */
+    public String generateTokenWithExpiration(String username, long expirationMs) {
         return Jwts.builder()
                 .subject(username)
                 .issuedAt(new Date(System.currentTimeMillis()))
-                .expiration(new Date(System.currentTimeMillis() + jwtExpiration))
+                .expiration(new Date(System.currentTimeMillis() + expirationMs))
                 .signWith(getSignInKey())
                 .compact();
     }
