@@ -46,12 +46,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
         
-        // "Bearer " プレフィックス（7文字）を除去してJWTトークンのみを抽出
-        jwt = authHeader.substring(7);
-        userId = jwtService.extractUsername(jwt);
-        
-        if (userId != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            try {
+        try {
+            // "Bearer " プレフィックス（7文字）を除去してJWTトークンのみを抽出
+            jwt = authHeader.substring(7);
+            
+            // トークンが空または空白のみの場合はスキップ
+            if (jwt.trim().isEmpty()) {
+                filterChain.doFilter(request, response);
+                return;
+            }
+            
+            userId = jwtService.extractUsername(jwt);
+            
+            if (userId != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                 UserDetails userDetails = this.userDetailsService.loadUserByUsername(userId);
                 
                 if (jwtService.isTokenValid(jwt, userId)) {
@@ -63,10 +70,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authToken);
                 }
-            } catch (Exception e) {
-                // ユーザーが見つからない、またはアカウントが無効な場合は認証をスキップ
-                logger.debug("JWT認証に失敗しました: " + e.getMessage());
             }
+        } catch (Exception e) {
+            // JWT関連エラー（無効なトークン、期限切れ、パースエラー等）は認証をスキップ
+            logger.debug("JWT認証に失敗しました: " + e.getMessage());
         }
         
         filterChain.doFilter(request, response);
