@@ -15,6 +15,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -22,6 +23,7 @@ import java.time.LocalDateTime;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -45,6 +47,12 @@ class AuthControllerTest {
     @MockitoBean
     private RegisterUserUseCase registerUserUseCase;
     
+    @MockitoBean
+    private JwtService jwtService;
+    
+    @MockitoBean
+    private JwtAuthenticationFilter jwtAuthenticationFilter;
+    
     @Test
     @DisplayName("POST /api/auth/login_正常ケース_JWTトークンが返される")
     void login_正常ケース_JWTトークンが返される() throws Exception {
@@ -61,7 +69,8 @@ class AuthControllerTest {
         // When & Then
         mockMvc.perform(post("/api/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
+                .content(objectMapper.writeValueAsString(request))
+                .with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.accessToken").value("jwt.access.token"))
@@ -86,7 +95,8 @@ class AuthControllerTest {
         // When & Then
         mockMvc.perform(post("/api/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
+                .content(objectMapper.writeValueAsString(request))
+                .with(csrf()))
                 .andExpect(status().isUnauthorized());
     }
     
@@ -99,7 +109,8 @@ class AuthControllerTest {
         // When & Then
         mockMvc.perform(post("/api/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
+                .content(objectMapper.writeValueAsString(request))
+                .with(csrf()))
                 .andExpect(status().isBadRequest());
     }
     
@@ -125,7 +136,8 @@ class AuthControllerTest {
         // When & Then
         mockMvc.perform(post("/api/auth/register")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
+                .content(objectMapper.writeValueAsString(request))
+                .with(csrf()))
                 .andExpect(status().isCreated())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.userId").value("newuser123"))
@@ -155,7 +167,8 @@ class AuthControllerTest {
         // When & Then
         mockMvc.perform(post("/api/auth/register")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
+                .content(objectMapper.writeValueAsString(request))
+                .with(csrf()))
                 .andExpect(status().isConflict());
     }
     
@@ -174,7 +187,8 @@ class AuthControllerTest {
         // When & Then
         mockMvc.perform(post("/api/auth/register")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
+                .content(objectMapper.writeValueAsString(request))
+                .with(csrf()))
                 .andExpect(status().isBadRequest());
     }
     
@@ -196,7 +210,8 @@ class AuthControllerTest {
         // When & Then
         mockMvc.perform(post("/api/auth/register")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
+                .content(objectMapper.writeValueAsString(request))
+                .with(csrf()))
                 .andExpect(status().isBadRequest());
     }
     
@@ -222,7 +237,8 @@ class AuthControllerTest {
         // When & Then
         mockMvc.perform(post("/api/auth/register")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
+                .content(objectMapper.writeValueAsString(request))
+                .with(csrf()))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.role").value("USER"));
     }
@@ -236,7 +252,8 @@ class AuthControllerTest {
         // When & Then
         mockMvc.perform(post("/api/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(invalidJson))
+                .content(invalidJson)
+                .with(csrf()))
                 .andExpect(status().isBadRequest());
     }
     
@@ -249,7 +266,8 @@ class AuthControllerTest {
         // When & Then
         mockMvc.perform(post("/api/auth/register")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(invalidJson))
+                .content(invalidJson)
+                .with(csrf()))
                 .andExpect(status().isBadRequest());
     }
     
@@ -261,7 +279,8 @@ class AuthControllerTest {
         
         // When & Then
         mockMvc.perform(post("/api/auth/login")
-                .content(objectMapper.writeValueAsString(request))) // Content-Type未指定
+                .content(objectMapper.writeValueAsString(request))
+                .with(csrf())) // Content-Type未指定
                 .andExpect(status().isUnsupportedMediaType());
     }
     
