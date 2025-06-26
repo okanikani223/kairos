@@ -1,5 +1,13 @@
 package com.github.okanikani.kairos.security;
 
+import com.github.okanikani.kairos.users.applications.usecases.AuthenticationUseCase;
+import com.github.okanikani.kairos.users.applications.usecases.RegisterUserUseCase;
+import com.github.okanikani.kairos.users.applications.usecases.dto.LoginRequest;
+import com.github.okanikani.kairos.users.applications.usecases.dto.LoginResponse;
+import com.github.okanikani.kairos.users.applications.usecases.dto.RegisterRequest;
+import com.github.okanikani.kairos.users.applications.usecases.dto.UserResponse;
+import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -10,30 +18,35 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/auth")
 public class AuthController {
     
-    private final JwtService jwtService;
+    private final AuthenticationUseCase authenticationUseCase;
+    private final RegisterUserUseCase registerUserUseCase;
     
-    public AuthController(JwtService jwtService) {
-        this.jwtService = jwtService;
+    public AuthController(AuthenticationUseCase authenticationUseCase, RegisterUserUseCase registerUserUseCase) {
+        this.authenticationUseCase = authenticationUseCase;
+        this.registerUserUseCase = registerUserUseCase;
     }
     
     /**
-     * ログイン（簡易実装）
+     * ログイン認証
+     * 
+     * @param request ログインリクエスト
+     * @return ログインレスポンス（JWTトークン含む）
      */
     @PostMapping("/login")
-    public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest request) {
-        // 実際の実装では、ユーザー認証を行う
-        // ここでは簡易的に任意のユーザーIDでトークンを生成
-        String token = jwtService.generateToken(request.userId());
-        return ResponseEntity.ok(new LoginResponse(token));
+    public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
+        LoginResponse response = authenticationUseCase.authenticate(request);
+        return ResponseEntity.ok(response);
     }
     
     /**
-     * ログインリクエスト
+     * ユーザー登録
+     * 
+     * @param request 登録リクエスト
+     * @return 登録されたユーザー情報
      */
-    public record LoginRequest(String userId, String password) {}
-    
-    /**
-     * ログインレスポンス
-     */
-    public record LoginResponse(String token) {}
+    @PostMapping("/register")
+    public ResponseEntity<UserResponse> register(@Valid @RequestBody RegisterRequest request) {
+        UserResponse response = registerUserUseCase.execute(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
 }
