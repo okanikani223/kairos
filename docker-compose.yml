@@ -32,7 +32,7 @@ services:
     image: dpage/pgadmin4:latest
     container_name: kairos-pgadmin
     environment:
-      PGADMIN_DEFAULT_EMAIL: admin@kairos.local
+      PGADMIN_DEFAULT_EMAIL: admin@example.com
       PGADMIN_DEFAULT_PASSWORD: admin_password
       PGADMIN_CONFIG_SERVER_MODE: 'False'
       TZ: Asia/Tokyo
