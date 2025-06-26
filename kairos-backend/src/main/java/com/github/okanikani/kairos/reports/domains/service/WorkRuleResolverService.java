@@ -1,11 +1,13 @@
 package com.github.okanikani.kairos.reports.domains.service;
 
+import com.github.okanikani.kairos.commons.service.LocationFilteringService.WorkplaceLocation;
 import com.github.okanikani.kairos.reports.domains.models.vos.User;
 import com.github.okanikani.kairos.reports.domains.roundings.RoundingSetting;
 
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.Optional;
 
 /**
  * 勤務ルール解決サービス
@@ -49,6 +51,21 @@ public interface WorkRuleResolverService {
      * @return 勤務ルール情報
      */
     WorkRuleInfo resolveWorkRule(User user, LocalDate workDate);
+    
+    /**
+     * 指定日時点で有効な作業場所位置情報を取得
+     * 
+     * 位置情報フィルタリング機能で使用する作業場所の位置情報を解決する
+     * 
+     * 取得優先順位：
+     * 1. WorkRule（有効期間内の勤怠ルール）- 最優先
+     * 2. DefaultWorkRule（デフォルト勤怠ルール）- フォールバック
+     * 
+     * @param user ユーザー
+     * @param workDate 勤務日
+     * @return 作業場所位置情報（設定されていない場合はOptional.empty()）
+     */
+    Optional<WorkplaceLocation> resolveWorkplaceLocation(User user, LocalDate workDate);
     
     /**
      * 統合された勤務ルール情報

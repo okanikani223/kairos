@@ -43,6 +43,14 @@ jwt:
   secret: kairosSecretKeyForJWTGenerationThisShouldBeChangedInProduction
   expiration: 86400000
 
+# Kairos固有設定
+kairos:
+  location:
+    filtering:
+      enabled: false  # デフォルトは無効（後方互換性のため）
+      default-tolerance-meters: 100  # デフォルト許容距離100メートル
+      strict-mode: false  # 寛容モード（作業場所未設定時は警告のみ）
+
 # サーバー設定
 server:
   error:

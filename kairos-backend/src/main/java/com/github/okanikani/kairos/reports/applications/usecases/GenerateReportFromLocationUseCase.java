@@ -1,5 +1,7 @@
 package com.github.okanikani.kairos.reports.applications.usecases;
 
+import com.github.okanikani.kairos.commons.config.LocationFilteringProperties;
+import com.github.okanikani.kairos.commons.service.LocationFilteringService.WorkplaceLocation;
 import com.github.okanikani.kairos.reports.applications.usecases.dto.GenerateReportFromLocationRequest;
 import com.github.okanikani.kairos.reports.applications.usecases.dto.ReportResponse;
 import com.github.okanikani.kairos.reports.applications.usecases.dto.DetailDto;
@@ -16,6 +18,8 @@ import com.github.okanikani.kairos.reports.domains.service.LocationService;
 import com.github.okanikani.kairos.reports.domains.service.ReportPeriodCalculator;
 import com.github.okanikani.kairos.reports.domains.service.SummaryFactory;
 import com.github.okanikani.kairos.reports.domains.service.WorkRuleResolverService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.time.DayOfWeek;
@@ -24,22 +28,28 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 @Service
 public class GenerateReportFromLocationUseCase {
     
+    private static final Logger logger = LoggerFactory.getLogger(GenerateReportFromLocationUseCase.class);
+    
     private final LocationService locationService;
     private final ReportRepository reportRepository;
     private final WorkRuleResolverService workRuleResolverService;
+    private final LocationFilteringProperties locationFilteringProperties;
     
     public GenerateReportFromLocationUseCase(
         LocationService locationService, 
         ReportRepository reportRepository,
-        WorkRuleResolverService workRuleResolverService) {
+        WorkRuleResolverService workRuleResolverService,
+        LocationFilteringProperties locationFilteringProperties) {
         
         this.locationService = Objects.requireNonNull(locationService, "locationServiceは必須です");
         this.reportRepository = Objects.requireNonNull(reportRepository, "reportRepositoryは必須です");
         this.workRuleResolverService = Objects.requireNonNull(workRuleResolverService, "workRuleResolverServiceは必須です");
+        this.locationFilteringProperties = Objects.requireNonNull(locationFilteringProperties, "locationFilteringPropertiesは必須です");
     }
     
     public ReportResponse execute(GenerateReportFromLocationRequest request) {
@@ -54,8 +64,8 @@ public class GenerateReportFromLocationUseCase {
         ReportPeriodCalculator.ReportPeriod period = 
             ReportPeriodCalculator.calculatePeriod(request.yearMonth(), closingDay);
         
-        // 期間内の位置情報記録日時を取得
-        List<LocalDateTime> locationTimes = locationService.getLocationRecordTimes(period, user);
+        // 期間内の位置情報記録日時を取得（作業場所フィルタリング対応）
+        List<LocalDateTime> locationTimes = getLocationRecordTimes(period, user);
         
         // 丸め設定を取得
         RoundingSetting roundingSetting = workRuleResolverService.createRoundingSetting(user);
@@ -84,6 +94,53 @@ public class GenerateReportFromLocationUseCase {
         
         // レスポンス作成
         return ReportMapper.toReportResponse(report);
+    }
+    
+    /**
+     * 位置情報記録日時を取得（作業場所フィルタリング対応）
+     * 
+     * 設定に応じて作業場所からの距離に基づいたフィルタリングを実行する
+     * 
+     * @param period 勤怠計算期間
+     * @param user ユーザー
+     * @return 位置情報記録日時リスト
+     */
+    private List<LocalDateTime> getLocationRecordTimes(ReportPeriodCalculator.ReportPeriod period, User user) {
+        
+        // 位置情報フィルタリングが無効な場合は従来通りの処理
+        if (!locationFilteringProperties.enabled()) {
+            logger.debug("位置情報フィルタリング機能は無効です。全ての位置情報を取得します。");
+            return locationService.getLocationRecordTimes(period, user);
+        }
+        
+        // 作業場所情報を取得（期間終了日時点の作業場所を使用）
+        Optional<WorkplaceLocation> workplace = workRuleResolverService.resolveWorkplaceLocation(user, period.endDate());
+        
+        if (workplace.isEmpty()) {
+            String message = "作業場所情報が設定されていません。ユーザー: " + user.userId() + ", 期間: " + period;
+            
+            if (locationFilteringProperties.strictMode()) {
+                // 厳密モード: エラーとして扱う
+                throw new IllegalStateException(message + " 厳密モードでは作業場所情報が必須です。");
+            } else {
+                // 寛容モード: 警告ログを出力し、全位置情報を対象とする
+                logger.warn(message + " 全ての位置情報を勤怠対象とします。");
+                return locationService.getLocationRecordTimes(period, user);
+            }
+        }
+        
+        // 作業場所近辺の位置情報のみを取得
+        WorkplaceLocation workplaceLocation = workplace.get();
+        logger.info("位置情報フィルタリングを実行します。作業場所: 緯度={}, 経度={}, 許容距離={}m, ユーザー: {}", 
+            workplaceLocation.latitude(), workplaceLocation.longitude(), 
+            workplaceLocation.radiusMeters(), user.userId());
+        
+        List<LocalDateTime> filteredTimes = locationService.getLocationRecordTimesNearWorkplace(period, user, workplaceLocation);
+        
+        logger.info("位置情報フィルタリング結果: {}件の位置情報を取得しました。ユーザー: {}", 
+            filteredTimes.size(), user.userId());
+        
+        return filteredTimes;
     }
     
     /**
