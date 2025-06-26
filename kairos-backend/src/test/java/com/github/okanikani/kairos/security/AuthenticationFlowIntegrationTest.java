@@ -14,11 +14,11 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 
@@ -32,11 +32,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
 @AutoConfigureMockMvc
+@Import(IntegrationTestSecurityConfig.class)
 @TestPropertySource(properties = {
     "jwt.secret=test-secret-key-for-integration-testing-must-be-at-least-256-bits",
     "jwt.expiration=86400000"
 })
-@Transactional
 @DisplayName("認証フロー統合テスト")
 class AuthenticationFlowIntegrationTest {
     
