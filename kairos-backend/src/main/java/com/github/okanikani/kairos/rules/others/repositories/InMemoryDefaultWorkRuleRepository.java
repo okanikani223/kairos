@@ -3,6 +3,7 @@ package com.github.okanikani.kairos.rules.others.repositories;
 import com.github.okanikani.kairos.rules.domains.models.entities.DefaultWorkRule;
 import com.github.okanikani.kairos.rules.domains.models.repositories.DefaultWorkRuleRepository;
 import com.github.okanikani.kairos.rules.domains.models.vos.User;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -16,6 +17,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * TODO: PostgreSQL等を使用した永続化実装への置き換え
  */
 @Repository
+@Profile("dev")
 public class InMemoryDefaultWorkRuleRepository implements DefaultWorkRuleRepository {
     
     private final Map<Long, DefaultWorkRule> defaultWorkRules = new ConcurrentHashMap<>();

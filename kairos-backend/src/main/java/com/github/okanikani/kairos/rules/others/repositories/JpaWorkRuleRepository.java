@@ -5,7 +5,7 @@ import com.github.okanikani.kairos.rules.domains.models.repositories.WorkRuleRep
 import com.github.okanikani.kairos.rules.domains.models.vos.User;
 import com.github.okanikani.kairos.rules.others.jpa.entities.WorkRuleJpaEntity;
 import com.github.okanikani.kairos.rules.others.jpa.repositories.WorkRuleJpaRepository;
-import org.springframework.context.annotation.Primary;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
  * 業務要件: ドメインモデルとJPAエンティティ間の変換とデータ永続化を担当
  */
 @Repository
-@Primary
+@Profile("prod")
 public class JpaWorkRuleRepository implements WorkRuleRepository {
 
     private final WorkRuleJpaRepository workRuleJpaRepository;

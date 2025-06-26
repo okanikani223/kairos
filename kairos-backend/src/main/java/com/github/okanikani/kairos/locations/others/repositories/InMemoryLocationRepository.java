@@ -3,6 +3,7 @@ package com.github.okanikani.kairos.locations.others.repositories;
 import com.github.okanikani.kairos.locations.domains.models.entities.Location;
 import com.github.okanikani.kairos.locations.domains.models.repositories.LocationRepository;
 import com.github.okanikani.kairos.locations.domains.models.vos.User;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
@@ -17,6 +18,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * TODO: PostgreSQL等を使用した永続化実装への置き換え
  */
 @Repository
+@Profile("dev")
 public class InMemoryLocationRepository implements LocationRepository {
     
     private final Map<Long, Location> locations = new ConcurrentHashMap<>();

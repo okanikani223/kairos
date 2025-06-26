@@ -1,0 +1,23 @@
+# テスト環境設定
+spring:
+  # テスト環境ではInMemory実装を使用
+  profiles:
+    active: dev
+  
+  # 自動設定の除外（InMemory実装使用時にデータソース関連の自動設定を除外）
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+      - org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration
+      - org.springframework.boot.autoconfigure.transaction.TransactionAutoConfiguration
+
+# JWT設定（テスト用）
+jwt:
+  secret: testSecretKeyForJWTGenerationThisIsOnlyForTesting
+  expiration: 3600000  # 1時間（テスト用短縮）
+
+# ログ設定（テスト環境）
+logging:
+  level:
+    root: WARN
+    com.github.okanikani.kairos: DEBUG

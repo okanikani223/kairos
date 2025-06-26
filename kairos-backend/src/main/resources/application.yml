@@ -3,6 +3,10 @@ spring:
   application:
     name: kairos
   
+  # デフォルトプロファイル設定（指定がない場合は開発環境）
+  profiles:
+    active: dev
+  
   # データソース設定
   datasource:
     url: jdbc:postgresql://localhost:5432/kairos_db

@@ -4,6 +4,7 @@ import com.github.okanikani.kairos.commons.exceptions.ResourceNotFoundException;
 import com.github.okanikani.kairos.reports.domains.models.entities.Report;
 import com.github.okanikani.kairos.reports.domains.models.repositories.ReportRepository;
 import com.github.okanikani.kairos.reports.domains.models.vos.User;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Repository;
 
 import java.time.YearMonth;
@@ -20,6 +21,7 @@ import java.util.Objects;
  * TODO: PostgreSQL等を使用した永続化実装への置き換え
  */
 @Repository
+@Profile("dev")
 public class InMemoryReportRepository implements ReportRepository {
     
     private final Map<String, Report> storage = new HashMap<>();

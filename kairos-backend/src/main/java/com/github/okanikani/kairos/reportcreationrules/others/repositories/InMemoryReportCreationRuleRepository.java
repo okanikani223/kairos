@@ -3,6 +3,7 @@ package com.github.okanikani.kairos.reportcreationrules.others.repositories;
 import com.github.okanikani.kairos.reportcreationrules.domains.models.entities.ReportCreationRule;
 import com.github.okanikani.kairos.reportcreationrules.domains.models.repositories.ReportCreationRuleRepository;
 import com.github.okanikani.kairos.reportcreationrules.domains.models.vos.User;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -16,6 +17,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * TODO: PostgreSQL等を使用した永続化実装への置き換え
  */
 @Repository
+@Profile("dev")
 public class InMemoryReportCreationRuleRepository implements ReportCreationRuleRepository {
     
     private final Map<Long, ReportCreationRule> reportCreationRules = new ConcurrentHashMap<>();
