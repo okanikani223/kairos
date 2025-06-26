@@ -1,0 +1,29 @@
+# 開発環境設定
+spring:
+  # 開発環境ではInMemory実装を使用するため、データソース関連の自動設定を除外
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+      - org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration
+      - org.springframework.boot.autoconfigure.transaction.TransactionAutoConfiguration
+
+# JWT設定（開発環境用）
+jwt:
+  secret: devSecretKeyForJWTGenerationThisIsOnlyForDevelopment
+  expiration: 86400000  # 24時間
+
+# サーバー設定（開発環境）
+server:
+  error:
+    include-message: always
+    include-binding-errors: always
+    include-stacktrace: always  # 開発環境ではスタックトレース表示
+
+# ログ設定（開発環境）
+logging:
+  level:
+    root: INFO
+    com.github.okanikani.kairos: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    org.springframework.web: DEBUG  # 開発環境ではWebログも詳細表示

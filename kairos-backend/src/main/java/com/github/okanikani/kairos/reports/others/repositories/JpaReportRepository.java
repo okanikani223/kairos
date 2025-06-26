@@ -6,7 +6,7 @@ import com.github.okanikani.kairos.reports.domains.models.repositories.ReportRep
 import com.github.okanikani.kairos.reports.domains.models.vos.*;
 import com.github.okanikani.kairos.reports.others.jpa.entities.*;
 import com.github.okanikani.kairos.reports.others.jpa.repositories.ReportJpaRepository;
-import org.springframework.context.annotation.Primary;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Repository;
 
 import java.time.YearMonth;
@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
  * 業務要件: ドメインモデルとJPAエンティティ間の変換とデータ永続化を担当
  */
 @Repository
-@Primary
+@Profile("prod")
 public class JpaReportRepository implements ReportRepository {
 
     private final ReportJpaRepository reportJpaRepository;

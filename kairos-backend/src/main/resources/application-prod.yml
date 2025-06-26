@@ -1,0 +1,52 @@
+# 本番環境設定
+spring:
+  # 本番環境ではPostgreSQLを使用
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/kairos_db}
+    username: ${DATABASE_USERNAME:kairos_user}
+    password: ${DATABASE_PASSWORD:kairos_password}
+    driver-class-name: org.postgresql.Driver
+    
+    # HikariCP設定（本番環境用）
+    hikari:
+      connection-timeout: 30000
+      maximum-pool-size: 10
+      minimum-idle: 5
+      idle-timeout: 600000
+      max-lifetime: 1800000
+  
+  # JPA/Hibernate設定（本番環境）
+  jpa:
+    hibernate:
+      ddl-auto: validate  # 本番環境では検証のみ（破壊的な変更を防ぐ）
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: false  # 本番環境ではフォーマットなし
+        default_schema: public
+        jdbc:
+          batch_size: 25  # パフォーマンス向上のためバッチ処理
+        order_inserts: true
+        order_updates: true
+    show-sql: false  # 本番環境ではSQL非表示
+    open-in-view: false
+
+# JWT設定（本番環境用）
+jwt:
+  secret: ${JWT_SECRET:changeMeInProductionWithSecureRandomKey}
+  expiration: ${JWT_EXPIRATION:86400000}  # デフォルト24時間
+
+# サーバー設定（本番環境）
+server:
+  error:
+    include-message: never  # 本番環境ではエラーメッセージを隠蔽
+    include-binding-errors: never
+    include-stacktrace: never  # 本番環境ではスタックトレース非表示
+
+# ログ設定（本番環境）
+logging:
+  level:
+    root: WARN
+    com.github.okanikani.kairos: INFO
+    org.hibernate.SQL: WARN
+    org.springframework: WARN

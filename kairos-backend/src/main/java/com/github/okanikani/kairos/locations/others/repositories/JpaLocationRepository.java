@@ -5,7 +5,7 @@ import com.github.okanikani.kairos.locations.domains.models.repositories.Locatio
 import com.github.okanikani.kairos.locations.domains.models.vos.User;
 import com.github.okanikani.kairos.locations.others.jpa.entities.LocationJpaEntity;
 import com.github.okanikani.kairos.locations.others.jpa.repositories.LocationJpaRepository;
-import org.springframework.context.annotation.Primary;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
  * 業務要件: ドメインモデルとJPAエンティティ間の変換とデータ永続化を担当
  */
 @Repository
-@Primary
+@Profile("prod")
 public class JpaLocationRepository implements LocationRepository {
 
     private final LocationJpaRepository locationJpaRepository;
