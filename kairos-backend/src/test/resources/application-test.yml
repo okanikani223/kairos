@@ -19,5 +19,7 @@ jwt:
 # ログ設定（テスト環境）
 logging:
   level:
-    root: WARN
-    com.github.okanikani.kairos: DEBUG
+    root: ERROR
+    com.github.okanikani.kairos: INFO
+    # GlobalExceptionHandlerのログ抑制（テスト時）
+    com.github.okanikani.kairos.commons.controllers.GlobalExceptionHandler: ERROR

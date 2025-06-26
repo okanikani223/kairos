@@ -6,12 +6,26 @@ import com.github.okanikani.kairos.commons.exceptions.BusinessRuleViolationExcep
 import com.github.okanikani.kairos.commons.exceptions.DuplicateResourceException;
 import com.github.okanikani.kairos.commons.exceptions.ResourceNotFoundException;
 import com.github.okanikani.kairos.commons.exceptions.ValidationException;
+import com.github.okanikani.kairos.commons.monitoring.ErrorMetricsService;
+import io.jsonwebtoken.JwtException;
+import io.jsonwebtoken.MalformedJwtException;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.security.SignatureException;
+import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.web.HttpRequestMethodNotSupportedException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+
+import java.util.stream.Collectors;
 
 /**
  * グローバル例外ハンドラー
@@ -27,6 +41,16 @@ public class GlobalExceptionHandler {
     
     private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
     
+    private final ErrorMetricsService errorMetricsService;
+    
+    public GlobalExceptionHandler() {
+        this.errorMetricsService = null; // テスト環境では無効化
+    }
+    
+    public GlobalExceptionHandler(ErrorMetricsService errorMetricsService) {
+        this.errorMetricsService = errorMetricsService;
+    }
+    
     /**
      * リソース不存在例外のハンドリング
      * 
@@ -34,13 +58,16 @@ public class GlobalExceptionHandler {
      * @return 404 Not Found レスポンス
      */
     @ExceptionHandler(ResourceNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleResourceNotFound(ResourceNotFoundException ex) {
-        logger.warn("リソースが見つかりません: {}", ex.getMessage());
+    public ResponseEntity<ErrorResponse> handleResourceNotFound(ResourceNotFoundException ex, HttpServletRequest request) {
+        String errorCode = "RESOURCE_NOT_FOUND";
+        logger.warn("リソースが見つかりません: {} [errorCode={}]", ex.getMessage(), errorCode);
         
-        ErrorResponse errorResponse = ErrorResponse.of(
-            "RESOURCE_NOT_FOUND",
-            ex.getMessage()
-        );
+        // エラーメトリクス記録（本番環境のみ）
+        if (errorMetricsService != null) {
+            errorMetricsService.recordError(errorCode, request.getRequestURI(), HttpStatus.NOT_FOUND.value());
+        }
+        
+        ErrorResponse errorResponse = ErrorResponse.of(errorCode, ex.getMessage());
         
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
     }
@@ -181,6 +208,169 @@ public class GlobalExceptionHandler {
         );
         
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
+    
+    /**
+     * 不正な状態例外のハンドリング
+     * 
+     * システム内部状態の不整合で発生します。
+     * 
+     * @param ex IllegalStateException
+     * @return 500 Internal Server Error レスポンス
+     */
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<ErrorResponse> handleIllegalState(IllegalStateException ex) {
+        logger.error("システム内部状態エラーが発生しました: {}", ex.getMessage(), ex);
+        
+        ErrorResponse errorResponse = ErrorResponse.of(
+            "ILLEGAL_STATE_ERROR",
+            "システム内部でエラーが発生しました。管理者にお問い合わせください。"
+        );
+        
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+    }
+    
+    /**
+     * JWT関連例外のハンドリング
+     * 
+     * JWTトークンの不正、期限切れ、署名無効などで発生します。
+     * 
+     * @param ex JwtException
+     * @return 401 Unauthorized レスポンス
+     */
+    @ExceptionHandler({
+        JwtException.class,
+        MalformedJwtException.class,
+        ExpiredJwtException.class,
+        SignatureException.class
+    })
+    public ResponseEntity<ErrorResponse> handleJwtException(Exception ex) {
+        logger.warn("JWT認証エラーが発生しました: {}", ex.getMessage());
+        
+        ErrorResponse errorResponse = ErrorResponse.of(
+            "JWT_AUTHENTICATION_ERROR",
+            "認証に失敗しました。再度ログインしてください。"
+        );
+        
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
+    }
+    
+    /**
+     * Spring MVCバリデーション例外のハンドリング
+     * 
+     * @Valid アノテーションによるバリデーション失敗で発生します。
+     * 
+     * @param ex MethodArgumentNotValidException
+     * @return 400 Bad Request レスポンス
+     */
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ErrorResponse> handleMethodArgumentNotValid(MethodArgumentNotValidException ex) {
+        logger.warn("リクエストバリデーションエラーが発生しました: {}", ex.getMessage());
+        
+        String errorMessage = ex.getBindingResult().getFieldErrors().stream()
+            .map(error -> error.getField() + ": " + error.getDefaultMessage())
+            .collect(Collectors.joining(", "));
+        
+        ErrorResponse errorResponse = ErrorResponse.of(
+            "REQUEST_VALIDATION_ERROR",
+            "リクエストパラメータが不正です: " + errorMessage
+        );
+        
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
+    
+    /**
+     * HTTPメッセージ読み取り例外のハンドリング
+     * 
+     * JSONパース失敗などで発生します。
+     * 
+     * @param ex HttpMessageNotReadableException
+     * @return 400 Bad Request レスポンス
+     */
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponse> handleHttpMessageNotReadable(HttpMessageNotReadableException ex) {
+        logger.warn("リクエストボディパースエラーが発生しました: {}", ex.getMessage());
+        
+        ErrorResponse errorResponse = ErrorResponse.of(
+            "REQUEST_PARSE_ERROR",
+            "リクエストボディの形式が正しくありません。JSON形式で送信してください。"
+        );
+        
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
+    
+    /**
+     * HTTPメソッド不正例外のハンドリング
+     * 
+     * @param ex HttpRequestMethodNotSupportedException
+     * @return 405 Method Not Allowed レスポンス
+     */
+    @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
+    public ResponseEntity<ErrorResponse> handleHttpRequestMethodNotSupported(HttpRequestMethodNotSupportedException ex) {
+        logger.warn("サポートされていないHTTPメソッドが指定されました: {}", ex.getMessage());
+        
+        ErrorResponse errorResponse = ErrorResponse.of(
+            "METHOD_NOT_ALLOWED",
+            "指定されたHTTPメソッドはサポートされていません。"
+        );
+        
+        return ResponseEntity.status(HttpStatus.METHOD_NOT_ALLOWED).body(errorResponse);
+    }
+    
+    /**
+     * 必須パラメータ不足例外のハンドリング
+     * 
+     * @param ex MissingServletRequestParameterException
+     * @return 400 Bad Request レスポンス
+     */
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<ErrorResponse> handleMissingServletRequestParameter(MissingServletRequestParameterException ex) {
+        logger.warn("必須パラメータが不足しています: {}", ex.getMessage());
+        
+        ErrorResponse errorResponse = ErrorResponse.of(
+            "MISSING_PARAMETER",
+            "必須パラメータが不足しています: " + ex.getParameterName()
+        );
+        
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+    }
+    
+    /**
+     * データ整合性違反例外のハンドリング
+     * 
+     * データベース制約違反で発生します。
+     * 
+     * @param ex DataIntegrityViolationException
+     * @return 409 Conflict レスポンス
+     */
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ErrorResponse> handleDataIntegrityViolation(DataIntegrityViolationException ex) {
+        logger.warn("データ整合性違反が発生しました: {}", ex.getMessage());
+        
+        ErrorResponse errorResponse = ErrorResponse.of(
+            "DATA_INTEGRITY_VIOLATION",
+            "データの整合性制約に違反しています。データを確認してください。"
+        );
+        
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
+    }
+    
+    /**
+     * Spring Security アクセス拒否例外のハンドリング
+     * 
+     * @param ex AccessDeniedException
+     * @return 403 Forbidden レスポンス
+     */
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ErrorResponse> handleAccessDenied(AccessDeniedException ex) {
+        logger.warn("アクセス拒否が発生しました: {}", ex.getMessage());
+        
+        ErrorResponse errorResponse = ErrorResponse.of(
+            "ACCESS_DENIED",
+            "このリソースにアクセスする権限がありません。"
+        );
+        
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorResponse);
     }
     
     /**
