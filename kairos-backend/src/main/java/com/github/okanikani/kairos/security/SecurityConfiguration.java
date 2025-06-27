@@ -15,8 +15,11 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter;
 import org.springframework.web.cors.CorsConfiguration;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
@@ -69,6 +72,11 @@ public class SecurityConfiguration {
                         )
                 )
                 
+                // 認証失敗時の処理（401を返す）
+                .exceptionHandling(exceptions -> exceptions
+                        .authenticationEntryPoint(authenticationEntryPoint())
+                )
+                
                 // 認証プロバイダーとフィルター設定
                 .authenticationProvider(authenticationProvider())
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
@@ -111,6 +119,19 @@ public class SecurityConfiguration {
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
+    }
+    
+    /**
+     * 認証失敗時のエントリーポイント
+     * 
+     * @return 認証エントリーポイント
+     */
+    @Bean
+    public AuthenticationEntryPoint authenticationEntryPoint() {
+        return (HttpServletRequest request, HttpServletResponse response, 
+                org.springframework.security.core.AuthenticationException authException) -> {
+            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "認証が必要です");
+        };
     }
     
     /**
