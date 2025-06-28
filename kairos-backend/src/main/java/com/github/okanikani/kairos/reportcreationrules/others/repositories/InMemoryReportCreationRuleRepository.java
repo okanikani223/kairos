@@ -61,4 +61,12 @@ public class InMemoryReportCreationRuleRepository implements ReportCreationRuleR
     public List<ReportCreationRule> findAll() {
         return List.copyOf(reportCreationRules.values());
     }
+    
+    /**
+     * テスト用のクリアメソッド
+     */
+    public void clear() {
+        reportCreationRules.clear();
+        idGenerator.set(1);
+    }
 }

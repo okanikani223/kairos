@@ -80,4 +80,12 @@ public class InMemoryDefaultWorkRuleRepository implements DefaultWorkRuleReposit
     public List<DefaultWorkRule> findAll() {
         return List.copyOf(defaultWorkRules.values());
     }
+    
+    /**
+     * テスト用のクリアメソッド
+     */
+    public void clear() {
+        defaultWorkRules.clear();
+        idGenerator.set(1);
+    }
 }

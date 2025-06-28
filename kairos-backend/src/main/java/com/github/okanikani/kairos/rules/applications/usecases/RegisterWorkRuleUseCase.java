@@ -39,9 +39,9 @@ public class RegisterWorkRuleUseCase {
         WorkRule workRule = WorkRuleMapper.toWorkRule(request);
         
         // 保存
-        workRuleRepository.save(workRule);
+        WorkRule savedWorkRule = workRuleRepository.save(workRule);
         
         // レスポンス作成
-        return WorkRuleMapper.toWorkRuleResponse(workRule);
+        return WorkRuleMapper.toWorkRuleResponse(savedWorkRule);
     }
 }

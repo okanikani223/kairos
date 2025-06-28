@@ -14,8 +14,9 @@ public interface WorkRuleRepository {
     /**
      * 勤怠ルールを保存する
      * @param workRule 保存する勤怠ルール
+     * @return 保存された勤怠ルール（IDが設定される）
      */
-    void save(WorkRule workRule);
+    WorkRule save(WorkRule workRule);
     
     /**
      * IDで勤怠ルールを検索する
