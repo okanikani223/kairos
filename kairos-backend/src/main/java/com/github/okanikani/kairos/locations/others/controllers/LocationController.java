@@ -5,9 +5,14 @@ import com.github.okanikani.kairos.locations.applications.usecases.FindAllLocati
 import com.github.okanikani.kairos.locations.applications.usecases.FindLocationByIdUseCase;
 import com.github.okanikani.kairos.locations.applications.usecases.RegisterLocationUseCase;
 import com.github.okanikani.kairos.locations.applications.usecases.SearchLocationsUseCase;
+import com.github.okanikani.kairos.locations.applications.usecases.UpdateLocationUseCase;
+import com.github.okanikani.kairos.locations.applications.usecases.PageableSearchLocationsUseCase;
 import com.github.okanikani.kairos.locations.applications.usecases.dto.RegisterLocationRequest;
+import com.github.okanikani.kairos.locations.applications.usecases.dto.UpdateLocationRequest;
 import com.github.okanikani.kairos.locations.applications.usecases.dto.LocationResponse;
 import com.github.okanikani.kairos.locations.applications.usecases.dto.SearchLocationsRequest;
+import com.github.okanikani.kairos.locations.applications.usecases.dto.PageableSearchLocationsRequest;
+import com.github.okanikani.kairos.locations.applications.usecases.dto.PagedLocationResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -27,13 +32,17 @@ public class LocationController {
     private final FindLocationByIdUseCase findLocationByIdUseCase;
     private final DeleteLocationUseCase deleteLocationUseCase;
     private final SearchLocationsUseCase searchLocationsUseCase;
+    private final UpdateLocationUseCase updateLocationUseCase;
+    private final PageableSearchLocationsUseCase pageableSearchLocationsUseCase;
     
-    public LocationController(RegisterLocationUseCase registerLocationUseCase, FindAllLocationsUseCase findAllLocationsUseCase, FindLocationByIdUseCase findLocationByIdUseCase, DeleteLocationUseCase deleteLocationUseCase, SearchLocationsUseCase searchLocationsUseCase) {
+    public LocationController(RegisterLocationUseCase registerLocationUseCase, FindAllLocationsUseCase findAllLocationsUseCase, FindLocationByIdUseCase findLocationByIdUseCase, DeleteLocationUseCase deleteLocationUseCase, SearchLocationsUseCase searchLocationsUseCase, UpdateLocationUseCase updateLocationUseCase, PageableSearchLocationsUseCase pageableSearchLocationsUseCase) {
         this.registerLocationUseCase = Objects.requireNonNull(registerLocationUseCase, "registerLocationUseCaseは必須です");
         this.findAllLocationsUseCase = Objects.requireNonNull(findAllLocationsUseCase, "findAllLocationsUseCaseは必須です");
         this.findLocationByIdUseCase = Objects.requireNonNull(findLocationByIdUseCase, "findLocationByIdUseCaseは必須です");
         this.deleteLocationUseCase = Objects.requireNonNull(deleteLocationUseCase, "deleteLocationUseCaseは必須です");
         this.searchLocationsUseCase = Objects.requireNonNull(searchLocationsUseCase, "searchLocationsUseCaseは必須です");
+        this.updateLocationUseCase = Objects.requireNonNull(updateLocationUseCase, "updateLocationUseCaseは必須です");
+        this.pageableSearchLocationsUseCase = Objects.requireNonNull(pageableSearchLocationsUseCase, "pageableSearchLocationsUseCaseは必須です");
     }
     
     @PostMapping
@@ -57,6 +66,16 @@ public class LocationController {
         return ResponseEntity.ok(response);
     }
     
+    @PutMapping("/{id}")
+    public ResponseEntity<LocationResponse> updateLocation(
+            @PathVariable(name = "id") Long id,
+            @RequestBody UpdateLocationRequest request,
+            Authentication authentication) {
+        String userId = authentication.getName();
+        LocationResponse response = updateLocationUseCase.execute(id, request, userId);
+        return ResponseEntity.ok(response);
+    }
+    
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteLocation(@PathVariable(name = "id") Long id, Authentication authentication) {
         String userId = authentication.getName();
@@ -77,6 +96,29 @@ public class LocationController {
         String userId = authentication.getName();
         SearchLocationsRequest request = new SearchLocationsRequest(startDateTime, endDateTime);
         List<LocationResponse> response = searchLocationsUseCase.execute(request, userId);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/search/paged")
+    public ResponseEntity<PagedLocationResponse> searchLocationsWithPagination(
+            @RequestParam("startDateTime") String startDateTimeStr,
+            @RequestParam("endDateTime") String endDateTimeStr,
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "size", defaultValue = "10") int size,
+            Authentication authentication) {
+        // 日時文字列のパース処理
+        // フォーマット: "2024-01-01T09:00:00"
+        LocalDateTime startDateTime = LocalDateTime.parse(startDateTimeStr, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+        LocalDateTime endDateTime = LocalDateTime.parse(endDateTimeStr, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+        
+        String userId = authentication.getName();
+        PageableSearchLocationsRequest request = new PageableSearchLocationsRequest(
+            startDateTime, 
+            endDateTime, 
+            page, 
+            size
+        );
+        PagedLocationResponse response = pageableSearchLocationsUseCase.execute(request, userId);
         return ResponseEntity.ok(response);
     }
 }

@@ -1,6 +1,8 @@
 package com.github.okanikani.kairos.locations.others.jpa.repositories;
 
 import com.github.okanikani.kairos.locations.others.jpa.entities.LocationJpaEntity;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -38,6 +40,21 @@ public interface LocationJpaRepository extends JpaRepository<LocationJpaEntity, 
     List<LocationJpaEntity> findByUserIdAndRecordedAtBetween(@Param("userId") String userId,
                                                              @Param("startDateTime") LocalDateTime startDateTime,
                                                              @Param("endDateTime") LocalDateTime endDateTime);
+
+    /**
+     * ユーザーIDと期間で位置情報をページネーション付きで検索
+     * 
+     * @param userId ユーザーID
+     * @param startDateTime 開始日時
+     * @param endDateTime 終了日時
+     * @param pageable ページング情報
+     * @return 該当期間の位置情報ページ
+     */
+    @Query("SELECT l FROM LocationJpaEntity l WHERE l.userId = :userId AND l.recordedAt BETWEEN :startDateTime AND :endDateTime")
+    Page<LocationJpaEntity> findByUserIdAndRecordedAtBetween(@Param("userId") String userId,
+                                                             @Param("startDateTime") LocalDateTime startDateTime,
+                                                             @Param("endDateTime") LocalDateTime endDateTime,
+                                                             Pageable pageable);
 
     /**
      * ユーザーIDで記録日時のみを取得（勤怠表生成用）

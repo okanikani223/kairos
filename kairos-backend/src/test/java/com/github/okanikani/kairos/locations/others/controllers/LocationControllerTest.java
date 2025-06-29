@@ -9,8 +9,12 @@ import com.github.okanikani.kairos.locations.applications.usecases.FindAllLocati
 import com.github.okanikani.kairos.locations.applications.usecases.FindLocationByIdUseCase;
 import com.github.okanikani.kairos.locations.applications.usecases.RegisterLocationUseCase;
 import com.github.okanikani.kairos.locations.applications.usecases.SearchLocationsUseCase;
+import com.github.okanikani.kairos.locations.applications.usecases.UpdateLocationUseCase;
+import com.github.okanikani.kairos.locations.applications.usecases.PageableSearchLocationsUseCase;
 import com.github.okanikani.kairos.locations.applications.usecases.dto.RegisterLocationRequest;
+import com.github.okanikani.kairos.locations.applications.usecases.dto.UpdateLocationRequest;
 import com.github.okanikani.kairos.locations.applications.usecases.dto.LocationResponse;
+import com.github.okanikani.kairos.locations.applications.usecases.dto.PagedLocationResponse;
 import com.github.okanikani.kairos.security.JwtService;
 import com.github.okanikani.kairos.commons.controllers.GlobalExceptionHandler;
 import org.junit.jupiter.api.BeforeEach;
@@ -60,6 +64,12 @@ class LocationControllerTest {
     
     @MockitoBean
     private SearchLocationsUseCase searchLocationsUseCase;
+    
+    @MockitoBean
+    private UpdateLocationUseCase updateLocationUseCase;
+    
+    @MockitoBean
+    private PageableSearchLocationsUseCase pageableSearchLocationsUseCase;
     
     @MockitoBean
     private JwtService jwtService;
@@ -467,5 +477,307 @@ class LocationControllerTest {
                 .andExpect(jsonPath("$.timestamp").exists());
 
         verify(searchLocationsUseCase, times(1)).execute(any(), eq("testuser"));
+    }
+
+    @Test
+    @WithMockUser(username = "testuser")
+    void updateLocation_正常ケース_200ステータスと更新された位置情報を返す() throws Exception {
+        // Arrange
+        Long locationId = 1L;
+        LocalDateTime newRecordedAt = LocalDateTime.of(2024, 1, 1, 15, 0, 0);
+        UpdateLocationRequest request = new UpdateLocationRequest(
+            35.6892,  // 新しい緯度
+            139.6917, // 新しい経度
+            newRecordedAt
+        );
+
+        LocationResponse expectedResponse = new LocationResponse(
+            locationId,
+            35.6892,
+            139.6917,
+            newRecordedAt
+        );
+
+        when(updateLocationUseCase.execute(eq(locationId), any(UpdateLocationRequest.class), anyString()))
+            .thenReturn(expectedResponse);
+
+        // Act & Assert
+        mockMvc.perform(put("/api/locations/{id}", locationId)
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(locationId))
+                .andExpect(jsonPath("$.latitude").value(35.6892))
+                .andExpect(jsonPath("$.longitude").value(139.6917))
+                .andExpect(jsonPath("$.recordedAt").value("2024-01-01T15:00:00"));
+
+        verify(updateLocationUseCase, times(1)).execute(eq(locationId), any(UpdateLocationRequest.class), eq("testuser"));
+    }
+
+    @Test
+    @WithMockUser(username = "testuser")
+    void updateLocation_位置情報が存在しない場合_404ステータスとエラーレスポンスを返す() throws Exception {
+        // Arrange
+        Long locationId = 999L;
+        UpdateLocationRequest request = new UpdateLocationRequest(
+            35.6892,
+            139.6917,
+            LocalDateTime.now()
+        );
+
+        when(updateLocationUseCase.execute(eq(locationId), any(UpdateLocationRequest.class), anyString()))
+            .thenThrow(new ResourceNotFoundException("指定された位置情報が見つかりません"));
+
+        // Act & Assert
+        mockMvc.perform(put("/api/locations/{id}", locationId)
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.errorCode").value("RESOURCE_NOT_FOUND"))
+                .andExpect(jsonPath("$.message").value("指定された位置情報が見つかりません"))
+                .andExpect(jsonPath("$.timestamp").exists());
+
+        verify(updateLocationUseCase, times(1)).execute(eq(locationId), any(UpdateLocationRequest.class), eq("testuser"));
+    }
+
+    @Test
+    @WithMockUser(username = "testuser")
+    void updateLocation_他ユーザーの位置情報を更新しようとした場合_403ステータスとエラーレスポンスを返す() throws Exception {
+        // Arrange
+        Long locationId = 1L;
+        UpdateLocationRequest request = new UpdateLocationRequest(
+            35.6892,
+            139.6917,
+            LocalDateTime.now()
+        );
+
+        when(updateLocationUseCase.execute(eq(locationId), any(UpdateLocationRequest.class), anyString()))
+            .thenThrow(new AuthorizationException("他のユーザーの位置情報は更新できません"));
+
+        // Act & Assert
+        mockMvc.perform(put("/api/locations/{id}", locationId)
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.errorCode").value("AUTHORIZATION_ERROR"))
+                .andExpect(jsonPath("$.message").value("他のユーザーの位置情報は更新できません"))
+                .andExpect(jsonPath("$.timestamp").exists());
+
+        verify(updateLocationUseCase, times(1)).execute(eq(locationId), any(UpdateLocationRequest.class), eq("testuser"));
+    }
+
+    @Test
+    @WithMockUser(username = "testuser")
+    void updateLocation_無効な緯度_400ステータスとエラーレスポンスを返す() throws Exception {
+        // Arrange
+        Long locationId = 1L;
+        UpdateLocationRequest request = new UpdateLocationRequest(
+            91.0,  // 無効な緯度
+            139.6917,
+            LocalDateTime.now()
+        );
+
+        when(updateLocationUseCase.execute(eq(locationId), any(UpdateLocationRequest.class), anyString()))
+            .thenThrow(new IllegalArgumentException("緯度は-90.0～90.0の範囲で指定してください"));
+
+        // Act & Assert
+        mockMvc.perform(put("/api/locations/{id}", locationId)
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errorCode").value("VALIDATION_ERROR"))
+                .andExpect(jsonPath("$.message").value("緯度は-90.0～90.0の範囲で指定してください"))
+                .andExpect(jsonPath("$.timestamp").exists());
+
+        verify(updateLocationUseCase, times(1)).execute(eq(locationId), any(UpdateLocationRequest.class), eq("testuser"));
+    }
+
+    @Test
+    @WithMockUser(username = "testuser")
+    void updateLocation_予期しない例外発生_500ステータスとエラーレスポンスを返す() throws Exception {
+        // Arrange
+        Long locationId = 1L;
+        UpdateLocationRequest request = new UpdateLocationRequest(
+            35.6892,
+            139.6917,
+            LocalDateTime.now()
+        );
+
+        when(updateLocationUseCase.execute(eq(locationId), any(UpdateLocationRequest.class), anyString()))
+            .thenThrow(new RuntimeException("データベースエラー"));
+
+        // Act & Assert
+        mockMvc.perform(put("/api/locations/{id}", locationId)
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.errorCode").value("INTERNAL_ERROR"))
+                .andExpect(jsonPath("$.message").value("システムエラーが発生しました。しばらく時間をおいて再度お試しください。"))
+                .andExpect(jsonPath("$.timestamp").exists());
+
+        verify(updateLocationUseCase, times(1)).execute(eq(locationId), any(UpdateLocationRequest.class), eq("testuser"));
+    }
+
+    @Test
+    @WithMockUser(username = "testuser")
+    void searchLocationsWithPagination_正常ケース_200ステータスとページネーション結果を返す() throws Exception {
+        // Arrange
+        String startDateTime = "2024-01-01T09:00:00";
+        String endDateTime = "2024-01-01T18:00:00";
+        int page = 0;
+        int size = 5;
+        
+        List<LocationResponse> locationList = Arrays.asList(
+            new LocationResponse(1L, 35.6812, 139.7671, LocalDateTime.of(2024, 1, 1, 9, 30)),
+            new LocationResponse(2L, 35.6813, 139.7672, LocalDateTime.of(2024, 1, 1, 12, 0)),
+            new LocationResponse(3L, 35.6814, 139.7673, LocalDateTime.of(2024, 1, 1, 15, 0))
+        );
+        
+        PagedLocationResponse expectedResponse = new PagedLocationResponse(
+            locationList,
+            0,      // page
+            5,      // size
+            10,     // totalElements
+            2,      // totalPages
+            true,   // first
+            false,  // last
+            true,   // hasNext
+            false   // hasPrevious
+        );
+        
+        when(pageableSearchLocationsUseCase.execute(any(), anyString())).thenReturn(expectedResponse);
+
+        // Act & Assert
+        mockMvc.perform(get("/api/locations/search/paged")
+                .param("startDateTime", startDateTime)
+                .param("endDateTime", endDateTime)
+                .param("page", String.valueOf(page))
+                .param("size", String.valueOf(size))
+                .with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content", hasSize(3)))
+                .andExpect(jsonPath("$.page").value(0))
+                .andExpect(jsonPath("$.size").value(5))
+                .andExpect(jsonPath("$.totalElements").value(10))
+                .andExpect(jsonPath("$.totalPages").value(2))
+                .andExpect(jsonPath("$.first").value(true))
+                .andExpect(jsonPath("$.last").value(false))
+                .andExpect(jsonPath("$.hasNext").value(true))
+                .andExpect(jsonPath("$.hasPrevious").value(false))
+                .andExpect(jsonPath("$.content[0].id").value(1L))
+                .andExpect(jsonPath("$.content[0].latitude").value(35.6812));
+
+        verify(pageableSearchLocationsUseCase, times(1)).execute(any(), eq("testuser"));
+    }
+
+    @Test
+    @WithMockUser(username = "testuser")
+    void searchLocationsWithPagination_デフォルトページング値_200ステータスとレスポンスを返す() throws Exception {
+        // Arrange
+        String startDateTime = "2024-01-01T09:00:00";
+        String endDateTime = "2024-01-01T18:00:00";
+        
+        List<LocationResponse> locationList = Arrays.asList(
+            new LocationResponse(1L, 35.6812, 139.7671, LocalDateTime.of(2024, 1, 1, 9, 30))
+        );
+        
+        PagedLocationResponse expectedResponse = new PagedLocationResponse(
+            locationList,
+            0,      // page (default)
+            10,     // size (default)
+            1,      // totalElements
+            1,      // totalPages
+            true,   // first
+            true,   // last
+            false,  // hasNext
+            false   // hasPrevious
+        );
+        
+        when(pageableSearchLocationsUseCase.execute(any(), anyString())).thenReturn(expectedResponse);
+
+        // Act & Assert（pageとsizeパラメータを省略してデフォルト値をテスト）
+        mockMvc.perform(get("/api/locations/search/paged")
+                .param("startDateTime", startDateTime)
+                .param("endDateTime", endDateTime)
+                .with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.page").value(0))
+                .andExpect(jsonPath("$.size").value(10));
+
+        verify(pageableSearchLocationsUseCase, times(1)).execute(any(), eq("testuser"));
+    }
+
+    @Test
+    @WithMockUser(username = "testuser")
+    void searchLocationsWithPagination_不正な日時形式_400ステータスとエラーレスポンスを返す() throws Exception {
+        // Arrange
+        String invalidStartDateTime = "invalid-datetime";
+        String endDateTime = "2024-01-01T18:00:00";
+
+        // Act & Assert
+        mockMvc.perform(get("/api/locations/search/paged")
+                .param("startDateTime", invalidStartDateTime)
+                .param("endDateTime", endDateTime)
+                .param("page", "0")
+                .param("size", "10")
+                .with(csrf()))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errorCode").value("VALIDATION_ERROR"))
+                .andExpect(jsonPath("$.message").value("日時形式が正しくありません。ISO-8601形式（YYYY-MM-DDTHH:mm:ss）で入力してください。"))
+                .andExpect(jsonPath("$.timestamp").exists());
+
+        verify(pageableSearchLocationsUseCase, never()).execute(any(), any());
+    }
+
+    @Test
+    @WithMockUser(username = "testuser")
+    void searchLocationsWithPagination_無効なページングパラメータ_400ステータスとエラーレスポンスを返す() throws Exception {
+        // Arrange
+        String startDateTime = "2024-01-01T09:00:00";
+        String endDateTime = "2024-01-01T18:00:00";
+
+        // Act & Assert
+        // PageableSearchLocationsRequestコンストラクタで例外が発生するため、usecaseは呼び出されない
+        mockMvc.perform(get("/api/locations/search/paged")
+                .param("startDateTime", startDateTime)
+                .param("endDateTime", endDateTime)
+                .param("page", "-1")  // 無効なページ番号
+                .param("size", "10")
+                .with(csrf()))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errorCode").value("VALIDATION_ERROR"))
+                .andExpect(jsonPath("$.timestamp").exists());
+
+        verify(pageableSearchLocationsUseCase, never()).execute(any(), any());
+    }
+
+    @Test
+    @WithMockUser(username = "testuser")
+    void searchLocationsWithPagination_予期しない例外発生_500ステータスとエラーレスポンスを返す() throws Exception {
+        // Arrange
+        String startDateTime = "2024-01-01T09:00:00";
+        String endDateTime = "2024-01-01T18:00:00";
+        
+        when(pageableSearchLocationsUseCase.execute(any(), anyString()))
+            .thenThrow(new RuntimeException("データベースエラー"));
+
+        // Act & Assert
+        mockMvc.perform(get("/api/locations/search/paged")
+                .param("startDateTime", startDateTime)
+                .param("endDateTime", endDateTime)
+                .param("page", "0")
+                .param("size", "10")
+                .with(csrf()))
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.errorCode").value("INTERNAL_ERROR"))
+                .andExpect(jsonPath("$.message").value("システムエラーが発生しました。しばらく時間をおいて再度お試しください。"))
+                .andExpect(jsonPath("$.timestamp").exists());
+
+        verify(pageableSearchLocationsUseCase, times(1)).execute(any(), eq("testuser"));
     }
 }
