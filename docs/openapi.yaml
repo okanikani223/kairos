@@ -1,0 +1,1616 @@
+openapi: 3.0.3
+info:
+  title: Kairos - 勤怠管理システム API
+  description: |
+    Java-based timesheet/attendance management system built with Spring Boot 3.5.3 and Java 21.
+    
+    ## Features
+    - **Timesheet management**: tracking work time, leave types, and report status
+    - **Location tracking**: GPS coordinate recording for attendance/timesheet purposes only
+    - **JWT Authentication**: Secure API access using JSON Web Tokens
+    - **Clean Architecture**: Domain-Driven Design implementation
+    
+    ## Authentication
+    All API endpoints except `/api/auth/**` require JWT Bearer Token authentication.
+    
+    ## Error Handling
+    API returns standardized error responses with appropriate HTTP status codes and Japanese error messages.
+  version: 1.0.0
+  contact:
+    name: Kairos Development Team
+    url: https://github.com/okanikani223/kairos
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:8080
+    description: Development server
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: Authentication
+    description: ユーザー認証・登録
+  - name: Reports
+    description: 勤怠表管理
+  - name: Locations
+    description: 位置情報管理
+  - name: Work Rules
+    description: 勤務ルール管理
+  - name: Default Work Rules
+    description: デフォルト勤務ルール管理
+  - name: Report Creation Rules
+    description: 勤怠作成ルール管理
+
+paths:
+  # Authentication endpoints
+  /api/auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: ユーザーログイン
+      description: ユーザー認証を行い、JWTトークンを発行します
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: ログイン成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/auth/register:
+    post:
+      tags:
+        - Authentication
+      summary: 新規ユーザー登録
+      description: 新しいユーザーアカウントを作成します
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: ユーザー登録成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # Reports endpoints
+  /api/reports:
+    post:
+      tags:
+        - Reports
+      summary: 勤怠表新規登録
+      description: 新しい勤怠表を登録します
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterReportRequest'
+      responses:
+        '201':
+          description: 勤怠表登録成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/reports/{year}/{month}:
+    get:
+      tags:
+        - Reports
+      summary: 勤怠表取得
+      description: 指定した年月の勤怠表を取得します
+      parameters:
+        - name: year
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1900
+            maximum: 9999
+          description: 年（YYYY形式）
+        - name: month
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 12
+          description: 月（MM形式）
+      responses:
+        '200':
+          description: 勤怠表取得成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    put:
+      tags:
+        - Reports
+      summary: 勤怠表更新
+      description: 既存の勤怠表を更新します
+      parameters:
+        - name: year
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1900
+            maximum: 9999
+          description: 年（YYYY形式）
+        - name: month
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 12
+          description: 月（MM形式）
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateReportRequest'
+      responses:
+        '200':
+          description: 勤怠表更新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    delete:
+      tags:
+        - Reports
+      summary: 勤怠表削除
+      description: 指定した年月の勤怠表を削除します
+      parameters:
+        - name: year
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1900
+            maximum: 9999
+          description: 年（YYYY形式）
+        - name: month
+          in: path
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 12
+          description: 月（MM形式）
+      responses:
+        '204':
+          description: 勤怠表削除成功
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/reports/generate:
+    post:
+      tags:
+        - Reports
+      summary: 位置情報から勤怠表自動生成
+      description: 位置情報データを基に勤怠表を自動生成します
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GenerateReportFromLocationRequest'
+      responses:
+        '201':
+          description: 勤怠表生成成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # Locations endpoints
+  /api/locations:
+    post:
+      tags:
+        - Locations
+      summary: 位置情報登録
+      description: 新しい位置情報を登録します
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterLocationRequest'
+      responses:
+        '201':
+          description: 位置情報登録成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LocationResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    get:
+      tags:
+        - Locations
+      summary: 全位置情報取得
+      description: 認証ユーザーのすべての位置情報を取得します
+      responses:
+        '200':
+          description: 位置情報取得成功
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LocationResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/locations/{id}:
+    get:
+      tags:
+        - Locations
+      summary: 特定位置情報取得
+      description: 指定したIDの位置情報を取得します
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: 位置情報ID
+      responses:
+        '200':
+          description: 位置情報取得成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LocationResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    put:
+      tags:
+        - Locations
+      summary: 位置情報更新
+      description: 既存の位置情報を更新します
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: 位置情報ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateLocationRequest'
+      responses:
+        '200':
+          description: 位置情報更新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LocationResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    delete:
+      tags:
+        - Locations
+      summary: 位置情報削除
+      description: 指定したIDの位置情報を削除します
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: 位置情報ID
+      responses:
+        '204':
+          description: 位置情報削除成功
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/locations/search:
+    get:
+      tags:
+        - Locations
+      summary: 期間指定位置情報検索
+      description: 指定した期間の位置情報を検索します
+      parameters:
+        - name: startDateTime
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+          description: 検索開始日時（ISO_LOCAL_DATE_TIME形式）
+          example: "2024-01-01T09:00:00"
+        - name: endDateTime
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+          description: 検索終了日時（ISO_LOCAL_DATE_TIME形式）
+          example: "2024-01-31T18:00:00"
+      responses:
+        '200':
+          description: 位置情報検索成功
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LocationResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/locations/search/paged:
+    get:
+      tags:
+        - Locations
+      summary: ページネーション付き位置情報検索
+      description: 指定した期間の位置情報をページネーションで検索します
+      parameters:
+        - name: startDateTime
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+          description: 検索開始日時（ISO_LOCAL_DATE_TIME形式）
+          example: "2024-01-01T09:00:00"
+        - name: endDateTime
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+          description: 検索終了日時（ISO_LOCAL_DATE_TIME形式）
+          example: "2024-01-31T18:00:00"
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+          description: ページ番号（0から開始）
+        - name: size
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+          description: 1ページあたりの件数
+      responses:
+        '200':
+          description: ページネーション付き位置情報検索成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PagedLocationResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # Work Rules endpoints
+  /api/work-rules:
+    post:
+      tags:
+        - Work Rules
+      summary: 勤務ルール登録
+      description: 新しい勤務ルールを登録します
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterWorkRuleRequest'
+      responses:
+        '201':
+          description: 勤務ルール登録成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkRuleResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    get:
+      tags:
+        - Work Rules
+      summary: 勤務ルール一覧取得
+      description: 認証ユーザーの勤務ルール一覧を取得します
+      responses:
+        '200':
+          description: 勤務ルール一覧取得成功
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/WorkRuleResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/work-rules/{id}:
+    get:
+      tags:
+        - Work Rules
+      summary: 特定勤務ルール取得
+      description: 指定したIDの勤務ルールを取得します
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: 勤務ルールID
+      responses:
+        '200':
+          description: 勤務ルール取得成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkRuleResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    put:
+      tags:
+        - Work Rules
+      summary: 勤務ルール更新
+      description: 既存の勤務ルールを更新します
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: 勤務ルールID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateWorkRuleRequest'
+      responses:
+        '200':
+          description: 勤務ルール更新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkRuleResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    delete:
+      tags:
+        - Work Rules
+      summary: 勤務ルール削除
+      description: 指定したIDの勤務ルールを削除します
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: 勤務ルールID
+      responses:
+        '204':
+          description: 勤務ルール削除成功
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # Default Work Rules endpoints
+  /api/default-work-rules:
+    post:
+      tags:
+        - Default Work Rules
+      summary: デフォルト勤務ルール登録
+      description: 新しいデフォルト勤務ルールを登録します
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterDefaultWorkRuleRequest'
+      responses:
+        '201':
+          description: デフォルト勤務ルール登録成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DefaultWorkRuleResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    get:
+      tags:
+        - Default Work Rules
+      summary: デフォルト勤務ルール一覧取得
+      description: 認証ユーザーのデフォルト勤務ルール一覧を取得します
+      responses:
+        '200':
+          description: デフォルト勤務ルール一覧取得成功
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DefaultWorkRuleResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # Report Creation Rules endpoints
+  /api/report-creation-rules:
+    post:
+      tags:
+        - Report Creation Rules
+      summary: 勤怠作成ルール登録
+      description: 新しい勤怠作成ルールを登録します
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterReportCreationRuleRequest'
+      responses:
+        '201':
+          description: 勤怠作成ルール登録成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportCreationRuleResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    get:
+      tags:
+        - Report Creation Rules
+      summary: 勤怠作成ルール取得
+      description: 認証ユーザーの勤怠作成ルールを取得します
+      responses:
+        '200':
+          description: 勤怠作成ルール取得成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReportCreationRuleResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT Bearer Token認証
+
+  schemas:
+    # Authentication DTOs
+    LoginRequest:
+      type: object
+      required:
+        - userId
+        - password
+      properties:
+        userId:
+          type: string
+          description: ユーザーID
+          minLength: 1
+          example: "user001"
+        password:
+          type: string
+          description: パスワード
+          minLength: 1
+          format: password
+          example: "password123"
+
+    LoginResponse:
+      type: object
+      required:
+        - accessToken
+        - tokenType
+        - expiresIn
+        - user
+      properties:
+        accessToken:
+          type: string
+          description: JWTアクセストークン
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        tokenType:
+          type: string
+          description: トークンタイプ
+          enum: ["Bearer"]
+          example: "Bearer"
+        expiresIn:
+          type: integer
+          format: int64
+          description: 有効期限（秒）
+          example: 86400
+        user:
+          $ref: '#/components/schemas/UserResponse'
+
+    RegisterRequest:
+      type: object
+      required:
+        - userId
+        - username
+        - email
+        - password
+      properties:
+        userId:
+          type: string
+          description: ユーザーID
+          minLength: 3
+          maxLength: 50
+          pattern: '^[a-zA-Z0-9_-]+$'
+          example: "user001"
+        username:
+          type: string
+          description: ユーザー名
+          minLength: 1
+          maxLength: 100
+          example: "山田太郎"
+        email:
+          type: string
+          format: email
+          description: メールアドレス
+          maxLength: 255
+          example: "yamada@example.com"
+        password:
+          type: string
+          description: パスワード
+          minLength: 8
+          maxLength: 128
+          format: password
+          example: "password123"
+        role:
+          type: string
+          description: ロール（オプション、デフォルト：USER）
+          enum: ["USER", "ADMIN", "SYSTEM_ADMIN"]
+          example: "USER"
+
+    UserResponse:
+      type: object
+      required:
+        - id
+        - userId
+        - username
+        - email
+        - role
+        - roleDisplayName
+        - enabled
+        - createdAt
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: 内部ID
+          example: 1
+        userId:
+          type: string
+          description: ユーザーID
+          example: "user001"
+        username:
+          type: string
+          description: ユーザー名
+          example: "山田太郎"
+        email:
+          type: string
+          format: email
+          description: メールアドレス
+          example: "yamada@example.com"
+        role:
+          type: string
+          description: ロール名
+          enum: ["USER", "ADMIN", "SYSTEM_ADMIN"]
+          example: "USER"
+        roleDisplayName:
+          type: string
+          description: ロール表示名
+          example: "一般ユーザー"
+        enabled:
+          type: boolean
+          description: 有効フラグ
+          example: true
+        createdAt:
+          type: string
+          format: date-time
+          description: 作成日時
+          example: "2024-01-01T10:00:00"
+        lastLoginAt:
+          type: string
+          format: date-time
+          description: 最終ログイン日時
+          nullable: true
+          example: "2024-01-15T09:30:00"
+
+    # Common DTOs
+    UserDto:
+      type: object
+      required:
+        - userId
+      properties:
+        userId:
+          type: string
+          description: ユーザーID
+          minLength: 1
+          example: "user001"
+
+    # Reports DTOs
+    RegisterReportRequest:
+      type: object
+      required:
+        - yearMonth
+        - user
+        - workDays
+      properties:
+        yearMonth:
+          type: string
+          pattern: '^\d{4}-\d{2}$'
+          description: 勤怠年月（YYYY-MM形式）
+          example: "2024-01"
+        user:
+          $ref: '#/components/schemas/UserDto'
+        workDays:
+          type: array
+          description: 勤務日情報一覧
+          items:
+            $ref: '#/components/schemas/DetailDto'
+
+    UpdateReportRequest:
+      allOf:
+        - $ref: '#/components/schemas/RegisterReportRequest'
+
+    GenerateReportFromLocationRequest:
+      type: object
+      required:
+        - yearMonth
+        - user
+      properties:
+        yearMonth:
+          type: string
+          pattern: '^\d{4}-\d{2}$'
+          description: 勤怠年月（YYYY-MM形式）
+          example: "2024-01"
+        user:
+          $ref: '#/components/schemas/UserDto'
+
+    ReportResponse:
+      type: object
+      required:
+        - yearMonth
+        - owner
+        - status
+        - workDays
+        - summary
+      properties:
+        yearMonth:
+          type: string
+          pattern: '^\d{4}-\d{2}$'
+          description: 勤怠年月（YYYY-MM形式）
+          example: "2024-01"
+        owner:
+          $ref: '#/components/schemas/UserDto'
+        status:
+          type: string
+          description: ステータス
+          enum: ["NOT_SUBMITTED", "SUBMITTED", "APPROVED"]
+          example: "NOT_SUBMITTED"
+        workDays:
+          type: array
+          description: 勤務日情報一覧
+          items:
+            $ref: '#/components/schemas/DetailDto'
+        summary:
+          $ref: '#/components/schemas/SummaryDto'
+
+    DetailDto:
+      type: object
+      required:
+        - workDate
+        - isHoliday
+        - leaveType
+      properties:
+        workDate:
+          type: string
+          format: date
+          description: 勤務日付
+          example: "2024-01-15"
+        isHoliday:
+          type: boolean
+          description: 休日フラグ
+          example: false
+        leaveType:
+          type: string
+          description: 休暇区分
+          enum: ["NORMAL_WORK", "PAID_LEAVE", "PAID_LEAVE_AM", "PAID_LEAVE_PM", "COMPENSATORY_LEAVE", "COMPENSATORY_LEAVE_AM", "COMPENSATORY_LEAVE_PM", "SPECIAL_LEAVE"]
+          example: "NORMAL_WORK"
+        startDateTime:
+          $ref: '#/components/schemas/WorkTimeDto'
+        endDateTime:
+          $ref: '#/components/schemas/WorkTimeDto'
+        workingHours:
+          type: string
+          description: 就業時間（ISO-8601 Duration形式）
+          example: "PT8H"
+        overtimeHours:
+          type: string
+          description: 残業時間（ISO-8601 Duration形式）
+          example: "PT1H30M"
+        holidayWorkHours:
+          type: string
+          description: 休出時間（ISO-8601 Duration形式）
+          example: "PT0S"
+        note:
+          type: string
+          description: 特記事項
+          nullable: true
+          example: "会議のため1時間延長"
+
+    WorkTimeDto:
+      type: object
+      required:
+        - value
+      properties:
+        value:
+          type: string
+          format: date-time
+          description: 日時情報
+          example: "2024-01-15T09:00:00"
+
+    SummaryDto:
+      type: object
+      required:
+        - workDays
+        - paidLeaveDays
+        - compensatoryLeaveDays
+        - specialLeaveDays
+        - totalWorkTime
+        - totalOvertime
+        - totalHolidayWork
+      properties:
+        workDays:
+          type: number
+          format: double
+          description: 就業日数
+          example: 20.0
+        paidLeaveDays:
+          type: number
+          format: double
+          description: 有給日数
+          example: 1.5
+        compensatoryLeaveDays:
+          type: number
+          format: double
+          description: 代休日数
+          example: 0.0
+        specialLeaveDays:
+          type: number
+          format: double
+          description: 特休日数
+          example: 1.0
+        totalWorkTime:
+          type: string
+          description: 総就業時間（ISO-8601 Duration形式）
+          example: "PT160H"
+        totalOvertime:
+          type: string
+          description: 総残業時間（ISO-8601 Duration形式）
+          example: "PT10H30M"
+        totalHolidayWork:
+          type: string
+          description: 総休出時間（ISO-8601 Duration形式）
+          example: "PT0S"
+
+    # Locations DTOs
+    RegisterLocationRequest:
+      type: object
+      required:
+        - latitude
+        - longitude
+        - recordedAt
+      properties:
+        latitude:
+          type: number
+          format: double
+          description: 緯度（-90.0〜90.0）
+          minimum: -90.0
+          maximum: 90.0
+          example: 35.6762
+        longitude:
+          type: number
+          format: double
+          description: 経度（-180.0〜180.0）
+          minimum: -180.0
+          maximum: 180.0
+          example: 139.6503
+        recordedAt:
+          type: string
+          format: date-time
+          description: 記録日時
+          example: "2024-01-15T09:00:00"
+
+    UpdateLocationRequest:
+      allOf:
+        - $ref: '#/components/schemas/RegisterLocationRequest'
+
+    LocationResponse:
+      type: object
+      required:
+        - id
+        - latitude
+        - longitude
+        - recordedAt
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: 位置情報ID
+          example: 1
+        latitude:
+          type: number
+          format: double
+          description: 緯度
+          example: 35.6762
+        longitude:
+          type: number
+          format: double
+          description: 経度
+          example: 139.6503
+        recordedAt:
+          type: string
+          format: date-time
+          description: 記録日時
+          example: "2024-01-15T09:00:00"
+
+    PagedLocationResponse:
+      type: object
+      required:
+        - content
+        - page
+        - size
+        - totalElements
+        - totalPages
+        - first
+        - last
+        - hasNext
+        - hasPrevious
+      properties:
+        content:
+          type: array
+          description: 位置情報リスト
+          items:
+            $ref: '#/components/schemas/LocationResponse'
+        page:
+          type: integer
+          description: 現在のページ番号
+          example: 0
+        size:
+          type: integer
+          description: 1ページあたりの件数
+          example: 10
+        totalElements:
+          type: integer
+          format: int64
+          description: 全件数
+          example: 50
+        totalPages:
+          type: integer
+          description: 全ページ数
+          example: 5
+        first:
+          type: boolean
+          description: 最初のページかどうか
+          example: true
+        last:
+          type: boolean
+          description: 最後のページかどうか
+          example: false
+        hasNext:
+          type: boolean
+          description: 次のページが存在するかどうか
+          example: true
+        hasPrevious:
+          type: boolean
+          description: 前のページが存在するかどうか
+          example: false
+
+    # Work Rules DTOs
+    RegisterWorkRuleRequest:
+      type: object
+      required:
+        - workPlaceId
+        - latitude
+        - longitude
+        - standardStartTime
+        - standardEndTime
+        - membershipStartDate
+        - membershipEndDate
+      properties:
+        workPlaceId:
+          type: integer
+          format: int64
+          description: 勤怠先ID
+          example: 1
+        latitude:
+          type: number
+          format: double
+          description: 勤怠先の緯度（-90.0〜90.0）
+          minimum: -90.0
+          maximum: 90.0
+          example: 35.6762
+        longitude:
+          type: number
+          format: double
+          description: 勤怠先の経度（-180.0〜180.0）
+          minimum: -180.0
+          maximum: 180.0
+          example: 139.6503
+        standardStartTime:
+          type: string
+          format: time
+          description: 規定勤怠開始時刻
+          example: "09:00:00"
+        standardEndTime:
+          type: string
+          format: time
+          description: 規定勤怠終了時刻
+          example: "18:00:00"
+        breakStartTime:
+          type: string
+          format: time
+          description: 規定休憩開始時刻
+          nullable: true
+          example: "12:00:00"
+        breakEndTime:
+          type: string
+          format: time
+          description: 規定休憩終了時刻
+          nullable: true
+          example: "13:00:00"
+        membershipStartDate:
+          type: string
+          format: date
+          description: 所属開始日
+          example: "2024-01-01"
+        membershipEndDate:
+          type: string
+          format: date
+          description: 所属終了日
+          example: "2024-12-31"
+
+    UpdateWorkRuleRequest:
+      allOf:
+        - $ref: '#/components/schemas/RegisterWorkRuleRequest'
+
+    WorkRuleResponse:
+      type: object
+      required:
+        - id
+        - workPlaceId
+        - user
+        - latitude
+        - longitude
+        - standardStartTime
+        - standardEndTime
+        - membershipStartDate
+        - membershipEndDate
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: 勤務ルールID
+          example: 1
+        workPlaceId:
+          type: integer
+          format: int64
+          description: 勤怠先ID
+          example: 1
+        user:
+          $ref: '#/components/schemas/UserDto'
+        latitude:
+          type: number
+          format: double
+          description: 勤怠先の緯度
+          example: 35.6762
+        longitude:
+          type: number
+          format: double
+          description: 勤怠先の経度
+          example: 139.6503
+        standardStartTime:
+          type: string
+          format: time
+          description: 規定勤怠開始時刻
+          example: "09:00:00"
+        standardEndTime:
+          type: string
+          format: time
+          description: 規定勤怠終了時刻
+          example: "18:00:00"
+        breakStartTime:
+          type: string
+          format: time
+          description: 規定休憩開始時刻
+          nullable: true
+          example: "12:00:00"
+        breakEndTime:
+          type: string
+          format: time
+          description: 規定休憩終了時刻
+          nullable: true
+          example: "13:00:00"
+        membershipStartDate:
+          type: string
+          format: date
+          description: 所属開始日
+          example: "2024-01-01"
+        membershipEndDate:
+          type: string
+          format: date
+          description: 所属終了日
+          example: "2024-12-31"
+
+    # Default Work Rules DTOs
+    RegisterDefaultWorkRuleRequest:
+      type: object
+      required:
+        - workPlaceId
+        - latitude
+        - longitude
+        - standardStartTime
+        - standardEndTime
+      properties:
+        workPlaceId:
+          type: integer
+          format: int64
+          description: 勤怠先ID
+          example: 1
+        latitude:
+          type: number
+          format: double
+          description: 勤怠先の緯度（-90.0〜90.0）
+          minimum: -90.0
+          maximum: 90.0
+          example: 35.6762
+        longitude:
+          type: number
+          format: double
+          description: 勤怠先の経度（-180.0〜180.0）
+          minimum: -180.0
+          maximum: 180.0
+          example: 139.6503
+        standardStartTime:
+          type: string
+          format: time
+          description: 規定勤怠開始時刻
+          example: "09:00:00"
+        standardEndTime:
+          type: string
+          format: time
+          description: 規定勤怠終了時刻
+          example: "18:00:00"
+        breakStartTime:
+          type: string
+          format: time
+          description: 規定休憩開始時刻
+          nullable: true
+          example: "12:00:00"
+        breakEndTime:
+          type: string
+          format: time
+          description: 規定休憩終了時刻
+          nullable: true
+          example: "13:00:00"
+
+    DefaultWorkRuleResponse:
+      type: object
+      required:
+        - id
+        - workPlaceId
+        - user
+        - latitude
+        - longitude
+        - standardStartTime
+        - standardEndTime
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: デフォルト勤務ルールID
+          example: 1
+        workPlaceId:
+          type: integer
+          format: int64
+          description: 勤怠先ID
+          example: 1
+        user:
+          $ref: '#/components/schemas/UserDto'
+        latitude:
+          type: number
+          format: double
+          description: 勤怠先の緯度
+          example: 35.6762
+        longitude:
+          type: number
+          format: double
+          description: 勤怠先の経度
+          example: 139.6503
+        standardStartTime:
+          type: string
+          format: time
+          description: 規定勤怠開始時刻
+          example: "09:00:00"
+        standardEndTime:
+          type: string
+          format: time
+          description: 規定勤怠終了時刻
+          example: "18:00:00"
+        breakStartTime:
+          type: string
+          format: time
+          description: 規定休憩開始時刻
+          nullable: true
+          example: "12:00:00"
+        breakEndTime:
+          type: string
+          format: time
+          description: 規定休憩終了時刻
+          nullable: true
+          example: "13:00:00"
+
+    # Report Creation Rules DTOs
+    RegisterReportCreationRuleRequest:
+      type: object
+      required:
+        - closingDay
+        - timeCalculationUnitMinutes
+      properties:
+        closingDay:
+          type: integer
+          description: 勤怠締め日（月の日：1-31）
+          minimum: 1
+          maximum: 31
+          example: 25
+        timeCalculationUnitMinutes:
+          type: integer
+          description: 勤怠時間計算単位（分：1-60）
+          minimum: 1
+          maximum: 60
+          example: 15
+
+    ReportCreationRuleResponse:
+      type: object
+      required:
+        - id
+        - user
+        - closingDay
+        - timeCalculationUnitMinutes
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: 勤怠作成ルールID
+          example: 1
+        user:
+          $ref: '#/components/schemas/UserDto'
+        closingDay:
+          type: integer
+          description: 勤怠締め日（月の日：1-31）
+          example: 25
+        timeCalculationUnitMinutes:
+          type: integer
+          description: 勤怠時間計算単位（分：1-60）
+          example: 15
+
+    # Error Response
+    ErrorResponse:
+      type: object
+      required:
+        - errorCode
+        - message
+        - timestamp
+      properties:
+        errorCode:
+          type: string
+          description: エラーコード
+          enum:
+            - VALIDATION_ERROR
+            - REQUEST_VALIDATION_ERROR
+            - REQUEST_PARSE_ERROR
+            - MISSING_PARAMETER
+            - JWT_AUTHENTICATION_ERROR
+            - AUTHORIZATION_ERROR
+            - ACCESS_DENIED
+            - RESOURCE_NOT_FOUND
+            - METHOD_NOT_ALLOWED
+            - DUPLICATE_RESOURCE
+            - DATA_INTEGRITY_VIOLATION
+            - BUSINESS_RULE_VIOLATION
+            - ILLEGAL_STATE_ERROR
+            - INTERNAL_ERROR
+          example: "VALIDATION_ERROR"
+        message:
+          type: string
+          description: エラーメッセージ（日本語）
+          example: "バリデーションエラーが発生しました"
+        timestamp:
+          type: string
+          format: date-time
+          description: エラー発生日時
+          example: "2024-01-15T10:30:00"
+
+  responses:
+    BadRequest:
+      description: Bad Request - バリデーションエラーまたはリクエスト形式エラー
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            validationError:
+              summary: バリデーションエラー
+              value:
+                errorCode: "VALIDATION_ERROR"
+                message: "ユーザーIDは必須です"
+                timestamp: "2024-01-15T10:30:00"
+            parseError:
+              summary: リクエストパースエラー
+              value:
+                errorCode: "REQUEST_PARSE_ERROR"
+                message: "リクエストボディの形式が正しくありません"
+                timestamp: "2024-01-15T10:30:00"
+
+    Unauthorized:
+      description: Unauthorized - 認証エラー
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            errorCode: "JWT_AUTHENTICATION_ERROR"
+            message: "JWTトークンが無効です"
+            timestamp: "2024-01-15T10:30:00"
+
+    Forbidden:
+      description: Forbidden - 権限不足エラー
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            errorCode: "AUTHORIZATION_ERROR"
+            message: "このリソースにアクセスする権限がありません"
+            timestamp: "2024-01-15T10:30:00"
+
+    NotFound:
+      description: Not Found - リソース不存在
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            errorCode: "RESOURCE_NOT_FOUND"
+            message: "指定されたリソースが見つかりません"
+            timestamp: "2024-01-15T10:30:00"
+
+    Conflict:
+      description: Conflict - リソース重複エラー
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            duplicateResource:
+              summary: リソース重複
+              value:
+                errorCode: "DUPLICATE_RESOURCE"
+                message: "このユーザーIDは既に使用されています"
+                timestamp: "2024-01-15T10:30:00"
+            dataIntegrityViolation:
+              summary: データ整合性違反
+              value:
+                errorCode: "DATA_INTEGRITY_VIOLATION"
+                message: "データの整合性に問題があります"
+                timestamp: "2024-01-15T10:30:00"
+
+    UnprocessableEntity:
+      description: Unprocessable Entity - 業務ルール違反
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            errorCode: "BUSINESS_RULE_VIOLATION"
+            message: "業務ルールに違反しています"
+            timestamp: "2024-01-15T10:30:00"
+
+    InternalServerError:
+      description: Internal Server Error - サーバー内部エラー
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            errorCode: "INTERNAL_ERROR"
+            message: "予期しないエラーが発生しました"
+            timestamp: "2024-01-15T10:30:00"
