@@ -68,14 +68,14 @@ public record WorkRule(
             throw new ValidationException("所属開始日は所属終了日より前である必要があります");
         }
         
-        // 業務ルール: 規定勤怠開始時刻は規定勤怠終了時刻より前である必要がある
-        if (standardStartTime.isAfter(standardEndTime)) {
-            throw new ValidationException("規定勤怠開始時刻は規定勤怠終了時刻より前である必要があります");
+        // 業務ルール: 規定勤怠開始時刻と終了時刻は異なる必要がある（日をまたぐ勤務も許可）
+        if (standardStartTime.equals(standardEndTime)) {
+            throw new ValidationException("規定勤怠開始時刻と規定勤怠終了時刻は異なる時刻である必要があります");
         }
         
-        // 業務ルール: 規定休憩開始時刻は規定休憩終了時刻より前である必要がある
-        if (breakStartTime != null && breakEndTime != null && breakStartTime.isAfter(breakEndTime)) {
-            throw new ValidationException("規定休憩開始時刻は規定休憩終了時刻より前である必要があります");
+        // 業務ルール: 規定休憩開始時刻と終了時刻は異なる必要がある（日をまたぐ休憩も許可）
+        if (breakStartTime != null && breakEndTime != null && breakStartTime.equals(breakEndTime)) {
+            throw new ValidationException("規定休憩開始時刻と規定休憩終了時刻は異なる時刻である必要があります");
         }
     }
 }

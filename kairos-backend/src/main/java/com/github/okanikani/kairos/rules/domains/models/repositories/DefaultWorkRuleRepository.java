@@ -14,8 +14,9 @@ public interface DefaultWorkRuleRepository {
     /**
      * デフォルト勤怠ルールを保存する
      * @param defaultWorkRule 保存するデフォルト勤怠ルール
+     * @return 保存されたデフォルト勤怠ルール（IDが設定される）
      */
-    void save(DefaultWorkRule defaultWorkRule);
+    DefaultWorkRule save(DefaultWorkRule defaultWorkRule);
     
     /**
      * IDでデフォルト勤怠ルールを検索する

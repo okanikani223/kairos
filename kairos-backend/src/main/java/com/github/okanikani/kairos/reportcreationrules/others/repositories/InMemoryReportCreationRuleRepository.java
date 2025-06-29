@@ -24,7 +24,7 @@ public class InMemoryReportCreationRuleRepository implements ReportCreationRuleR
     private final AtomicLong idGenerator = new AtomicLong(1);
     
     @Override
-    public void save(ReportCreationRule reportCreationRule) {
+    public ReportCreationRule save(ReportCreationRule reportCreationRule) {
         Long id = reportCreationRule.id();
         if (id == null) {
             // 新規作成の場合は自動生成IDを設定
@@ -37,6 +37,7 @@ public class InMemoryReportCreationRuleRepository implements ReportCreationRuleR
             );
         }
         reportCreationRules.put(id, reportCreationRule);
+        return reportCreationRule;
     }
     
     @Override

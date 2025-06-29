@@ -28,9 +28,10 @@ public class JpaReportCreationRuleRepository implements ReportCreationRuleReposi
     }
 
     @Override
-    public void save(ReportCreationRule reportCreationRule) {
+    public ReportCreationRule save(ReportCreationRule reportCreationRule) {
         ReportCreationRuleJpaEntity jpaEntity = toJpaEntity(reportCreationRule);
-        reportCreationRuleJpaRepository.save(jpaEntity);
+        ReportCreationRuleJpaEntity savedEntity = reportCreationRuleJpaRepository.save(jpaEntity);
+        return toDomainModel(savedEntity);
     }
 
     @Override

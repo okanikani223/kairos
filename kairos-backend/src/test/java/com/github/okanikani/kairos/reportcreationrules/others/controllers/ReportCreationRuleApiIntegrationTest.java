@@ -274,12 +274,12 @@ class ReportCreationRuleApiIntegrationTest {
         // 同一ユーザーで再度勤怠作成ルール作成試行
         RegisterReportCreationRuleRequestBody duplicateRequest = new RegisterReportCreationRuleRequestBody(30, 30);
         
-        // 重複のため400エラーになることを期待
+        // 重複のため409エラーになることを期待
         mockMvc.perform(post("/api/report-creation-rules")
                 .header("Authorization", "Bearer " + jwtToken)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(duplicateRequest)))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isConflict());
     }
     
     @Test

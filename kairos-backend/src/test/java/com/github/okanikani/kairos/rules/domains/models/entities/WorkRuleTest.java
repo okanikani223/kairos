@@ -253,7 +253,7 @@ class WorkRuleTest {
     }
 
     @Test
-    void constructor_勤務時間が無効_例外が発生する() {
+    void constructor_勤務時間が同じ_例外が発生する() {
         // Act & Assert
         ValidationException exception = assertThrows(
             ValidationException.class,
@@ -263,19 +263,19 @@ class WorkRuleTest {
                 35.6762,
                 139.6503,
                 new User("testuser"),
-                LocalTime.of(17, 30),
-                LocalTime.of(9, 0), // 開始時刻 > 終了時刻
+                LocalTime.of(9, 0),
+                LocalTime.of(9, 0), // 開始時刻 = 終了時刻
                 LocalTime.of(12, 0),
                 LocalTime.of(13, 0),
                 LocalDate.of(2024, 1, 1),
                 LocalDate.of(2024, 12, 31)
             )
         );
-        assertEquals("規定勤怠開始時刻は規定勤怠終了時刻より前である必要があります", exception.getMessage());
+        assertEquals("規定勤怠開始時刻と規定勤怠終了時刻は異なる時刻である必要があります", exception.getMessage());
     }
 
     @Test
-    void constructor_休憩時間が無効_例外が発生する() {
+    void constructor_休憩時間が同じ_例外が発生する() {
         // Act & Assert
         ValidationException exception = assertThrows(
             ValidationException.class,
@@ -287,12 +287,12 @@ class WorkRuleTest {
                 new User("testuser"),
                 LocalTime.of(9, 0),
                 LocalTime.of(17, 30),
-                LocalTime.of(13, 0),
-                LocalTime.of(12, 0), // 休憩開始時刻 > 休憩終了時刻
+                LocalTime.of(12, 0),
+                LocalTime.of(12, 0), // 休憩開始時刻 = 休憩終了時刻
                 LocalDate.of(2024, 1, 1),
                 LocalDate.of(2024, 12, 31)
             )
         );
-        assertEquals("規定休憩開始時刻は規定休憩終了時刻より前である必要があります", exception.getMessage());
+        assertEquals("規定休憩開始時刻と規定休憩終了時刻は異なる時刻である必要があります", exception.getMessage());
     }
 }

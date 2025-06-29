@@ -48,9 +48,9 @@ public class RegisterDefaultWorkRuleUseCase {
         }
         
         // デフォルト勤怠ルールを保存
-        defaultWorkRuleRepository.save(defaultWorkRule);
+        DefaultWorkRule savedRule = defaultWorkRuleRepository.save(defaultWorkRule);
         
         // レスポンスに変換して返却
-        return DefaultWorkRuleMapper.toResponse(defaultWorkRule);
+        return DefaultWorkRuleMapper.toResponse(savedRule);
     }
 }

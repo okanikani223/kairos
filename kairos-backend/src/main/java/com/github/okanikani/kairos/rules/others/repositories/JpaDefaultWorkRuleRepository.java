@@ -28,9 +28,10 @@ public class JpaDefaultWorkRuleRepository implements DefaultWorkRuleRepository {
     }
 
     @Override
-    public void save(DefaultWorkRule defaultWorkRule) {
+    public DefaultWorkRule save(DefaultWorkRule defaultWorkRule) {
         DefaultWorkRuleJpaEntity jpaEntity = toJpaEntity(defaultWorkRule);
-        defaultWorkRuleJpaRepository.save(jpaEntity);
+        DefaultWorkRuleJpaEntity savedEntity = defaultWorkRuleJpaRepository.save(jpaEntity);
+        return toDomainModel(savedEntity);
     }
 
     @Override

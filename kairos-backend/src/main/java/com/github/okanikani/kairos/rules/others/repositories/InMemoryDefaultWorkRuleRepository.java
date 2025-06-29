@@ -24,7 +24,7 @@ public class InMemoryDefaultWorkRuleRepository implements DefaultWorkRuleReposit
     private final AtomicLong idGenerator = new AtomicLong(1);
     
     @Override
-    public void save(DefaultWorkRule defaultWorkRule) {
+    public DefaultWorkRule save(DefaultWorkRule defaultWorkRule) {
         Long id = defaultWorkRule.id();
         if (id == null) {
             // 新規作成の場合は自動生成IDを設定
@@ -42,6 +42,7 @@ public class InMemoryDefaultWorkRuleRepository implements DefaultWorkRuleReposit
             );
         }
         defaultWorkRules.put(id, defaultWorkRule);
+        return defaultWorkRule;
     }
     
     @Override
