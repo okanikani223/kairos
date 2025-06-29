@@ -6,8 +6,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Kairos is a Java-based timesheet/attendance management system built with Spring Boot 3.5.3 and Java 21. The project focuses on managing work reports (勤怠表) and location tracking with features for:
 - Timesheet management: tracking work time, leave types, and report status
-- Location tracking: GPS coordinate recording with validation
+- Location tracking: GPS coordinate recording for attendance/timesheet purposes only
 - Clean Architecture implementation with Domain-Driven Design principles
+
+**Location Data Usage Policy:**
+- Location information is collected and used EXCLUSIVELY for timesheet/attendance report generation
+- Advanced location features (mapping, analytics, geofencing, etc.) are not part of the system requirements
+- Location data should only support basic CRUD operations and integration with timesheet functionality
 
 ## Build and Development Commands
 
@@ -102,6 +107,9 @@ Each domain follows the same structure:
 **Locations Domain:**
 - **Location**: Core entity representing GPS coordinates (latitude, longitude) with timestamp
 - GPS coordinate validation ensures latitude (-90.0 to 90.0) and longitude (-180.0 to 180.0) ranges
+- **IMPORTANT: Single Purpose Design** - Location data is ONLY used for timesheet/attendance report generation
+- Location features beyond basic CRUD and timesheet integration are NOT required for this system
+- Advanced features like geographical range search, location analytics, or mapping are out of scope
 
 **Rules Domain:**
 - **WorkRule**: Core entity representing work rules for specific workplace locations
