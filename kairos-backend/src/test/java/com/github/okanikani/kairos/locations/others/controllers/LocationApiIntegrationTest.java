@@ -2,6 +2,7 @@ package com.github.okanikani.kairos.locations.others.controllers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.okanikani.kairos.locations.applications.usecases.dto.RegisterLocationRequest;
+import com.github.okanikani.kairos.locations.applications.usecases.dto.UpdateLocationRequest;
 import com.github.okanikani.kairos.security.JwtService;
 import com.github.okanikani.kairos.users.applications.usecases.dto.LoginRequest;
 import com.github.okanikani.kairos.users.applications.usecases.dto.LoginResponse;
@@ -374,6 +375,215 @@ class LocationApiIntegrationTest {
                 .andExpect(jsonPath("$").isEmpty());
     }
     
+    @Test
+    @DisplayName("ページネーション検索_基本動作")
+    void ページネーション検索_基本動作() throws Exception {
+        LocalDateTime baseTime = LocalDateTime.of(2024, 1, 15, 9, 0);
+        
+        // テスト用に新しいユーザーを作成（既存データの影響を回避）
+        String testUserId = "paginationtest001";
+        setupTestUserForPagination(testUserId);
+        String testToken = getTokenForUser(testUserId, "PaginationTest123!");
+        
+        // 5件の位置情報を登録（10分間隔）
+        for (int i = 0; i < 5; i++) {
+            RegisterLocationRequest request = new RegisterLocationRequest(
+                35.6762 + (i * 0.001),
+                139.7649 + (i * 0.001),
+                baseTime.plusMinutes(i * 10)
+            );
+            
+            mockMvc.perform(post("/api/locations")
+                    .header("Authorization", "Bearer " + testToken)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isCreated());
+        }
+        
+        // 最初のページ（2件取得）
+        mockMvc.perform(get("/api/locations/search/paged")
+                .header("Authorization", "Bearer " + testToken)
+                .param("startDateTime", baseTime.minusMinutes(5).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME))
+                .param("endDateTime", baseTime.plusHours(1).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME))
+                .param("page", "0")
+                .param("size", "2"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content").isArray())
+                .andExpect(jsonPath("$.content.length()").value(2))
+                .andExpect(jsonPath("$.totalElements").value(5))
+                .andExpect(jsonPath("$.totalPages").value(3))
+                .andExpect(jsonPath("$.page").value(0))
+                .andExpect(jsonPath("$.size").value(2))
+                .andExpect(jsonPath("$.first").value(true))
+                .andExpect(jsonPath("$.last").value(false));
+        
+        // 2番目のページ（2件取得）
+        mockMvc.perform(get("/api/locations/search/paged")
+                .header("Authorization", "Bearer " + testToken)
+                .param("startDateTime", baseTime.minusMinutes(5).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME))
+                .param("endDateTime", baseTime.plusHours(1).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME))
+                .param("page", "1")
+                .param("size", "2"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content").isArray())
+                .andExpect(jsonPath("$.content.length()").value(2))
+                .andExpect(jsonPath("$.page").value(1))
+                .andExpect(jsonPath("$.first").value(false))
+                .andExpect(jsonPath("$.last").value(false));
+        
+        // 最後のページ（1件取得）
+        mockMvc.perform(get("/api/locations/search/paged")
+                .header("Authorization", "Bearer " + testToken)
+                .param("startDateTime", baseTime.minusMinutes(5).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME))
+                .param("endDateTime", baseTime.plusHours(1).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME))
+                .param("page", "2")
+                .param("size", "2"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content").isArray())
+                .andExpect(jsonPath("$.content.length()").value(1))
+                .andExpect(jsonPath("$.page").value(2))
+                .andExpect(jsonPath("$.first").value(false))
+                .andExpect(jsonPath("$.last").value(true));
+    }
+    
+    @Test
+    @DisplayName("ページネーション検索_パラメータバリデーション")
+    void ページネーション検索_パラメータバリデーション() throws Exception {
+        LocalDateTime now = LocalDateTime.now();
+        
+        // 負のページ番号
+        mockMvc.perform(get("/api/locations/search/paged")
+                .header("Authorization", "Bearer " + jwtToken)
+                .param("startDateTime", now.minusHours(1).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME))
+                .param("endDateTime", now.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME))
+                .param("page", "-1")
+                .param("size", "10"))
+                .andExpect(status().isBadRequest());
+        
+        // ゼロのページサイズ
+        mockMvc.perform(get("/api/locations/search/paged")
+                .header("Authorization", "Bearer " + jwtToken)
+                .param("startDateTime", now.minusHours(1).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME))
+                .param("endDateTime", now.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME))
+                .param("page", "0")
+                .param("size", "0"))
+                .andExpect(status().isBadRequest());
+        
+        // 過大なページサイズ（上限100）
+        mockMvc.perform(get("/api/locations/search/paged")
+                .header("Authorization", "Bearer " + jwtToken)
+                .param("startDateTime", now.minusHours(1).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME))
+                .param("endDateTime", now.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME))
+                .param("page", "0")
+                .param("size", "101"))
+                .andExpect(status().isBadRequest());
+    }
+    
+    @Test
+    @DisplayName("位置情報更新API_正常ケース")
+    void 位置情報更新API_正常ケース() throws Exception {
+        LocalDateTime now = LocalDateTime.now();
+        
+        // Step 1: 位置情報登録
+        RegisterLocationRequest createRequest = new RegisterLocationRequest(
+            35.6762,
+            139.7649,
+            now
+        );
+        
+        MvcResult createResult = mockMvc.perform(post("/api/locations")
+                .header("Authorization", "Bearer " + jwtToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(createRequest)))
+                .andExpect(status().isCreated())
+                .andReturn();
+        
+        // レスポンスからIDを取得
+        String responseContent = createResult.getResponse().getContentAsString();
+        Long locationId = objectMapper.readTree(responseContent).get("id").asLong();
+        
+        // Step 2: 位置情報更新
+        UpdateLocationRequest updateRequest = new UpdateLocationRequest(
+            35.6800,  // 緯度変更
+            139.7700, // 経度変更
+            now.plusMinutes(30) // 時刻変更
+        );
+        
+        mockMvc.perform(put("/api/locations/" + locationId)
+                .header("Authorization", "Bearer " + jwtToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(updateRequest)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(locationId))
+                .andExpect(jsonPath("$.latitude").value(35.6800))
+                .andExpect(jsonPath("$.longitude").value(139.7700));
+        
+        // Step 3: 更新結果確認
+        mockMvc.perform(get("/api/locations/" + locationId)
+                .header("Authorization", "Bearer " + jwtToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.latitude").value(35.6800))
+                .andExpect(jsonPath("$.longitude").value(139.7700));
+    }
+    
+    @Test
+    @DisplayName("位置情報更新API_存在しないID")
+    void 位置情報更新API_存在しないID() throws Exception {
+        LocalDateTime now = LocalDateTime.now();
+        
+        UpdateLocationRequest updateRequest = new UpdateLocationRequest(
+            35.6800,
+            139.7700,
+            now
+        );
+        
+        mockMvc.perform(put("/api/locations/999999")
+                .header("Authorization", "Bearer " + jwtToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(updateRequest)))
+                .andExpect(status().isNotFound());
+    }
+    
+    @Test
+    @DisplayName("位置情報更新API_他ユーザーの位置情報")
+    void 位置情報更新API_他ユーザーの位置情報() throws Exception {
+        LocalDateTime now = LocalDateTime.now();
+        
+        // 別ユーザーを作成して位置情報登録
+        String secondUserId = "updatetest002";
+        setupSecondUser(secondUserId);
+        String secondUserToken = getTokenForUser(secondUserId);
+        
+        RegisterLocationRequest createRequest = new RegisterLocationRequest(
+            35.6762,
+            139.7649,
+            now
+        );
+        
+        MvcResult createResult = mockMvc.perform(post("/api/locations")
+                .header("Authorization", "Bearer " + secondUserToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(createRequest)))
+                .andExpect(status().isCreated())
+                .andReturn();
+        
+        String responseContent = createResult.getResponse().getContentAsString();
+        Long locationId = objectMapper.readTree(responseContent).get("id").asLong();
+        
+        // 最初のユーザーが他ユーザーの位置情報を更新しようとする
+        UpdateLocationRequest updateRequest = new UpdateLocationRequest(
+            35.6800,
+            139.7700,
+            now.plusMinutes(30)
+        );
+        
+        mockMvc.perform(put("/api/locations/" + locationId)
+                .header("Authorization", "Bearer " + jwtToken)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(updateRequest)))
+                .andExpect(status().isForbidden());
+    }
+    
     // ヘルパーメソッド
     
     private void setupSecondUser(String userId) throws Exception {
@@ -393,6 +603,35 @@ class LocationApiIntegrationTest {
     
     private String getTokenForUser(String userId) throws Exception {
         LoginRequest loginRequest = new LoginRequest(userId, "SecondLocationTest123!");
+        
+        MvcResult loginResult = mockMvc.perform(post("/api/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(loginRequest)))
+                .andExpect(status().isOk())
+                .andReturn();
+        
+        String responseContent = loginResult.getResponse().getContentAsString();
+        LoginResponse loginResponse = objectMapper.readValue(responseContent, LoginResponse.class);
+        return loginResponse.accessToken();
+    }
+    
+    private void setupTestUserForPagination(String userId) throws Exception {
+        RegisterRequest registerRequest = new RegisterRequest(
+            userId,
+            "ページネーションテストユーザー",
+            userId + "@example.com",
+            "PaginationTest123!",
+            "USER"
+        );
+        
+        mockMvc.perform(post("/api/auth/register")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(registerRequest)))
+                .andExpect(status().isCreated());
+    }
+    
+    private String getTokenForUser(String userId, String password) throws Exception {
+        LoginRequest loginRequest = new LoginRequest(userId, password);
         
         MvcResult loginResult = mockMvc.perform(post("/api/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
