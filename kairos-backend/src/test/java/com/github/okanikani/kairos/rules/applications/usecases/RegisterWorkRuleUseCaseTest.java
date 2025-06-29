@@ -54,9 +54,16 @@ class RegisterWorkRuleUseCaseTest {
             LocalDate.of(2024, 12, 31)            // 所属終了日
         );
 
+        User user = new User("testuser");
+        WorkRule savedWorkRule = new WorkRule(
+            1L, 1L, 35.6762, 139.6503, user,
+            LocalTime.of(9, 0), LocalTime.of(17, 30),
+            LocalTime.of(12, 0), LocalTime.of(13, 0),
+            LocalDate.of(2024, 1, 1), LocalDate.of(2024, 12, 31)
+        );
         when(workRuleRepository.findByUser(any(User.class))).thenReturn(Arrays.asList());
         when(workRuleDomainService.hasOverlappingPeriod(any(), any(), any())).thenReturn(false);
-        doNothing().when(workRuleRepository).save(any(WorkRule.class));
+        when(workRuleRepository.save(any(WorkRule.class))).thenReturn(savedWorkRule);
 
         // Act
         WorkRuleResponse response = registerWorkRuleUseCase.execute(request);
@@ -105,9 +112,16 @@ class RegisterWorkRuleUseCaseTest {
             LocalDate.of(2024, 12, 31)            
         );
 
+        User user = new User("testuser");
+        WorkRule savedWorkRule = new WorkRule(
+            1L, 1L, 35.6762, 139.6503, user,
+            LocalTime.of(9, 0), LocalTime.of(17, 30),
+            null, null,
+            LocalDate.of(2024, 1, 1), LocalDate.of(2024, 12, 31)
+        );
         when(workRuleRepository.findByUser(any(User.class))).thenReturn(Arrays.asList());
         when(workRuleDomainService.hasOverlappingPeriod(any(), any(), any())).thenReturn(false);
-        doNothing().when(workRuleRepository).save(any(WorkRule.class));
+        when(workRuleRepository.save(any(WorkRule.class))).thenReturn(savedWorkRule);
 
         // Act
         WorkRuleResponse response = registerWorkRuleUseCase.execute(request);
@@ -223,9 +237,15 @@ class RegisterWorkRuleUseCaseTest {
             )
         );
 
+        WorkRule savedWorkRule = new WorkRule(
+            2L, 1L, 35.6762, 139.6503, user,
+            LocalTime.of(9, 0), LocalTime.of(17, 30),
+            LocalTime.of(12, 0), LocalTime.of(13, 0),
+            LocalDate.of(2024, 8, 1), LocalDate.of(2024, 10, 31)
+        );
         when(workRuleRepository.findByUser(user)).thenReturn(existingRules);
         when(workRuleDomainService.hasOverlappingPeriod(any(), any(), any())).thenReturn(false);
-        doNothing().when(workRuleRepository).save(any(WorkRule.class));
+        when(workRuleRepository.save(any(WorkRule.class))).thenReturn(savedWorkRule);
 
         // Act
         WorkRuleResponse response = registerWorkRuleUseCase.execute(request);
@@ -257,9 +277,15 @@ class RegisterWorkRuleUseCaseTest {
 
         // 対象ユーザーには既存ルールなし
         User user = new User("testuser2");
+        WorkRule savedWorkRule = new WorkRule(
+            1L, 1L, 35.6762, 139.6503, user,
+            LocalTime.of(9, 0), LocalTime.of(17, 30),
+            LocalTime.of(12, 0), LocalTime.of(13, 0),
+            LocalDate.of(2024, 6, 1), LocalDate.of(2024, 8, 31)
+        );
         when(workRuleRepository.findByUser(user)).thenReturn(Arrays.asList());
         when(workRuleDomainService.hasOverlappingPeriod(any(), any(), any())).thenReturn(false);
-        doNothing().when(workRuleRepository).save(any(WorkRule.class));
+        when(workRuleRepository.save(any(WorkRule.class))).thenReturn(savedWorkRule);
 
         // Act
         WorkRuleResponse response = registerWorkRuleUseCase.execute(request);

@@ -47,9 +47,9 @@ public class RegisterReportCreationRuleUseCase {
         }
         
         // 勤怠作成ルールを保存
-        reportCreationRuleRepository.save(reportCreationRule);
+        ReportCreationRule savedRule = reportCreationRuleRepository.save(reportCreationRule);
         
         // レスポンスに変換して返却
-        return ReportCreationRuleMapper.toResponse(reportCreationRule);
+        return ReportCreationRuleMapper.toResponse(savedRule);
     }
 }

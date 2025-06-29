@@ -50,8 +50,13 @@ class RegisterDefaultWorkRuleUseCaseTest {
         );
 
         User user = new User("testuser");
+        DefaultWorkRule savedRule = new DefaultWorkRule(
+            1L, 1001L, 35.6762, 139.6503, user,
+            LocalTime.of(9, 0), LocalTime.of(17, 30),
+            LocalTime.of(12, 0), LocalTime.of(13, 0)
+        );
         when(defaultWorkRuleRepository.findByUserAndWorkPlaceId(user, 1001L)).thenReturn(null);
-        doNothing().when(defaultWorkRuleRepository).save(any(DefaultWorkRule.class));
+        when(defaultWorkRuleRepository.save(any(DefaultWorkRule.class))).thenReturn(savedRule);
 
         // Act
         DefaultWorkRuleResponse response = registerDefaultWorkRuleUseCase.execute(request);
@@ -121,8 +126,13 @@ class RegisterDefaultWorkRuleUseCaseTest {
         );
 
         User user = new User("testuser");
+        DefaultWorkRule savedRule = new DefaultWorkRule(
+            1L, 1001L, 35.6762, 139.6503, user,
+            LocalTime.of(9, 0), LocalTime.of(17, 30),
+            null, null
+        );
         when(defaultWorkRuleRepository.findByUserAndWorkPlaceId(user, 1001L)).thenReturn(null);
-        doNothing().when(defaultWorkRuleRepository).save(any(DefaultWorkRule.class));
+        when(defaultWorkRuleRepository.save(any(DefaultWorkRule.class))).thenReturn(savedRule);
 
         // Act
         DefaultWorkRuleResponse response = registerDefaultWorkRuleUseCase.execute(request);

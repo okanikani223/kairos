@@ -43,8 +43,9 @@ class RegisterReportCreationRuleUseCaseTest {
         );
 
         User user = new User("testuser");
+        ReportCreationRule savedRule = new ReportCreationRule(1L, user, 15, 15);
         when(reportCreationRuleRepository.findByUser(user)).thenReturn(null);
-        doNothing().when(reportCreationRuleRepository).save(any(ReportCreationRule.class));
+        when(reportCreationRuleRepository.save(any(ReportCreationRule.class))).thenReturn(savedRule);
 
         // Act
         ReportCreationRuleResponse response = registerReportCreationRuleUseCase.execute(request);
@@ -97,8 +98,9 @@ class RegisterReportCreationRuleUseCaseTest {
         );
 
         User user = new User("testuser");
+        ReportCreationRule savedRule = new ReportCreationRule(1L, user, 31, 30);
         when(reportCreationRuleRepository.findByUser(user)).thenReturn(null);
-        doNothing().when(reportCreationRuleRepository).save(any(ReportCreationRule.class));
+        when(reportCreationRuleRepository.save(any(ReportCreationRule.class))).thenReturn(savedRule);
 
         // Act
         ReportCreationRuleResponse response = registerReportCreationRuleUseCase.execute(request);
@@ -122,8 +124,9 @@ class RegisterReportCreationRuleUseCaseTest {
         );
 
         User user = new User("testuser");
+        ReportCreationRule savedRule = new ReportCreationRule(1L, user, 1, 1);
         when(reportCreationRuleRepository.findByUser(user)).thenReturn(null);
-        doNothing().when(reportCreationRuleRepository).save(any(ReportCreationRule.class));
+        when(reportCreationRuleRepository.save(any(ReportCreationRule.class))).thenReturn(savedRule);
 
         // Act
         ReportCreationRuleResponse response = registerReportCreationRuleUseCase.execute(request);

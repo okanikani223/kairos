@@ -26,7 +26,7 @@ public class InMemoryWorkRuleRepository implements WorkRuleRepository {
     private final AtomicLong idGenerator = new AtomicLong(1);
     
     @Override
-    public void save(WorkRule workRule) {
+    public WorkRule save(WorkRule workRule) {
         Long id = workRule.id();
         if (id == null) {
             // 新規作成の場合は自動生成IDを設定
@@ -46,6 +46,7 @@ public class InMemoryWorkRuleRepository implements WorkRuleRepository {
             );
         }
         workRules.put(id, workRule);
+        return workRule;
     }
     
     @Override
@@ -81,5 +82,13 @@ public class InMemoryWorkRuleRepository implements WorkRuleRepository {
         LocalDate endDate = workRule.membershipEndDate();
         
         return !targetDate.isBefore(startDate) && !targetDate.isAfter(endDate);
+    }
+    
+    /**
+     * テスト用のクリアメソッド
+     */
+    public void clear() {
+        workRules.clear();
+        idGenerator.set(1);
     }
 }

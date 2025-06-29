@@ -44,9 +44,9 @@ public record DefaultWorkRule(
             throw new ValidationException("経度は-180.0から180.0の範囲で指定してください");
         }
         
-        // 勤怠時刻の論理チェック
-        if (!standardStartTime.isBefore(standardEndTime)) {
-            throw new ValidationException("規定勤怠開始時刻は規定勤怠終了時刻より前である必要があります");
+        // 勤怠時刻の論理チェック（日をまたぐ勤務も許可するため、同じ時刻のみ拒否）
+        if (standardStartTime.equals(standardEndTime)) {
+            throw new ValidationException("規定勤怠開始時刻と規定勤怠終了時刻は異なる時刻である必要があります");
         }
         
         // 休憩時刻のバリデーション
@@ -65,10 +65,10 @@ public record DefaultWorkRule(
             throw new ValidationException("休憩時刻は開始時刻と終了時刻の両方を設定するか、両方ともnullにしてください");
         }
         
-        // 両方non-nullの場合、開始時刻が終了時刻より前である必要がある
+        // 両方non-nullの場合、開始時刻と終了時刻が異なる必要がある（日をまたぐ休憩も許可）
         if (breakStartTime != null && breakEndTime != null) {
-            if (!breakStartTime.isBefore(breakEndTime)) {
-                throw new ValidationException("規定休憩開始時刻は規定休憩終了時刻より前である必要があります");
+            if (breakStartTime.equals(breakEndTime)) {
+                throw new ValidationException("規定休憩開始時刻と規定休憩終了時刻は異なる時刻である必要があります");
             }
         }
     }

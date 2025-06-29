@@ -14,8 +14,9 @@ public interface ReportCreationRuleRepository {
     /**
      * 勤怠作成ルールを保存する
      * @param reportCreationRule 保存する勤怠作成ルール
+     * @return 保存された勤怠作成ルール（IDが設定される）
      */
-    void save(ReportCreationRule reportCreationRule);
+    ReportCreationRule save(ReportCreationRule reportCreationRule);
     
     /**
      * IDで勤怠作成ルールを検索する

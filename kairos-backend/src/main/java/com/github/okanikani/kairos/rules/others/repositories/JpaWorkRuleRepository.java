@@ -29,9 +29,10 @@ public class JpaWorkRuleRepository implements WorkRuleRepository {
     }
 
     @Override
-    public void save(WorkRule workRule) {
+    public WorkRule save(WorkRule workRule) {
         WorkRuleJpaEntity jpaEntity = toJpaEntity(workRule);
-        workRuleJpaRepository.save(jpaEntity);
+        WorkRuleJpaEntity savedEntity = workRuleJpaRepository.save(jpaEntity);
+        return toDomainModel(savedEntity);
     }
 
     @Override
