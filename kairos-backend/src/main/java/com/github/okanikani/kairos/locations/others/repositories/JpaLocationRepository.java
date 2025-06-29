@@ -6,6 +6,8 @@ import com.github.okanikani.kairos.locations.domains.models.vos.User;
 import com.github.okanikani.kairos.locations.others.jpa.entities.LocationJpaEntity;
 import com.github.okanikani.kairos.locations.others.jpa.repositories.LocationJpaRepository;
 import org.springframework.context.annotation.Profile;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
@@ -98,6 +100,18 @@ public class JpaLocationRepository implements LocationRepository {
         
         return locationJpaRepository.findRecordedAtByUserIdAndPeriod(
                 user.userId(), startDateTime, endDateTime);
+    }
+
+    @Override
+    public Page<Location> findByUserAndDateTimeRange(User user, LocalDateTime startDateTime, LocalDateTime endDateTime, Pageable pageable) {
+        Page<LocationJpaEntity> jpaEntityPage = locationJpaRepository.findByUserIdAndRecordedAtBetween(
+            user.userId(), 
+            startDateTime, 
+            endDateTime, 
+            pageable
+        );
+        
+        return jpaEntityPage.map(this::toDomainModel);
     }
 
     /**

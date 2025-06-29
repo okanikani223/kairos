@@ -2,6 +2,8 @@ package com.github.okanikani.kairos.locations.domains.models.repositories;
 
 import com.github.okanikani.kairos.locations.domains.models.entities.Location;
 import com.github.okanikani.kairos.locations.domains.models.vos.User;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -66,4 +68,14 @@ public interface LocationRepository {
      * @param id 削除する位置情報のID
      */
     void deleteById(Long id);
+
+    /**
+     * 指定したユーザーの指定した日時範囲の位置情報をページネーション付きで取得する
+     * @param user 対象ユーザー
+     * @param startDateTime 開始日時
+     * @param endDateTime 終了日時
+     * @param pageable ページング情報（ページ番号、サイズ、ソート条件）
+     * @return 指定ユーザーの指定範囲の位置情報ページ
+     */
+    Page<Location> findByUserAndDateTimeRange(User user, LocalDateTime startDateTime, LocalDateTime endDateTime, Pageable pageable);
 }

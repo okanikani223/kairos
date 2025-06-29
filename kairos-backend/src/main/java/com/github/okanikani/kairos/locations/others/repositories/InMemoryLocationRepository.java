@@ -4,6 +4,9 @@ import com.github.okanikani.kairos.locations.domains.models.entities.Location;
 import com.github.okanikani.kairos.locations.domains.models.repositories.LocationRepository;
 import com.github.okanikani.kairos.locations.domains.models.vos.User;
 import org.springframework.context.annotation.Profile;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
@@ -91,5 +94,30 @@ public class InMemoryLocationRepository implements LocationRepository {
             .filter(location -> location.user().equals(user))
             .sorted((l1, l2) -> l1.recordedAt().compareTo(l2.recordedAt()))
             .toList();
+    }
+
+    @Override
+    public Page<Location> findByUserAndDateTimeRange(User user, LocalDateTime startDateTime, LocalDateTime endDateTime, Pageable pageable) {
+        // 全体のデータを取得してフィルタリング・ソート
+        List<Location> allFilteredLocations = locations.values().stream()
+            .filter(location -> location.user().equals(user))
+            .filter(location -> !location.recordedAt().isBefore(startDateTime) && 
+                               !location.recordedAt().isAfter(endDateTime))
+            .sorted((l1, l2) -> l1.recordedAt().compareTo(l2.recordedAt()))
+            .toList();
+        
+        // ページネーション情報を計算
+        int totalElements = allFilteredLocations.size();
+        int pageSize = pageable.getPageSize();
+        int pageNumber = pageable.getPageNumber();
+        int startIndex = pageNumber * pageSize;
+        int endIndex = Math.min(startIndex + pageSize, totalElements);
+        
+        // 指定ページの範囲でデータを取得
+        List<Location> pageContent = startIndex < totalElements 
+            ? allFilteredLocations.subList(startIndex, endIndex)
+            : List.of();
+        
+        return new PageImpl<>(pageContent, pageable, totalElements);
     }
 }
