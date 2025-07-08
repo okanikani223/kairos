@@ -41,6 +41,8 @@ public class GlobalExceptionHandler {
     
     private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
     
+    private static final String VALIDATION_ERROR = "バリデーションエラー";
+    
     private final ErrorMetricsService errorMetricsService;
     
     public GlobalExceptionHandler() {
@@ -60,7 +62,9 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleResourceNotFound(ResourceNotFoundException ex, HttpServletRequest request) {
         String errorCode = "RESOURCE_NOT_FOUND";
-        logger.warn("リソースが見つかりません: {} [errorCode={}]", ex.getMessage(), errorCode);
+        if (logger.isWarnEnabled()) {
+            logger.warn("リソースが見つかりません: {} [errorCode={}]", ex.getMessage(), errorCode);
+        }
         
         // エラーメトリクス記録（本番環境のみ）
         if (errorMetricsService != null) {
@@ -80,7 +84,9 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(AuthorizationException.class)
     public ResponseEntity<ErrorResponse> handleAuthorization(AuthorizationException ex) {
-        logger.warn("権限エラーが発生しました: {}", ex.getMessage());
+        if (logger.isWarnEnabled()) {
+            logger.warn("権限エラーが発生しました: {}", ex.getMessage());
+        }
         
         ErrorResponse errorResponse = ErrorResponse.of(
             "AUTHORIZATION_ERROR",
@@ -100,10 +106,12 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ErrorResponse> handleValidation(IllegalArgumentException ex) {
-        logger.warn("バリデーションエラーが発生しました: {}", ex.getMessage());
+        if (logger.isWarnEnabled()) {
+            logger.warn("バリデーションエラーが発生しました: {}", ex.getMessage());
+        }
         
         ErrorResponse errorResponse = ErrorResponse.of(
-            "VALIDATION_ERROR",
+            VALIDATION_ERROR,
             ex.getMessage()
         );
         
@@ -120,10 +128,12 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(NullPointerException.class)
     public ResponseEntity<ErrorResponse> handleNullPointer(NullPointerException ex) {
-        logger.warn("必須パラメータエラーが発生しました: {}", ex.getMessage());
+        if (logger.isWarnEnabled()) {
+            logger.warn("必須パラメータエラーが発生しました: {}", ex.getMessage());
+        }
         
         ErrorResponse errorResponse = ErrorResponse.of(
-            "VALIDATION_ERROR",
+            VALIDATION_ERROR,
             ex.getMessage() != null ? ex.getMessage() : "必須パラメータが設定されていません"
         );
         
@@ -140,7 +150,9 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(DuplicateResourceException.class)
     public ResponseEntity<ErrorResponse> handleDuplicateResource(DuplicateResourceException ex) {
-        logger.warn("リソース重複エラーが発生しました: {}", ex.getMessage());
+        if (logger.isWarnEnabled()) {
+            logger.warn("リソース重複エラーが発生しました: {}", ex.getMessage());
+        }
         
         ErrorResponse errorResponse = ErrorResponse.of(
             "DUPLICATE_RESOURCE",
@@ -160,7 +172,9 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(BusinessRuleViolationException.class)
     public ResponseEntity<ErrorResponse> handleBusinessRuleViolation(BusinessRuleViolationException ex) {
-        logger.warn("業務ルール違反エラーが発生しました: {}", ex.getMessage());
+        if (logger.isWarnEnabled()) {
+            logger.warn("業務ルール違反エラーが発生しました: {}", ex.getMessage());
+        }
         
         ErrorResponse errorResponse = ErrorResponse.of(
             "BUSINESS_RULE_VIOLATION",
@@ -180,10 +194,12 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(ValidationException.class)
     public ResponseEntity<ErrorResponse> handleValidation(ValidationException ex) {
-        logger.warn("バリデーションエラーが発生しました: {}", ex.getMessage());
+        if (logger.isWarnEnabled()) {
+            logger.warn("バリデーションエラーが発生しました: {}", ex.getMessage());
+        }
         
         ErrorResponse errorResponse = ErrorResponse.of(
-            "VALIDATION_ERROR",
+            VALIDATION_ERROR,
             ex.getMessage()
         );
         
@@ -200,10 +216,12 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(java.time.format.DateTimeParseException.class)
     public ResponseEntity<ErrorResponse> handleDateTimeParse(java.time.format.DateTimeParseException ex) {
-        logger.warn("日時パースエラーが発生しました: {}", ex.getMessage());
+        if (logger.isWarnEnabled()) {
+            logger.warn("日時パースエラーが発生しました: {}", ex.getMessage());
+        }
         
         ErrorResponse errorResponse = ErrorResponse.of(
-            "VALIDATION_ERROR",
+            VALIDATION_ERROR,
             "日時形式が正しくありません。ISO-8601形式（YYYY-MM-DDTHH:mm:ss）で入力してください。"
         );
         
@@ -220,7 +238,9 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(IllegalStateException.class)
     public ResponseEntity<ErrorResponse> handleIllegalState(IllegalStateException ex) {
-        logger.error("システム内部状態エラーが発生しました: {}", ex.getMessage(), ex);
+        if (logger.isErrorEnabled()) {
+            logger.error("システム内部状態エラーが発生しました: {}", ex.getMessage(), ex);
+        }
         
         ErrorResponse errorResponse = ErrorResponse.of(
             "ILLEGAL_STATE_ERROR",
@@ -245,7 +265,9 @@ public class GlobalExceptionHandler {
         SignatureException.class
     })
     public ResponseEntity<ErrorResponse> handleJwtException(Exception ex) {
-        logger.warn("JWT認証エラーが発生しました: {}", ex.getMessage());
+        if (logger.isWarnEnabled()) {
+            logger.warn("JWT認証エラーが発生しました: {}", ex.getMessage());
+        }
         
         ErrorResponse errorResponse = ErrorResponse.of(
             "JWT_AUTHENTICATION_ERROR",
@@ -265,7 +287,9 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleMethodArgumentNotValid(MethodArgumentNotValidException ex) {
-        logger.warn("リクエストバリデーションエラーが発生しました: {}", ex.getMessage());
+        if (logger.isWarnEnabled()) {
+            logger.warn("リクエストバリデーションエラーが発生しました: {}", ex.getMessage());
+        }
         
         String errorMessage = ex.getBindingResult().getFieldErrors().stream()
             .map(error -> error.getField() + ": " + error.getDefaultMessage())
@@ -289,7 +313,9 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<ErrorResponse> handleHttpMessageNotReadable(HttpMessageNotReadableException ex) {
-        logger.warn("リクエストボディパースエラーが発生しました: {}", ex.getMessage());
+        if (logger.isWarnEnabled()) {
+            logger.warn("リクエストボディパースエラーが発生しました: {}", ex.getMessage());
+        }
         
         ErrorResponse errorResponse = ErrorResponse.of(
             "REQUEST_PARSE_ERROR",
@@ -307,7 +333,9 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
     public ResponseEntity<ErrorResponse> handleHttpRequestMethodNotSupported(HttpRequestMethodNotSupportedException ex) {
-        logger.warn("サポートされていないHTTPメソッドが指定されました: {}", ex.getMessage());
+        if (logger.isWarnEnabled()) {
+            logger.warn("サポートされていないHTTPメソッドが指定されました: {}", ex.getMessage());
+        }
         
         ErrorResponse errorResponse = ErrorResponse.of(
             "METHOD_NOT_ALLOWED",
@@ -325,7 +353,9 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(MissingServletRequestParameterException.class)
     public ResponseEntity<ErrorResponse> handleMissingServletRequestParameter(MissingServletRequestParameterException ex) {
-        logger.warn("必須パラメータが不足しています: {}", ex.getMessage());
+        if (logger.isWarnEnabled()) {
+            logger.warn("必須パラメータが不足しています: {}", ex.getMessage());
+        }
         
         ErrorResponse errorResponse = ErrorResponse.of(
             "MISSING_PARAMETER",
@@ -345,7 +375,9 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ErrorResponse> handleDataIntegrityViolation(DataIntegrityViolationException ex) {
-        logger.warn("データ整合性違反が発生しました: {}", ex.getMessage());
+        if (logger.isWarnEnabled()) {
+            logger.warn("データ整合性違反が発生しました: {}", ex.getMessage());
+        }
         
         ErrorResponse errorResponse = ErrorResponse.of(
             "DATA_INTEGRITY_VIOLATION",
@@ -363,7 +395,9 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ErrorResponse> handleAccessDenied(AccessDeniedException ex) {
-        logger.warn("アクセス拒否が発生しました: {}", ex.getMessage());
+        if (logger.isWarnEnabled()) {
+            logger.warn("アクセス拒否が発生しました: {}", ex.getMessage());
+        }
         
         ErrorResponse errorResponse = ErrorResponse.of(
             "ACCESS_DENIED",
@@ -384,7 +418,9 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGeneral(Exception ex) {
-        logger.error("予期しないエラーが発生しました", ex);
+        if (logger.isErrorEnabled()) {
+            logger.error("予期しないエラーが発生しました", ex);
+        }
         
         ErrorResponse errorResponse = ErrorResponse.of(
             "INTERNAL_ERROR",

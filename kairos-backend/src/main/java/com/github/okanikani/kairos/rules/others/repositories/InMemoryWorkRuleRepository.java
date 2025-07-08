@@ -28,10 +28,11 @@ public class InMemoryWorkRuleRepository implements WorkRuleRepository {
     @Override
     public WorkRule save(WorkRule workRule) {
         Long id = workRule.id();
+        WorkRule workRuleToSave = workRule;
         if (id == null) {
             // 新規作成の場合は自動生成IDを設定
             id = idGenerator.getAndIncrement();
-            workRule = new WorkRule(
+            workRuleToSave = new WorkRule(
                 id,
                 workRule.workPlaceId(),
                 workRule.latitude(),
@@ -45,8 +46,8 @@ public class InMemoryWorkRuleRepository implements WorkRuleRepository {
                 workRule.membershipEndDate()
             );
         }
-        workRules.put(id, workRule);
-        return workRule;
+        workRules.put(id, workRuleToSave);
+        return workRuleToSave;
     }
     
     @Override

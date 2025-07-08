@@ -14,6 +14,8 @@ import java.util.Objects;
 @Embeddable
 public class ReportId implements Serializable {
 
+    private static final long serialVersionUID = 1L;
+
     @Column(name = "year_month", nullable = false, length = 7)
     private YearMonth yearMonth;
 

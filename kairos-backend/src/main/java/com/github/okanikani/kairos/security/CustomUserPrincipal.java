@@ -15,6 +15,8 @@ import java.util.Objects;
  */
 public class CustomUserPrincipal implements UserDetails {
     
+    private static final long serialVersionUID = 7239485610273958412L;
+    
     private final User user;
     
     public CustomUserPrincipal(User user) {

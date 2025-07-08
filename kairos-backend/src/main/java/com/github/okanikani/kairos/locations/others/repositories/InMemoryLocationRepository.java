@@ -24,16 +24,22 @@ import java.util.concurrent.atomic.AtomicLong;
 @Profile("dev")
 public class InMemoryLocationRepository implements LocationRepository {
     
+    // 時間定数
+    private static final int LAST_HOUR_OF_DAY = 23;
+    private static final int LAST_MINUTE_OF_HOUR = 59;
+    private static final int LAST_SECOND_OF_MINUTE = 59;
+    
     private final Map<Long, Location> locations = new ConcurrentHashMap<>();
     private final AtomicLong idGenerator = new AtomicLong(1);
     
     @Override
     public Location save(Location location) {
         Long id = location.id();
+        Location locationToSave = location;
         if (id == null) {
             // 新規作成の場合は自動生成IDを設定
             id = idGenerator.getAndIncrement();
-            location = new Location(
+            locationToSave = new Location(
                 id,
                 location.latitude(),
                 location.longitude(),
@@ -41,8 +47,8 @@ public class InMemoryLocationRepository implements LocationRepository {
                 location.user()
             );
         }
-        locations.put(id, location);
-        return location;
+        locations.put(id, locationToSave);
+        return locationToSave;
     }
     
     @Override
@@ -57,7 +63,7 @@ public class InMemoryLocationRepository implements LocationRepository {
     @Override
     public List<Location> findByDate(LocalDateTime date) {
         LocalDateTime startOfDay = date.toLocalDate().atStartOfDay();
-        LocalDateTime endOfDay = date.toLocalDate().atTime(23, 59, 59);
+        LocalDateTime endOfDay = date.toLocalDate().atTime(LAST_HOUR_OF_DAY, LAST_MINUTE_OF_HOUR, LAST_SECOND_OF_MINUTE);
         return findByDateTimeRange(startOfDay, endOfDay);
     }
     

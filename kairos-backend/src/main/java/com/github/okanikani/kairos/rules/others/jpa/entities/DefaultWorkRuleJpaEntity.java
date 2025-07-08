@@ -72,6 +72,7 @@ public class DefaultWorkRuleJpaEntity {
     // ビジネスルールのバリデーション
     @PrePersist
     @PreUpdate
+    @SuppressWarnings("PMD.UnusedPrivateMethod") // JPAによって自動的に呼び出される
     private void validateBusinessRules() {
         // 勤怠時刻のチェック
         if (standardStartTime.isAfter(standardEndTime)) {
