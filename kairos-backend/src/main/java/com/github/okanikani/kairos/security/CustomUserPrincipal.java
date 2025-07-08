@@ -15,7 +15,9 @@ import java.util.Objects;
  */
 public class CustomUserPrincipal implements UserDetails {
     
-    private final User user;
+    private static final long serialVersionUID = 1L;
+    
+    private final transient User user;
     
     public CustomUserPrincipal(User user) {
         this.user = Objects.requireNonNull(user, "ユーザーは必須です");

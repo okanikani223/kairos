@@ -22,6 +22,11 @@ public record User(
         LocalDateTime lastLoginAt   // 最終ログイン日時（null可）
 ) {
     
+    // バリデーション定数
+    private static final int MAX_EMAIL_LENGTH = 255;
+    private static final int MIN_PASSWORD_LENGTH = 8;
+    private static final int MAX_PASSWORD_LENGTH = 128;
+    
     // パスワード強度チェック用の正規表現
     private static final Pattern PASSWORD_PATTERN = Pattern.compile(
         "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$"
@@ -60,7 +65,7 @@ public record User(
         }
         
         // メールアドレスの長さチェック
-        if (email.length() > 255) {
+        if (email.length() > MAX_EMAIL_LENGTH) {
             throw new ValidationException("メールアドレスは255文字以内で入力してください");
         }
         
@@ -200,11 +205,11 @@ public record User(
     public static void validatePasswordStrength(String password) {
         Objects.requireNonNull(password, "パスワードは必須です");
         
-        if (password.length() < 8) {
+        if (password.length() < MIN_PASSWORD_LENGTH) {
             throw new ValidationException("パスワードは8文字以上で入力してください");
         }
         
-        if (password.length() > 128) {
+        if (password.length() > MAX_PASSWORD_LENGTH) {
             throw new ValidationException("パスワードは128文字以内で入力してください");
         }
         

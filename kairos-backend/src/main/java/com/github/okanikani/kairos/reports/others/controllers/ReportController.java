@@ -67,7 +67,7 @@ public class ReportController {
         try {
             yearMonth = YearMonth.of(year, month);
         } catch (DateTimeException e) {
-            throw new ValidationException("無効な年月が指定されました: " + year + "/" + month);
+            throw new ValidationException("無効な年月が指定されました: " + year + "/" + month, e);
         }
         
         UserDto userDto = new UserDto(userId);
@@ -96,7 +96,7 @@ public class ReportController {
         try {
             pathYearMonth = YearMonth.of(year, month);
         } catch (DateTimeException e) {
-            throw new ValidationException("無効な年月が指定されました: " + year + "/" + month);
+            throw new ValidationException("無効な年月が指定されました: " + year + "/" + month, e);
         }
         
         if (!pathYearMonth.equals(request.yearMonth())) {
@@ -125,7 +125,7 @@ public class ReportController {
         try {
             yearMonth = YearMonth.of(year, month);
         } catch (DateTimeException e) {
-            throw new ValidationException("無効な年月が指定されました: " + year + "/" + month);
+            throw new ValidationException("無効な年月が指定されました: " + year + "/" + month, e);
         }
         
         UserDto userDto = new UserDto(authenticatedUserId);

@@ -31,7 +31,7 @@ public class DetailJpaEntity {
     private LocalDate workDate;
 
     @Column(name = "is_holiday", nullable = false)
-    private boolean isHoliday;
+    private boolean holiday;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "leave_type", length = 30)
@@ -67,7 +67,7 @@ public class DetailJpaEntity {
                           Duration workingHours, Duration overtimeHours,
                           Duration holidayWorkHours, String note) {
         this.workDate = Objects.requireNonNull(workDate, "勤務日は必須です");
-        this.isHoliday = isHoliday;
+        this.holiday = isHoliday;
         this.leaveType = leaveType;
         this.startDateTime = startDateTime;
         this.endDateTime = endDateTime;
@@ -94,7 +94,7 @@ public class DetailJpaEntity {
     }
 
     public boolean isHoliday() {
-        return isHoliday;
+        return holiday;
     }
 
     public LeaveType getLeaveType() {

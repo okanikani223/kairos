@@ -54,6 +54,9 @@ public record LocationFilteringProperties(
     
 ) {
     
+    // 位置情報フィルタリング設定値の定数定義
+    private static final int MAX_TOLERANCE_METERS = 10000;
+    
     /**
      * デフォルト設定でのインスタンス生成
      * テスト用途や設定が存在しない場合の fallback として使用
@@ -80,7 +83,7 @@ public record LocationFilteringProperties(
                 "defaultToleranceMetersは0以上の値を指定してください。指定値: " + defaultToleranceMeters);
         }
         
-        if (defaultToleranceMeters > 10000) {
+        if (defaultToleranceMeters > MAX_TOLERANCE_METERS) {
             throw new IllegalArgumentException(
                 "defaultToleranceMetersは10000メートル以下の値を指定してください。指定値: " + defaultToleranceMeters);
         }

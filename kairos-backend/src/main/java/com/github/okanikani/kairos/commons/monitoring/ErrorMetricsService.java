@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -19,10 +20,10 @@ public class ErrorMetricsService {
     private static final Logger logger = LoggerFactory.getLogger(ErrorMetricsService.class);
     
     // エラーコード別カウンター
-    private final ConcurrentHashMap<String, AtomicLong> errorCounts = new ConcurrentHashMap<>();
+    private final Map<String, AtomicLong> errorCounts = new ConcurrentHashMap<>();
     
     // エラーパス別カウンター
-    private final ConcurrentHashMap<String, AtomicLong> errorPathCounts = new ConcurrentHashMap<>();
+    private final Map<String, AtomicLong> errorPathCounts = new ConcurrentHashMap<>();
     
     /**
      * エラー発生を記録
