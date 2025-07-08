@@ -131,6 +131,16 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <version>${spring.boot.version}</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>repackage</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <mainClass>com.github.okanikani.kairos.Application</mainClass>
+                </configuration>
             </plugin>
             
             <!-- Maven Surefire Plugin for Test Configuration -->
