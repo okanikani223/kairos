@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FindBugsFilter>
+    <!-- すべてのバグパターンを有効化 -->
+    <Match>
+        <Bug pattern="*" />
+    </Match>
+    
+    <!-- テストコードは除外 -->
+    <Match>
+        <Class name="~.*Test" />
+        <Not>
+            <Bug pattern="*" />
+        </Not>
+    </Match>
+</FindBugsFilter>
