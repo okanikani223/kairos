@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.3.xsd">
+    <!-- 既知の誤検知を抑制 -->
+    <!-- 必要に応じて、特定の脆弱性の誤検知を追加 -->
+</suppressions>
