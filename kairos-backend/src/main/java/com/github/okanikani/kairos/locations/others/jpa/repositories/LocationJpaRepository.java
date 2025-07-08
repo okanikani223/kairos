@@ -18,6 +18,11 @@ import java.util.List;
  */
 @Repository
 public interface LocationJpaRepository extends JpaRepository<LocationJpaEntity, Long> {
+    
+    // クエリパラメータ名の定数定義
+    String PARAM_USER_ID = "userId";
+    String PARAM_START_DATE_TIME = "startDateTime";
+    String PARAM_END_DATE_TIME = "endDateTime";
 
     /**
      * ユーザーIDで位置情報を検索（記録日時の降順）
@@ -26,7 +31,7 @@ public interface LocationJpaRepository extends JpaRepository<LocationJpaEntity, 
      * @return 該当ユーザーの位置情報一覧
      */
     @Query("SELECT l FROM LocationJpaEntity l WHERE l.userId = :userId ORDER BY l.recordedAt DESC")
-    List<LocationJpaEntity> findByUserIdOrderByRecordedAtDesc(@Param("userId") String userId);
+    List<LocationJpaEntity> findByUserIdOrderByRecordedAtDesc(@Param(PARAM_USER_ID) String userId);
 
     /**
      * ユーザーIDと期間で位置情報を検索
@@ -37,9 +42,9 @@ public interface LocationJpaRepository extends JpaRepository<LocationJpaEntity, 
      * @return 該当期間の位置情報一覧
      */
     @Query("SELECT l FROM LocationJpaEntity l WHERE l.userId = :userId AND l.recordedAt BETWEEN :startDateTime AND :endDateTime ORDER BY l.recordedAt")
-    List<LocationJpaEntity> findByUserIdAndRecordedAtBetween(@Param("userId") String userId,
-                                                             @Param("startDateTime") LocalDateTime startDateTime,
-                                                             @Param("endDateTime") LocalDateTime endDateTime);
+    List<LocationJpaEntity> findByUserIdAndRecordedAtBetween(@Param(PARAM_USER_ID) String userId,
+                                                             @Param(PARAM_START_DATE_TIME) LocalDateTime startDateTime,
+                                                             @Param(PARAM_END_DATE_TIME) LocalDateTime endDateTime);
 
     /**
      * ユーザーIDと期間で位置情報をページネーション付きで検索
@@ -51,9 +56,9 @@ public interface LocationJpaRepository extends JpaRepository<LocationJpaEntity, 
      * @return 該当期間の位置情報ページ
      */
     @Query("SELECT l FROM LocationJpaEntity l WHERE l.userId = :userId AND l.recordedAt BETWEEN :startDateTime AND :endDateTime")
-    Page<LocationJpaEntity> findByUserIdAndRecordedAtBetween(@Param("userId") String userId,
-                                                             @Param("startDateTime") LocalDateTime startDateTime,
-                                                             @Param("endDateTime") LocalDateTime endDateTime,
+    Page<LocationJpaEntity> findByUserIdAndRecordedAtBetween(@Param(PARAM_USER_ID) String userId,
+                                                             @Param(PARAM_START_DATE_TIME) LocalDateTime startDateTime,
+                                                             @Param(PARAM_END_DATE_TIME) LocalDateTime endDateTime,
                                                              Pageable pageable);
 
     /**
@@ -65,9 +70,9 @@ public interface LocationJpaRepository extends JpaRepository<LocationJpaEntity, 
      * @return 記録日時のリスト
      */
     @Query("SELECT l.recordedAt FROM LocationJpaEntity l WHERE l.userId = :userId AND l.recordedAt BETWEEN :startDateTime AND :endDateTime ORDER BY l.recordedAt")
-    List<LocalDateTime> findRecordedAtByUserIdAndPeriod(@Param("userId") String userId,
-                                                        @Param("startDateTime") LocalDateTime startDateTime,
-                                                        @Param("endDateTime") LocalDateTime endDateTime);
+    List<LocalDateTime> findRecordedAtByUserIdAndPeriod(@Param(PARAM_USER_ID) String userId,
+                                                        @Param(PARAM_START_DATE_TIME) LocalDateTime startDateTime,
+                                                        @Param(PARAM_END_DATE_TIME) LocalDateTime endDateTime);
 
     /**
      * 期間で位置情報を検索（管理者用）
@@ -77,8 +82,8 @@ public interface LocationJpaRepository extends JpaRepository<LocationJpaEntity, 
      * @return 該当期間の全位置情報一覧
      */
     @Query("SELECT l FROM LocationJpaEntity l WHERE l.recordedAt BETWEEN :startDateTime AND :endDateTime ORDER BY l.recordedAt, l.userId")
-    List<LocationJpaEntity> findByRecordedAtBetween(@Param("startDateTime") LocalDateTime startDateTime,
-                                                    @Param("endDateTime") LocalDateTime endDateTime);
+    List<LocationJpaEntity> findByRecordedAtBetween(@Param(PARAM_START_DATE_TIME) LocalDateTime startDateTime,
+                                                    @Param(PARAM_END_DATE_TIME) LocalDateTime endDateTime);
 
     /**
      * ユーザーの最新位置情報を取得
@@ -87,5 +92,5 @@ public interface LocationJpaRepository extends JpaRepository<LocationJpaEntity, 
      * @return 最新の位置情報（存在しない場合はnull）
      */
     @Query("SELECT l FROM LocationJpaEntity l WHERE l.userId = :userId ORDER BY l.recordedAt DESC LIMIT 1")
-    LocationJpaEntity findLatestByUserId(@Param("userId") String userId);
+    LocationJpaEntity findLatestByUserId(@Param(PARAM_USER_ID) String userId);
 }

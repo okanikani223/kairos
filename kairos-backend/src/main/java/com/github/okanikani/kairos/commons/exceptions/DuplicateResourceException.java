@@ -13,6 +13,8 @@ package com.github.okanikani.kairos.commons.exceptions;
  */
 public class DuplicateResourceException extends KairosException {
     
+    private static final long serialVersionUID = 847291653710248592L;
+    
     /**
      * メッセージを指定してDuplicateResourceExceptionを生成します。
      * 

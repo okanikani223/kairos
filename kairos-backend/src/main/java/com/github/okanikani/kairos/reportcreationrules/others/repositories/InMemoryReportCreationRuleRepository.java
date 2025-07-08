@@ -26,18 +26,19 @@ public class InMemoryReportCreationRuleRepository implements ReportCreationRuleR
     @Override
     public ReportCreationRule save(ReportCreationRule reportCreationRule) {
         Long id = reportCreationRule.id();
+        ReportCreationRule ruleToSave = reportCreationRule;
         if (id == null) {
             // 新規作成の場合は自動生成IDを設定
             id = idGenerator.getAndIncrement();
-            reportCreationRule = new ReportCreationRule(
+            ruleToSave = new ReportCreationRule(
                 id,
                 reportCreationRule.user(),
                 reportCreationRule.closingDay(),
                 reportCreationRule.timeCalculationUnitMinutes()
             );
         }
-        reportCreationRules.put(id, reportCreationRule);
-        return reportCreationRule;
+        reportCreationRules.put(id, ruleToSave);
+        return ruleToSave;
     }
     
     @Override

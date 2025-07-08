@@ -124,21 +124,27 @@ public class GenerateReportFromLocationUseCase {
                 throw new IllegalStateException(message + " 厳密モードでは作業場所情報が必須です。");
             } else {
                 // 寛容モード: 警告ログを出力し、全位置情報を対象とする
-                logger.warn(message + " 全ての位置情報を勤怠対象とします。");
+                if (logger.isWarnEnabled()) {
+                    logger.warn(message + " 全ての位置情報を勤怠対象とします。");
+                }
                 return locationService.getLocationRecordTimes(period, user);
             }
         }
         
         // 作業場所近辺の位置情報のみを取得
         WorkplaceLocation workplaceLocation = workplace.get();
-        logger.info("位置情報フィルタリングを実行します。作業場所: 緯度={}, 経度={}, 許容距離={}m, ユーザー: {}", 
-            workplaceLocation.latitude(), workplaceLocation.longitude(), 
-            workplaceLocation.radiusMeters(), user.userId());
+        if (logger.isInfoEnabled()) {
+            logger.info("位置情報フィルタリングを実行します。作業場所: 緯度={}, 経度={}, 許容距離={}m, ユーザー: {}", 
+                workplaceLocation.latitude(), workplaceLocation.longitude(), 
+                workplaceLocation.radiusMeters(), user.userId());
+        }
         
         List<LocalDateTime> filteredTimes = locationService.getLocationRecordTimesNearWorkplace(period, user, workplaceLocation);
         
-        logger.info("位置情報フィルタリング結果: {}件の位置情報を取得しました。ユーザー: {}", 
-            filteredTimes.size(), user.userId());
+        if (logger.isInfoEnabled()) {
+            logger.info("位置情報フィルタリング結果: {}件の位置情報を取得しました。ユーザー: {}", 
+                filteredTimes.size(), user.userId());
+        }
         
         return filteredTimes;
     }

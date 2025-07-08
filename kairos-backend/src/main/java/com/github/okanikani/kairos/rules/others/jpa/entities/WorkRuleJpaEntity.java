@@ -84,6 +84,7 @@ public class WorkRuleJpaEntity {
     // ビジネスルールのバリデーション
     @PrePersist
     @PreUpdate
+    @SuppressWarnings("PMD.UnusedPrivateMethod") // JPAによって自動的に呼び出される
     private void validateBusinessRules() {
         // 所属期間のチェック
         if (membershipStartDate.isAfter(membershipEndDate)) {
