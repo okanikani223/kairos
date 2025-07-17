@@ -17,6 +17,10 @@ import java.util.Optional;
 @Repository
 public interface DefaultWorkRuleJpaRepository extends JpaRepository<DefaultWorkRuleJpaEntity, Long> {
 
+    // パラメータ名定数定義
+    String USER_ID_PARAM = "userId";
+    String WORK_PLACE_ID_PARAM = "workPlaceId";
+
     /**
      * ユーザーIDでデフォルト勤怠ルールを検索
      * 
@@ -24,7 +28,7 @@ public interface DefaultWorkRuleJpaRepository extends JpaRepository<DefaultWorkR
      * @return 該当ユーザーのデフォルト勤怠ルール一覧
      */
     @Query("SELECT d FROM DefaultWorkRuleJpaEntity d WHERE d.userId = :userId ORDER BY d.workPlaceId")
-    List<DefaultWorkRuleJpaEntity> findByUserId(@Param("userId") String userId);
+    List<DefaultWorkRuleJpaEntity> findByUserId(@Param(USER_ID_PARAM) String userId);
 
     /**
      * 勤怠先IDでデフォルト勤怠ルールを検索
@@ -33,7 +37,7 @@ public interface DefaultWorkRuleJpaRepository extends JpaRepository<DefaultWorkR
      * @return 該当勤怠先のデフォルト勤怠ルール一覧
      */
     @Query("SELECT d FROM DefaultWorkRuleJpaEntity d WHERE d.workPlaceId = :workPlaceId ORDER BY d.userId")
-    List<DefaultWorkRuleJpaEntity> findByWorkPlaceId(@Param("workPlaceId") Long workPlaceId);
+    List<DefaultWorkRuleJpaEntity> findByWorkPlaceId(@Param(WORK_PLACE_ID_PARAM) Long workPlaceId);
 
     /**
      * ユーザーIDと勤怠先IDでデフォルト勤怠ルールを検索
@@ -44,8 +48,8 @@ public interface DefaultWorkRuleJpaRepository extends JpaRepository<DefaultWorkR
      * @return デフォルト勤怠ルール（存在しない場合はEmpty）
      */
     @Query("SELECT d FROM DefaultWorkRuleJpaEntity d WHERE d.userId = :userId AND d.workPlaceId = :workPlaceId")
-    Optional<DefaultWorkRuleJpaEntity> findByUserIdAndWorkPlaceId(@Param("userId") String userId, 
-                                                                  @Param("workPlaceId") Long workPlaceId);
+    Optional<DefaultWorkRuleJpaEntity> findByUserIdAndWorkPlaceId(@Param(USER_ID_PARAM) String userId, 
+                                                                  @Param(WORK_PLACE_ID_PARAM) Long workPlaceId);
 
     /**
      * ユーザーIDと勤怠先IDの組み合わせが存在するかチェック
@@ -55,7 +59,7 @@ public interface DefaultWorkRuleJpaRepository extends JpaRepository<DefaultWorkR
      * @return 存在する場合true
      */
     @Query("SELECT COUNT(d) > 0 FROM DefaultWorkRuleJpaEntity d WHERE d.userId = :userId AND d.workPlaceId = :workPlaceId")
-    boolean existsByUserIdAndWorkPlaceId(@Param("userId") String userId, @Param("workPlaceId") Long workPlaceId);
+    boolean existsByUserIdAndWorkPlaceId(@Param(USER_ID_PARAM) String userId, @Param(WORK_PLACE_ID_PARAM) Long workPlaceId);
 
     /**
      * ユーザーIDと勤怠先IDの組み合わせが存在するかチェック（ID除外）
@@ -67,7 +71,7 @@ public interface DefaultWorkRuleJpaRepository extends JpaRepository<DefaultWorkR
      * @return 存在する場合true
      */
     @Query("SELECT COUNT(d) > 0 FROM DefaultWorkRuleJpaEntity d WHERE d.userId = :userId AND d.workPlaceId = :workPlaceId AND d.id != :excludeId")
-    boolean existsByUserIdAndWorkPlaceIdExcludingId(@Param("userId") String userId, 
-                                                    @Param("workPlaceId") Long workPlaceId, 
+    boolean existsByUserIdAndWorkPlaceIdExcludingId(@Param(USER_ID_PARAM) String userId, 
+                                                    @Param(WORK_PLACE_ID_PARAM) Long workPlaceId, 
                                                     @Param("excludeId") Long excludeId);
 }

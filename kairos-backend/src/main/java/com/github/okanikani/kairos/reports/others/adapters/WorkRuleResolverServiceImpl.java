@@ -29,6 +29,14 @@ import java.util.Optional;
 @Service
 public class WorkRuleResolverServiceImpl implements WorkRuleResolverService {
     
+    // エラーメッセージ定数
+    private static final String ERROR_MSG_USER_REQUIRED = "userは必須です";
+    
+    // デフォルト値定数
+    private static final int DEFAULT_CLOSING_DAY = 1;
+    private static final int DEFAULT_TIME_CALCULATION_UNIT_MINUTES = 15;
+    private static final double DEFAULT_WORKPLACE_RADIUS_METERS = 100.0;
+    
     private final WorkRuleRepository workRuleRepository;
     private final DefaultWorkRuleRepository defaultWorkRuleRepository;
     private final ReportCreationRuleRepository reportCreationRuleRepository;
@@ -45,7 +53,7 @@ public class WorkRuleResolverServiceImpl implements WorkRuleResolverService {
     
     @Override
     public int getClosingDay(User user) {
-        Objects.requireNonNull(user, "userは必須です");
+        Objects.requireNonNull(user, ERROR_MSG_USER_REQUIRED);
         
         // ReportCreationRuleから勤怠締め日を取得
         com.github.okanikani.kairos.reportcreationrules.domains.models.vos.User ruleUser = 
@@ -58,12 +66,12 @@ public class WorkRuleResolverServiceImpl implements WorkRuleResolverService {
         }
         
         // デフォルト：1日（月の初日から計算）
-        return 1;
+        return DEFAULT_CLOSING_DAY;
     }
     
     @Override
     public RoundingSetting createRoundingSetting(User user) {
-        Objects.requireNonNull(user, "userは必須です");
+        Objects.requireNonNull(user, ERROR_MSG_USER_REQUIRED);
         
         // ReportCreationRuleから時間計算単位を取得
         com.github.okanikani.kairos.reportcreationrules.domains.models.vos.User ruleUser = 
@@ -76,12 +84,12 @@ public class WorkRuleResolverServiceImpl implements WorkRuleResolverService {
         }
         
         // デフォルト：15分単位
-        return new MinuteBasedRoundingSetting(15);
+        return new MinuteBasedRoundingSetting(DEFAULT_TIME_CALCULATION_UNIT_MINUTES);
     }
     
     @Override
     public WorkRuleInfo resolveWorkRule(User user, LocalDate workDate) {
-        Objects.requireNonNull(user, "userは必須です");
+        Objects.requireNonNull(user, ERROR_MSG_USER_REQUIRED);
         Objects.requireNonNull(workDate, "workDateは必須です");
         
         // 1. 有効なWorkRuleを検索（最優先）
@@ -107,7 +115,7 @@ public class WorkRuleResolverServiceImpl implements WorkRuleResolverService {
     
     @Override
     public Optional<WorkplaceLocation> resolveWorkplaceLocation(User user, LocalDate workDate) {
-        Objects.requireNonNull(user, "userは必須です");
+        Objects.requireNonNull(user, ERROR_MSG_USER_REQUIRED);
         Objects.requireNonNull(workDate, "workDateは必須です");
         
         // 1. 有効なWorkRuleを検索（最優先）
@@ -120,7 +128,7 @@ public class WorkRuleResolverServiceImpl implements WorkRuleResolverService {
             return Optional.of(new WorkplaceLocation(
                 rule.latitude(),
                 rule.longitude(),
-                100.0  // デフォルトの許容半径100メートル
+                DEFAULT_WORKPLACE_RADIUS_METERS  // デフォルトの許容半径100メートル
             ));
         }
         
@@ -131,7 +139,7 @@ public class WorkRuleResolverServiceImpl implements WorkRuleResolverService {
             return Optional.of(new WorkplaceLocation(
                 rule.latitude(),
                 rule.longitude(),
-                100.0  // デフォルトの許容半径100メートル
+                DEFAULT_WORKPLACE_RADIUS_METERS  // デフォルトの許容半径100メートル
             ));
         }
         

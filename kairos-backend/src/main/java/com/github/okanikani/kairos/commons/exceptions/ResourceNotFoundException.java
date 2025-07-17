@@ -13,6 +13,8 @@ package com.github.okanikani.kairos.commons.exceptions;
  */
 public class ResourceNotFoundException extends KairosException {
     
+    private static final long serialVersionUID = 639174285360471829L;
+    
     /**
      * エラーメッセージを指定してResourceNotFoundExceptionを作成します
      * 

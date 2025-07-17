@@ -15,6 +15,8 @@ package com.github.okanikani.kairos.commons.exceptions;
  */
 public class ValidationException extends KairosException {
     
+    private static final long serialVersionUID = 512893764018537246L;
+    
     /**
      * メッセージを指定してValidationExceptionを生成します。
      * 

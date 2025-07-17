@@ -85,7 +85,7 @@ public record LocationFilteringProperties(
         
         if (defaultToleranceMeters > MAX_TOLERANCE_METERS) {
             throw new IllegalArgumentException(
-                "defaultToleranceMetersは10000メートル以下の値を指定してください。指定値: " + defaultToleranceMeters);
+                "defaultToleranceMetersは" + MAX_TOLERANCE_METERS + "メートル以下の値を指定してください。指定値: " + defaultToleranceMeters);
         }
     }
 }

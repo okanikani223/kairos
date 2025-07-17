@@ -26,10 +26,11 @@ public class InMemoryDefaultWorkRuleRepository implements DefaultWorkRuleReposit
     @Override
     public DefaultWorkRule save(DefaultWorkRule defaultWorkRule) {
         Long id = defaultWorkRule.id();
+        DefaultWorkRule workRuleToSave = defaultWorkRule;
         if (id == null) {
             // 新規作成の場合は自動生成IDを設定
             id = idGenerator.getAndIncrement();
-            defaultWorkRule = new DefaultWorkRule(
+            workRuleToSave = new DefaultWorkRule(
                 id,
                 defaultWorkRule.workPlaceId(),
                 defaultWorkRule.latitude(),
@@ -41,8 +42,8 @@ public class InMemoryDefaultWorkRuleRepository implements DefaultWorkRuleReposit
                 defaultWorkRule.breakEndTime()
             );
         }
-        defaultWorkRules.put(id, defaultWorkRule);
-        return defaultWorkRule;
+        defaultWorkRules.put(id, workRuleToSave);
+        return workRuleToSave;
     }
     
     @Override

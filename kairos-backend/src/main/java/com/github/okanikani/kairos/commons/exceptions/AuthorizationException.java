@@ -13,6 +13,8 @@ package com.github.okanikani.kairos.commons.exceptions;
  */
 public class AuthorizationException extends KairosException {
     
+    private static final long serialVersionUID = 8956123047528310129L;
+    
     /**
      * エラーメッセージを指定してAuthorizationExceptionを作成します
      * 

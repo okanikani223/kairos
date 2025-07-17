@@ -8,6 +8,8 @@ package com.github.okanikani.kairos.commons.exceptions;
  */
 public abstract class KairosException extends RuntimeException {
     
+    private static final long serialVersionUID = 2743581293847561023L;
+    
     /**
      * エラーメッセージを指定してKairosExceptionを作成します
      * 

@@ -18,6 +18,10 @@ import java.util.Optional;
 @Repository
 public interface WorkRuleJpaRepository extends JpaRepository<WorkRuleJpaEntity, Long> {
 
+    // パラメータ名定数定義
+    String USER_ID_PARAM = "userId";
+    String WORK_PLACE_ID_PARAM = "workPlaceId";
+
     /**
      * ユーザーIDで勤怠ルールを検索（所属開始日の降順）
      * 
@@ -25,7 +29,7 @@ public interface WorkRuleJpaRepository extends JpaRepository<WorkRuleJpaEntity, 
      * @return 該当ユーザーの勤怠ルール一覧
      */
     @Query("SELECT w FROM WorkRuleJpaEntity w WHERE w.userId = :userId ORDER BY w.membershipStartDate DESC")
-    List<WorkRuleJpaEntity> findByUserIdOrderByMembershipStartDateDesc(@Param("userId") String userId);
+    List<WorkRuleJpaEntity> findByUserIdOrderByMembershipStartDateDesc(@Param(USER_ID_PARAM) String userId);
 
     /**
      * 勤怠先IDで勤怠ルールを検索
@@ -34,7 +38,7 @@ public interface WorkRuleJpaRepository extends JpaRepository<WorkRuleJpaEntity, 
      * @return 該当勤怠先の勤怠ルール一覧
      */
     @Query("SELECT w FROM WorkRuleJpaEntity w WHERE w.workPlaceId = :workPlaceId ORDER BY w.membershipStartDate")
-    List<WorkRuleJpaEntity> findByWorkPlaceIdOrderByMembershipStartDate(@Param("workPlaceId") Long workPlaceId);
+    List<WorkRuleJpaEntity> findByWorkPlaceIdOrderByMembershipStartDate(@Param(WORK_PLACE_ID_PARAM) Long workPlaceId);
 
     /**
      * ユーザーIDと有効日で勤怠ルールを検索
@@ -45,7 +49,7 @@ public interface WorkRuleJpaRepository extends JpaRepository<WorkRuleJpaEntity, 
      * @return 有効な勤怠ルール（存在しない場合はEmpty）
      */
     @Query("SELECT w FROM WorkRuleJpaEntity w WHERE w.userId = :userId AND w.membershipStartDate <= :effectiveDate AND w.membershipEndDate >= :effectiveDate")
-    Optional<WorkRuleJpaEntity> findByUserIdAndEffectiveDate(@Param("userId") String userId, 
+    Optional<WorkRuleJpaEntity> findByUserIdAndEffectiveDate(@Param(USER_ID_PARAM) String userId, 
                                                              @Param("effectiveDate") LocalDate effectiveDate);
 
     /**
@@ -59,7 +63,7 @@ public interface WorkRuleJpaRepository extends JpaRepository<WorkRuleJpaEntity, 
      */
     @Query("SELECT w FROM WorkRuleJpaEntity w WHERE w.userId = :userId AND " +
            "((w.membershipStartDate <= :endDate) AND (w.membershipEndDate >= :startDate))")
-    List<WorkRuleJpaEntity> findOverlappingRules(@Param("userId") String userId,
+    List<WorkRuleJpaEntity> findOverlappingRules(@Param(USER_ID_PARAM) String userId,
                                                  @Param("startDate") LocalDate startDate,
                                                  @Param("endDate") LocalDate endDate);
 
@@ -75,7 +79,7 @@ public interface WorkRuleJpaRepository extends JpaRepository<WorkRuleJpaEntity, 
      */
     @Query("SELECT w FROM WorkRuleJpaEntity w WHERE w.userId = :userId AND w.id != :excludeId AND " +
            "((w.membershipStartDate <= :endDate) AND (w.membershipEndDate >= :startDate))")
-    List<WorkRuleJpaEntity> findOverlappingRulesExcludingId(@Param("userId") String userId,
+    List<WorkRuleJpaEntity> findOverlappingRulesExcludingId(@Param(USER_ID_PARAM) String userId,
                                                             @Param("startDate") LocalDate startDate,
                                                             @Param("endDate") LocalDate endDate,
                                                             @Param("excludeId") Long excludeId);

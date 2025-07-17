@@ -14,6 +14,8 @@ package com.github.okanikani.kairos.commons.exceptions;
  */
 public class BusinessRuleViolationException extends KairosException {
     
+    private static final long serialVersionUID = 4571829304865120374L;
+    
     /**
      * メッセージを指定してBusinessRuleViolationExceptionを生成します。
      * 
