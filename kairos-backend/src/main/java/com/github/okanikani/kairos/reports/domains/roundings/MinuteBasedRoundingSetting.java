@@ -9,6 +9,10 @@ import java.time.LocalDateTime;
  */
 public class MinuteBasedRoundingSetting implements RoundingSetting {
     
+    // 時間計算単位の制限値
+    private static final int MIN_UNIT_MINUTES = 1;
+    private static final int MAX_UNIT_MINUTES = 60;
+    
     private final int unitMinutes;
     
     /**
@@ -16,8 +20,8 @@ public class MinuteBasedRoundingSetting implements RoundingSetting {
      * @param unitMinutes 丸め単位（分）：1-60分の範囲で指定
      */
     public MinuteBasedRoundingSetting(int unitMinutes) {
-        if (unitMinutes < 1 || unitMinutes > 60) {
-            throw new ValidationException("時間計算単位は1-60分の範囲で指定してください");
+        if (unitMinutes < MIN_UNIT_MINUTES || unitMinutes > MAX_UNIT_MINUTES) {
+            throw new ValidationException("時間計算単位は" + MIN_UNIT_MINUTES + "-" + MAX_UNIT_MINUTES + "分の範囲で指定してください");
         }
         this.unitMinutes = unitMinutes;
     }
@@ -35,7 +39,7 @@ public class MinuteBasedRoundingSetting implements RoundingSetting {
         int roundedMinute = ((currentMinute + unitMinutes - 1) / unitMinutes) * unitMinutes;
         
         // 60分を超える場合は時間を繰り上げ
-        if (roundedMinute >= 60) {
+        if (roundedMinute >= MAX_UNIT_MINUTES) {
             return dateTime.withMinute(0).withSecond(0).withNano(0).plusHours(1);
         }
         

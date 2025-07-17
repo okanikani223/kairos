@@ -19,6 +19,14 @@ public record ReportCreationRule(
         int timeCalculationUnitMinutes     // 勤怠時間計算単位（分：1-60）
 ) {
     
+    // 勤怠締め日の範囲定数
+    private static final int MIN_CLOSING_DAY = 1;
+    private static final int MAX_CLOSING_DAY = 31;
+    
+    // 勤怠時間計算単位の範囲定数
+    private static final int MIN_TIME_CALCULATION_UNIT_MINUTES = 1;
+    private static final int MAX_TIME_CALCULATION_UNIT_MINUTES = 60;
+    
     /**
      * コンストラクタ
      * 各フィールドのバリデーションを実行
@@ -28,16 +36,16 @@ public record ReportCreationRule(
         Objects.requireNonNull(user, "ユーザーは必須です");
         
         // 勤怠締め日の範囲チェック
-        if (closingDay < 1 || closingDay > 31) {
-            throw new ValidationException("勤怠締め日は1日から31日までの範囲で指定してください");
+        if (closingDay < MIN_CLOSING_DAY || closingDay > MAX_CLOSING_DAY) {
+            throw new ValidationException("勤怠締め日は" + MIN_CLOSING_DAY + "日から" + MAX_CLOSING_DAY + "日までの範囲で指定してください");
         }
         
         // 勤怠時間計算単位の範囲チェック
-        if (timeCalculationUnitMinutes < 1) {
-            throw new ValidationException("勤怠時間計算単位は1分以上である必要があります");
+        if (timeCalculationUnitMinutes < MIN_TIME_CALCULATION_UNIT_MINUTES) {
+            throw new ValidationException("勤怠時間計算単位は" + MIN_TIME_CALCULATION_UNIT_MINUTES + "分以上である必要があります");
         }
-        if (timeCalculationUnitMinutes > 60) {
-            throw new ValidationException("勤怠時間計算単位は60分以下である必要があります");
+        if (timeCalculationUnitMinutes > MAX_TIME_CALCULATION_UNIT_MINUTES) {
+            throw new ValidationException("勤怠時間計算単位は" + MAX_TIME_CALCULATION_UNIT_MINUTES + "分以下である必要があります");
         }
     }
 }
