@@ -62,7 +62,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleResourceNotFound(ResourceNotFoundException ex, HttpServletRequest request) {
         String errorCode = "RESOURCE_NOT_FOUND";
-        if (logger.isWarnEnabled()) {
+    if (logger.isWarnEnabled()) {
             logger.warn("リソースが見つかりません: {} [errorCode={}]", ex.getMessage(), errorCode);
         }
         

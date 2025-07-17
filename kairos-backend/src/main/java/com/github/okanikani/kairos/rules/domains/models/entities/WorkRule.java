@@ -74,7 +74,7 @@ public record WorkRule(
         }
         
         // 業務ルール: 規定休憩開始時刻と終了時刻は異なる必要がある（日をまたぐ休憩も許可）
-        if (breakStartTime != null && breakEndTime != null && breakStartTime.equals(breakEndTime)) {
+        if (Objects.equals(breakStartTime, breakEndTime) && breakStartTime != null) {
             throw new ValidationException("規定休憩開始時刻と規定休憩終了時刻は異なる時刻である必要があります");
         }
     }

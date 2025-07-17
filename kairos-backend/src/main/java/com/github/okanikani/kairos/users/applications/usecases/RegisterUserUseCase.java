@@ -12,6 +12,7 @@ import com.github.okanikani.kairos.users.domains.models.repositories.UserReposit
 import com.github.okanikani.kairos.users.domains.services.PasswordService;
 import org.springframework.stereotype.Service;
 
+import java.util.Locale;
 import java.util.Objects;
 
 /**
@@ -176,9 +177,9 @@ public class RegisterUserUseCase {
         }
         
         try {
-            return Role.valueOf(roleString.toUpperCase());
+            return Role.valueOf(roleString.toUpperCase(Locale.ROOT));
         } catch (IllegalArgumentException e) {
-            throw new ValidationException("無効なロールが指定されました: " + roleString);
+            throw new ValidationException("無効なロールが指定されました: " + roleString, e);
         }
     }
     

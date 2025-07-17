@@ -54,6 +54,7 @@ public record LocationFilteringProperties(
     
 ) {
     
+    // 位置情報フィルタリング設定値の定数定義
     private static final int MAX_TOLERANCE_METERS = 10000;
     
     /**
