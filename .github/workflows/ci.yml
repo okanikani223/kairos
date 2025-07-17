@@ -53,7 +53,7 @@ jobs:
     - name: Run tests with coverage
       run: |
         cd kairos-backend
-        mvn test -B
+        mvn test jacoco:report -B
       env:
         SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/kairos_test
         SPRING_DATASOURCE_USERNAME: testuser
@@ -63,7 +63,7 @@ jobs:
     - name: Run code quality checks
       run: |
         cd kairos-backend
-        mvn verify -B -DskipTests
+        mvn verify -B
       env:
         SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/kairos_test
         SPRING_DATASOURCE_USERNAME: testuser
