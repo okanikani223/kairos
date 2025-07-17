@@ -41,7 +41,7 @@ public class GlobalExceptionHandler {
     
     private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
     
-    private static final String VALIDATION_ERROR = "バリデーションエラー";
+    private static final String VALIDATION_ERROR = "VALIDATION_ERROR";
     
     private final ErrorMetricsService errorMetricsService;
     

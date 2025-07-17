@@ -19,6 +19,10 @@ public class ErrorMetricsService {
     
     private static final Logger logger = LoggerFactory.getLogger(ErrorMetricsService.class);
     
+    // HTTPステータスコード定数
+    private static final int INTERNAL_SERVER_ERROR_THRESHOLD = 500;
+    private static final int METRICS_LOG_INTERVAL = 100;
+    
     // エラーコード別カウンター
     private final Map<String, AtomicLong> errorCounts = new ConcurrentHashMap<>();
     
@@ -41,14 +45,14 @@ public class ErrorMetricsService {
         errorPathCounts.computeIfAbsent(pathKey, k -> new AtomicLong(0)).incrementAndGet();
         
         // 重要度が高いエラーの場合は追加ログ出力
-        if (httpStatus >= 500) {
+        if (httpStatus >= INTERNAL_SERVER_ERROR_THRESHOLD) {
             logger.error("重要エラー発生 [errorCode={}, requestPath={}, httpStatus={}]", 
                 errorCode, requestPath, httpStatus);
         }
         
         // メトリクス定期出力（100回ごと）
         long totalErrors = errorCounts.values().stream().mapToLong(AtomicLong::get).sum();
-        if (totalErrors % 100 == 0) {
+        if (totalErrors % METRICS_LOG_INTERVAL == 0) {
             logMetricsSummary();
         }
     }

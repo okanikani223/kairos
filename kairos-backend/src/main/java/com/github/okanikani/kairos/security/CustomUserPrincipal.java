@@ -17,7 +17,7 @@ public class CustomUserPrincipal implements UserDetails {
     
     private static final long serialVersionUID = 7239485610273958412L;
     
-    private final User user;
+    private final transient User user;
     
     public CustomUserPrincipal(User user) {
         this.user = Objects.requireNonNull(user, "ユーザーは必須です");

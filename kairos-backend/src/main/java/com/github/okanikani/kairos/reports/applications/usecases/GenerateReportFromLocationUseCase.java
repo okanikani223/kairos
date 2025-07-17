@@ -149,6 +149,9 @@ public class GenerateReportFromLocationUseCase {
         return filteredTimes;
     }
     
+    // 勤務時間グループ化の判定基準定数
+    private static final int WORK_TIME_GROUPING_THRESHOLD_MINUTES = 60;
+    
     /**
      * 位置情報記録日時を1時間以内の間隔でグルーピングし、勤務日詳細を作成する
      * @param locationTimes 位置情報記録日時のリスト（昇順）
@@ -175,7 +178,7 @@ public class GenerateReportFromLocationUseCase {
             
             // 前の記録時刻との間隔が1時間以内かチェック
             Duration gap = Duration.between(previous, current);
-            if (gap.toMinutes() <= 60) {
+            if (gap.toMinutes() <= WORK_TIME_GROUPING_THRESHOLD_MINUTES) {
                 // 同じグループに追加
                 currentGroup.add(current);
             } else {

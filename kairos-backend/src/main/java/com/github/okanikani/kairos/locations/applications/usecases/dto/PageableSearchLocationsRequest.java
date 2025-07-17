@@ -17,6 +17,8 @@ public record PageableSearchLocationsRequest(
     int page,
     int size
 ) {
+    // ページネーション制限値の定数
+    private static final int MAX_PAGE_SIZE = 100;
     /**
      * バリデーション用コンストラクタ
      */
@@ -41,8 +43,8 @@ public record PageableSearchLocationsRequest(
         if (size <= 0) {
             throw new ValidationException("ページサイズは1以上である必要があります");
         }
-        if (size > 100) {
-            throw new ValidationException("ページサイズは100以下である必要があります");
+        if (size > MAX_PAGE_SIZE) {
+            throw new ValidationException("ページサイズは" + MAX_PAGE_SIZE + "以下である必要があります");
         }
     }
 }

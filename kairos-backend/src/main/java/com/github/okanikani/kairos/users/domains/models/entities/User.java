@@ -40,10 +40,6 @@ public record User(
         "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
     );
     
-    // パスワード長制限
-    private static final int MIN_PASSWORD_LENGTH = 8;
-    private static final int MAX_PASSWORD_LENGTH = 128;
-    
     public User {
         // 必須フィールドのバリデーション
         Objects.requireNonNull(userId, "ユーザーIDは必須です");
