@@ -50,3 +50,14 @@ logging:
     com.github.okanikani.kairos: INFO
     org.hibernate.SQL: WARN
     org.springframework: WARN
+
+# Actuator設定（本番環境）
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health  # healthエンドポイントのみ公開
+  endpoint:
+    health:
+      show-details: never  # 詳細情報は非公開
+      show-components: never  # コンポーネント情報も非公開

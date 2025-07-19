@@ -40,10 +40,10 @@ CREATE TABLE reports (
     status VARCHAR(20) NOT NULL,              -- ステータス (NOT_SUBMITTED, SUBMITTED, APPROVED)
     
     -- 集計情報（埋め込み）
-    work_days NUMERIC(5,2) NOT NULL DEFAULT 0.0,                    -- 就業日数
-    paid_leave_days NUMERIC(5,2) NOT NULL DEFAULT 0.0,              -- 有給日数
-    compensatory_leave_days NUMERIC(5,2) NOT NULL DEFAULT 0.0,      -- 代休日数
-    special_leave_days NUMERIC(5,2) NOT NULL DEFAULT 0.0,           -- 特休日数
+    work_days DOUBLE PRECISION NOT NULL DEFAULT 0.0,                    -- 就業日数
+    paid_leave_days DOUBLE PRECISION NOT NULL DEFAULT 0.0,              -- 有給日数
+    compensatory_leave_days DOUBLE PRECISION NOT NULL DEFAULT 0.0,      -- 代休日数
+    special_leave_days DOUBLE PRECISION NOT NULL DEFAULT 0.0,           -- 特休日数
     total_work_time_minutes BIGINT NOT NULL DEFAULT 0,              -- 総就業時間（分）
     total_overtime_minutes BIGINT NOT NULL DEFAULT 0,               -- 総残業時間（分）
     total_holiday_work_minutes BIGINT NOT NULL DEFAULT 0,           -- 総休出時間（分）
