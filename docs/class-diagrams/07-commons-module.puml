@@ -1,0 +1,514 @@
+@startuml commons-module-class-diagram
+
+!define ENTITY class
+!define VALUE_OBJECT class
+!define ENUM enum
+!define INTERFACE interface
+!define SERVICE class
+!define REPOSITORY interface
+!define CONTROLLER class
+!define USECASE class
+!define CONFIG class
+!define EXCEPTION class
+!define UTIL class
+
+skinparam linetype ortho
+skinparam groupInheritance 2
+
+' Color scheme
+skinparam class {
+  BackgroundColor<<Entity>> #FFE6E6
+  BorderColor<<Entity>> #FF6666
+  BackgroundColor<<ValueObject>> #E6F3FF
+  BorderColor<<ValueObject>> #6699FF
+  BackgroundColor<<Enum>> #FFFACD
+  BorderColor<<Enum>> #FFD700
+  BackgroundColor<<Service>> #E6FFE6
+  BorderColor<<Service>> #66FF66
+  BackgroundColor<<Config>> #F0E6FF
+  BorderColor<<Config>> #9966FF
+  BackgroundColor<<Exception>> #FFE6E6
+  BorderColor<<Exception>> #FF3333
+  BackgroundColor<<Util>> #F0F8FF
+  BorderColor<<Util>> #4169E1
+  BackgroundColor<<Controller>> #FFE6F3
+  BorderColor<<Controller>> #FF66B2
+  BackgroundColor<<UseCase>> #FFF0E6
+  BorderColor<<UseCase>> #FF9966
+  BackgroundColor<<Interface>> #E6E6FA
+  BorderColor<<Interface>> #9370DB
+}
+
+title Commons Module (共通モジュール) - クラス図
+
+package "com.github.okanikani.kairos.commons" {
+  
+  ' ===== Exception Handling =====
+  package "exceptions" #FAFAFA {
+    
+    EXCEPTION KairosException <<Exception>> {
+      - errorCode: String
+      - timestamp: Instant
+      --
+      + KairosException(message: String)
+      + KairosException(message: String, cause: Throwable)
+      + KairosException(errorCode: String, message: String)
+      + KairosException(errorCode: String, message: String, cause: Throwable)
+      + getErrorCode(): String
+      + getTimestamp(): Instant
+      + getErrorInfo(): ErrorInfo
+    }
+    
+    EXCEPTION ValidationException <<Exception>> {
+      - violations: List<FieldViolation>
+      --
+      + ValidationException(message: String)
+      + ValidationException(violations: List<FieldViolation>)
+      + ValidationException(message: String, violations: List<FieldViolation>)
+      + getViolations(): List<FieldViolation>
+      + hasViolations(): boolean
+      + getViolationCount(): int
+    }
+    
+    EXCEPTION BusinessRuleViolationException <<Exception>> {
+      - ruleCode: String
+      - ruleDescription: String
+      --
+      + BusinessRuleViolationException(message: String)
+      + BusinessRuleViolationException(ruleCode: String, message: String)
+      + BusinessRuleViolationException(ruleCode: String, ruleDescription: String, message: String)
+      + getRuleCode(): String
+      + getRuleDescription(): String
+    }
+    
+    EXCEPTION ResourceNotFoundException <<Exception>> {
+      - resourceType: String
+      - resourceId: String
+      --
+      + ResourceNotFoundException(message: String)
+      + ResourceNotFoundException(resourceType: String, resourceId: String)
+      + ResourceNotFoundException(resourceType: String, resourceId: String, message: String)
+      + getResourceType(): String
+      + getResourceId(): String
+    }
+    
+    EXCEPTION DuplicateResourceException <<Exception>> {
+      - resourceType: String
+      - conflictingFields: Map<String, Object>
+      --
+      + DuplicateResourceException(message: String)
+      + DuplicateResourceException(resourceType: String, conflictingFields: Map<String, Object>)
+      + getResourceType(): String
+      + getConflictingFields(): Map<String, Object>
+    }
+    
+    EXCEPTION AuthorizationException <<Exception>> {
+      - requiredPermission: String
+      - currentPermissions: Set<String>
+      --
+      + AuthorizationException(message: String)
+      + AuthorizationException(requiredPermission: String, message: String)
+      + AuthorizationException(requiredPermission: String, currentPermissions: Set<String>, message: String)
+      + getRequiredPermission(): String
+      + getCurrentPermissions(): Set<String>
+    }
+    
+    EXCEPTION SystemException <<Exception>> {
+      - systemComponent: String
+      - operationId: String
+      --
+      + SystemException(message: String)
+      + SystemException(systemComponent: String, message: String)
+      + SystemException(systemComponent: String, operationId: String, message: String, cause: Throwable)
+      + getSystemComponent(): String
+      + getOperationId(): String
+    }
+    
+    note right of KairosException
+      **基底例外クラス**
+      システム全体の例外階層の基底
+      - エラーコード管理
+      - タイムスタンプ記録
+      - エラー情報構造化
+      
+      **例外階層:**
+      - ValidationException: 入力検証エラー
+      - BusinessRuleViolationException: 業務ルール違反
+      - ResourceNotFoundException: リソース未発見
+      - DuplicateResourceException: 重複リソース
+      - AuthorizationException: 認可エラー
+      - SystemException: システムエラー
+    end note
+  }
+  
+  ' ===== Exception Support Objects =====
+  package "exceptions.support" #F5F5F5 {
+    
+    VALUE_OBJECT FieldViolation <<ValueObject>> {
+      - fieldName: String
+      - rejectedValue: Object
+      - message: String
+      - code: String
+      --
+      + FieldViolation(fieldName, rejectedValue, message, code)
+      + getFieldName(): String
+      + getRejectedValue(): Object
+      + getMessage(): String
+      + getCode(): String
+      + equals(other: Object): boolean
+      + hashCode(): int
+    }
+    
+    VALUE_OBJECT ErrorInfo <<ValueObject>> {
+      - errorCode: String
+      - message: String
+      - timestamp: Instant
+      - details: Map<String, Object>
+      --
+      + ErrorInfo(errorCode, message, timestamp, details)
+      + getErrorCode(): String
+      + getMessage(): String
+      + getTimestamp(): Instant
+      + getDetails(): Map<String, Object>
+      + addDetail(key: String, value: Object): ErrorInfo
+    }
+    
+    VALUE_OBJECT ErrorResponse <<ValueObject>> {
+      - status: int
+      - error: String
+      - message: String
+      - timestamp: Instant
+      - path: String
+      - details: List<FieldViolation>
+      --
+      + ErrorResponse(...)
+      + getStatus(): int
+      + getError(): String
+      + getMessage(): String
+      + getTimestamp(): Instant
+      + getPath(): String
+      + getDetails(): List<FieldViolation>
+    }
+  }
+  
+  ' ===== Global Exception Handler =====
+  package "exceptions.handlers" #E8E8E8 {
+    
+    SERVICE GlobalExceptionHandler <<Service>> {
+      - logger: Logger
+      - errorMetricsService: ErrorMetricsService
+      --
+      + @ExceptionHandler handleValidationException(ex: ValidationException): ResponseEntity<ErrorResponse>
+      + @ExceptionHandler handleBusinessRuleViolationException(ex: BusinessRuleViolationException): ResponseEntity<ErrorResponse>
+      + @ExceptionHandler handleResourceNotFoundException(ex: ResourceNotFoundException): ResponseEntity<ErrorResponse>
+      + @ExceptionHandler handleDuplicateResourceException(ex: DuplicateResourceException): ResponseEntity<ErrorResponse>
+      + @ExceptionHandler handleAuthorizationException(ex: AuthorizationException): ResponseEntity<ErrorResponse>
+      + @ExceptionHandler handleSystemException(ex: SystemException): ResponseEntity<ErrorResponse>
+      + @ExceptionHandler handleGenericException(ex: Exception): ResponseEntity<ErrorResponse>
+      - createErrorResponse(ex: KairosException, status: HttpStatus, request: HttpServletRequest): ErrorResponse
+      - logException(ex: Exception, level: LogLevel): void
+      - recordErrorMetrics(ex: Exception): void
+    }
+    
+    SERVICE ErrorMetricsService <<Service>> {
+      - meterRegistry: MeterRegistry
+      - errorCounters: Map<String, Counter>
+      --
+      + recordError(exceptionType: String, errorCode: String): void
+      + recordErrorWithTags(exceptionType: String, tags: Map<String, String>): void
+      + getErrorCount(exceptionType: String): double
+      + getErrorRate(exceptionType: String, duration: Duration): double
+      - createErrorCounter(exceptionType: String): Counter
+    }
+    
+    note right of GlobalExceptionHandler
+      **グローバル例外ハンドラー**
+      - 全例外の統一ハンドリング
+      - HTTPステータス自動設定
+      - エラーログ記録
+      - メトリクス収集
+      - レスポンス形式統一
+    end note
+  }
+  
+  ' ===== Utilities =====
+  package "utilities" #F0F8FF {
+    
+    UTIL DistanceCalculator <<Util>> {
+      + {static} EARTH_RADIUS_KM: double = 6371.0
+      --
+      + {static} calculateDistance(lat1: double, lon1: double, lat2: double, lon2: double): double
+      + {static} calculateDistanceInMeters(lat1: double, lon1: double, lat2: double, lon2: double): double
+      + {static} isWithinRadius(centerLat: double, centerLon: double, pointLat: double, pointLon: double, radiusKm: double): boolean
+      + {static} toRadians(degrees: double): double
+      + {static} haversineDistance(lat1Rad: double, lon1Rad: double, lat2Rad: double, lon2Rad: double): double
+    }
+    
+    SERVICE LocationFilteringService <<Service>> {
+      - distanceCalculator: DistanceCalculator
+      --
+      + filterByDistance(locations: List<LocationPoint>, centerLat: double, centerLon: double, radiusKm: double): List<LocationPoint>
+      + filterByBoundingBox(locations: List<LocationPoint>, northEastLat: double, northEastLon: double, southWestLat: double, southWestLon: double): List<LocationPoint>
+      + groupByDistance(locations: List<LocationPoint>, centerLat: double, centerLon: double, radiusIntervals: List<Double>): Map<Double, List<LocationPoint>>
+      + findNearestLocations(locations: List<LocationPoint>, centerLat: double, centerLon: double, count: int): List<LocationPoint>
+      - isWithinBoundingBox(lat: double, lon: double, northEastLat: double, northEastLon: double, southWestLat: double, southWestLon: double): boolean
+    }
+    
+    UTIL DateTimeUtils <<Util>> {
+      + {static} DEFAULT_ZONE: ZoneId = ZoneId.of("Asia/Tokyo")
+      --
+      + {static} now(): LocalDateTime
+      + {static} nowInZone(zoneId: ZoneId): LocalDateTime
+      + {static} toEpochSecond(dateTime: LocalDateTime): long
+      + {static} fromEpochSecond(epochSecond: long): LocalDateTime
+      + {static} formatDateTime(dateTime: LocalDateTime, pattern: String): String
+      + {static} parseDateTime(dateTimeString: String, pattern: String): LocalDateTime
+      + {static} isBusinessDay(date: LocalDate): boolean
+      + {static} getWorkingDaysBetween(startDate: LocalDate, endDate: LocalDate): List<LocalDate>
+      + {static} roundToMinutes(time: LocalTime, minutes: int): LocalTime
+    }
+    
+    UTIL ValidationUtils <<Util>> {
+      --
+      + {static} isValidEmail(email: String): boolean
+      + {static} isValidPhoneNumber(phoneNumber: String): boolean
+      + {static} isValidLatitude(latitude: double): boolean
+      + {static} isValidLongitude(longitude: double): boolean
+      + {static} isValidDateRange(startDate: LocalDate, endDate: LocalDate): boolean
+      + {static} isValidTimeRange(startTime: LocalTime, endTime: LocalTime): boolean
+      + {static} isNotBlank(value: String): boolean
+      + {static} isPositive(value: Number): boolean
+      + {static} isInRange(value: Number, min: Number, max: Number): boolean
+      + {static} validateRequired(value: Object, fieldName: String): void
+    }
+    
+    note right of DistanceCalculator
+      **距離計算ユーティリティ**
+      Haversine公式を使用した
+      GPS座標間の距離計算
+      - 地球の曲率を考慮
+      - 高精度距離算出
+      - メートル・キロメートル対応
+    end note
+  }
+  
+  ' ===== Configuration =====
+  package "configuration" #F0E6FF {
+    
+    CONFIG ApplicationConfiguration <<Config>> {
+      --
+      + @Bean clock(): Clock
+      + @Bean meterRegistry(): MeterRegistry
+      + @Bean taskExecutor(): TaskExecutor
+      + @Bean objectMapper(): ObjectMapper
+      + @Bean validatorFactory(): ValidatorFactory
+      - configureObjectMapper(mapper: ObjectMapper): void
+    }
+    
+    CONFIG LoggingConfiguration <<Config>> {
+      --
+      + @Bean loggerConfiguration(): LoggerConfiguration
+      + configureLogLevel(environment: Environment): void
+      + configureLogFormat(): void
+      + configureFileAppender(): void
+      + configureConsoleAppender(): void
+    }
+    
+    CONFIG LocationFilterConfiguration <<Config>> {
+      + @Value defaultRadiusKm: double
+      + @Value maxFilterRadius: double
+      + @Value enableBoundingBoxFilter: boolean
+      --
+      + @Bean locationFilteringService(): LocationFilteringService
+      + getDefaultRadius(): double
+      + getMaxFilterRadius(): double
+      + isBoundingBoxFilterEnabled(): boolean
+    }
+    
+    CONFIG MetricsConfiguration <<Config>> {
+      --
+      + @Bean customMeterRegistry(): MeterRegistry
+      + @Bean timerConfiguration(): TimerConfiguration
+      + @Bean counterConfiguration(): CounterConfiguration
+      + configureCommonTags(): CommonTags
+      + configureMeterFilters(): List<MeterFilter>
+    }
+  }
+  
+  ' ===== Constants =====
+  package "constants" #FFFACD {
+    
+    class ApplicationConstants {
+      + {static} final APPLICATION_NAME: String = "Kairos"
+      + {static} final APPLICATION_VERSION: String = "1.0.0"
+      + {static} final DEFAULT_TIMEZONE: String = "Asia/Tokyo"
+      + {static} final DEFAULT_LOCALE: Locale = Locale.JAPAN
+      + {static} final DATE_FORMAT_PATTERN: String = "yyyy-MM-dd"
+      + {static} final DATETIME_FORMAT_PATTERN: String = "yyyy-MM-dd HH:mm:ss"
+      + {static} final DEFAULT_PAGE_SIZE: int = 20
+      + {static} final MAX_PAGE_SIZE: int = 100
+    }
+    
+    class ValidationConstants {
+      + {static} final EMAIL_REGEX: String
+      + {static} final PHONE_REGEX: String
+      + {static} final USERNAME_MIN_LENGTH: int = 3
+      + {static} final USERNAME_MAX_LENGTH: int = 50
+      + {static} final PASSWORD_MIN_LENGTH: int = 8
+      + {static} final PASSWORD_MAX_LENGTH: int = 128
+      + {static} final MAX_LATITUDE: double = 90.0
+      + {static} final MIN_LATITUDE: double = -90.0
+      + {static} final MAX_LONGITUDE: double = 180.0
+      + {static} final MIN_LONGITUDE: double = -180.0
+    }
+    
+    class ErrorConstants {
+      + {static} final VALIDATION_ERROR: String = "VALIDATION_ERROR"
+      + {static} final BUSINESS_RULE_VIOLATION: String = "BUSINESS_RULE_VIOLATION"
+      + {static} final RESOURCE_NOT_FOUND: String = "RESOURCE_NOT_FOUND"
+      + {static} final DUPLICATE_RESOURCE: String = "DUPLICATE_RESOURCE"
+      + {static} final AUTHORIZATION_ERROR: String = "AUTHORIZATION_ERROR"
+      + {static} final SYSTEM_ERROR: String = "SYSTEM_ERROR"
+    }
+  }
+  
+  ' ===== Annotations =====
+  package "annotations" #E6E6FA {
+    
+    INTERFACE ValidGpsCoordinates <<Interface>> {
+      + message(): String = "Invalid GPS coordinates"
+      + groups(): Class<?>[] = {}
+      + payload(): Class<? extends Payload>[] = {}
+    }
+    
+    SERVICE GpsCoordinatesValidator <<Service>> {
+      + isValid(coordinates: Object, context: ConstraintValidatorContext): boolean
+      - validateLatitude(latitude: double): boolean
+      - validateLongitude(longitude: double): boolean
+    }
+    
+    INTERFACE ValidDateRange <<Interface>> {
+      + message(): String = "Invalid date range"
+      + groups(): Class<?>[] = {}
+      + payload(): Class<? extends Payload>[] = {}
+    }
+    
+    SERVICE DateRangeValidator <<Service>> {
+      + isValid(dateRange: Object, context: ConstraintValidatorContext): boolean
+      - extractStartDate(object: Object): LocalDate
+      - extractEndDate(object: Object): LocalDate
+    }
+  }
+  
+  ' ===== Support Classes =====
+  package "support" #F5F5F5 {
+    
+    VALUE_OBJECT LocationPoint <<ValueObject>> {
+      - latitude: double
+      - longitude: double
+      - metadata: Map<String, Object>
+      --
+      + LocationPoint(latitude, longitude)
+      + LocationPoint(latitude, longitude, metadata)
+      + distanceTo(other: LocationPoint): double
+      + isValid(): boolean
+      + addMetadata(key: String, value: Object): LocationPoint
+      + getMetadata(key: String): Object
+    }
+    
+    VALUE_OBJECT Page<T> <<ValueObject>> {
+      - content: List<T>
+      - pageNumber: int
+      - pageSize: int
+      - totalElements: long
+      - totalPages: int
+      --
+      + Page(content, pageNumber, pageSize, totalElements)
+      + getContent(): List<T>
+      + hasNext(): boolean
+      + hasPrevious(): boolean
+      + isFirst(): boolean
+      + isLast(): boolean
+      + getNumberOfElements(): int
+    }
+    
+    VALUE_OBJECT Pageable <<ValueObject>> {
+      - pageNumber: int
+      - pageSize: int
+      - sort: Sort
+      --
+      + Pageable(pageNumber, pageSize)
+      + Pageable(pageNumber, pageSize, sort)
+      + getOffset(): long
+      + next(): Pageable
+      + previous(): Pageable
+      + first(): Pageable
+    }
+  }
+}
+
+' ===== Relationships =====
+
+' Exception hierarchy
+ValidationException --|> KairosException
+BusinessRuleViolationException --|> KairosException
+ResourceNotFoundException --|> KairosException
+DuplicateResourceException --|> KairosException
+AuthorizationException --|> KairosException
+SystemException --|> KairosException
+
+' Exception support relationships
+ValidationException --> FieldViolation : contains
+KairosException --> ErrorInfo : provides
+GlobalExceptionHandler --> ErrorResponse : creates
+ErrorMetricsService --> "MeterRegistry" : uses
+
+' Exception handler relationships
+GlobalExceptionHandler ..> KairosException : handles
+GlobalExceptionHandler ..> ValidationException : handles
+GlobalExceptionHandler ..> BusinessRuleViolationException : handles
+GlobalExceptionHandler ..> ResourceNotFoundException : handles
+GlobalExceptionHandler ..> DuplicateResourceException : handles
+GlobalExceptionHandler ..> AuthorizationException : handles
+GlobalExceptionHandler ..> SystemException : handles
+GlobalExceptionHandler ..> ErrorMetricsService : uses
+
+' Utility relationships
+LocationFilteringService ..> DistanceCalculator : uses
+LocationFilteringService ..> LocationPoint : filters
+DistanceCalculator ..> "Haversine Formula" : implements
+
+' Configuration relationships
+ApplicationConfiguration --> "Spring Beans" : creates
+LoggingConfiguration --> "Logback Configuration" : configures
+LocationFilterConfiguration --> LocationFilteringService : configures
+MetricsConfiguration --> "MeterRegistry" : configures
+
+' Validation relationships
+GpsCoordinatesValidator ..|> ValidGpsCoordinates : implements
+DateRangeValidator ..|> ValidDateRange : implements
+ValidationUtils ..> ValidationConstants : uses
+
+' Support relationships
+Page --> Pageable : "created from"
+LocationPoint --> ValidationUtils : validates
+
+' Legend
+legend right
+  |= 記号 |= 意味 |
+  | <<Exception>> | 例外クラス |
+  | <<Util>> | ユーティリティクラス |
+  | <<Service>> | サービスクラス |
+  | <<Config>> | 設定クラス |
+  | <<ValueObject>> | バリューオブジェクト |
+  | <<Interface>> | アノテーションインターフェース |
+  
+  **共通機能:**
+  - 統一例外処理
+  - GPS距離計算
+  - バリデーション支援
+  - 設定管理
+  - メトリクス収集
+endlegend
+
+@enduml

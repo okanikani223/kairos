@@ -1,0 +1,499 @@
+@startuml rules-domain-class-diagram
+
+!define ENTITY class
+!define VALUE_OBJECT class
+!define ENUM enum
+!define INTERFACE interface
+!define SERVICE class
+!define REPOSITORY interface
+!define CONTROLLER class
+!define USECASE class
+
+skinparam linetype ortho
+skinparam groupInheritance 2
+
+' Color scheme
+skinparam class {
+  BackgroundColor<<Entity>> #FFE6E6
+  BorderColor<<Entity>> #FF6666
+  BackgroundColor<<ValueObject>> #E6F3FF
+  BorderColor<<ValueObject>> #6699FF
+  BackgroundColor<<Enum>> #FFFACD
+  BorderColor<<Enum>> #FFD700
+  BackgroundColor<<Service>> #E6FFE6
+  BorderColor<<Service>> #66FF66
+  BackgroundColor<<Repository>> #F0F0F0
+  BorderColor<<Repository>> #808080
+  BackgroundColor<<Controller>> #FFE6F3
+  BorderColor<<Controller>> #FF66B2
+  BackgroundColor<<UseCase>> #FFF0E6
+  BorderColor<<UseCase>> #FF9966
+  BackgroundColor<<Interface>> #E6E6FA
+  BorderColor<<Interface>> #9370DB
+}
+
+title Rules Domain (勤務ルール管理ドメイン) - クラス図
+
+package "com.github.okanikani.kairos.rules" {
+  
+  ' ===== Domain Models Layer =====
+  package "domains.models" #FAFAFA {
+    
+    package "entities" {
+      ENTITY WorkRule <<Entity>> {
+        - id: UUID
+        - workPlaceId: String
+        - workPlaceName: String
+        - latitude: double
+        - longitude: double
+        - radiusMeters: double
+        - user: User
+        - workStartTime: LocalTime
+        - workEndTime: LocalTime
+        - breakHours: double
+        - membershipStartDate: LocalDate
+        - membershipEndDate: LocalDate
+        --
+        + WorkRule(...)
+        + update(workPlaceName, latitude, longitude, radiusMeters, workStartTime, workEndTime, breakHours, membershipStartDate, membershipEndDate): void
+        + isActive(date: LocalDate): boolean
+        + isWithinWorkplace(locationLatitude: double, locationLongitude: double): boolean
+        + getWorkHours(): double
+        + isOwnedBy(user: User): boolean
+        + hasOverlapWith(other: WorkRule): boolean
+        + getMembershipPeriod(): Period
+        - validateCoordinates(): void
+        - validateTimes(): void
+        - validateMembershipPeriod(): void
+      }
+      
+      ENTITY DefaultWorkRule <<Entity>> {
+        - id: UUID
+        - user: User
+        - workStartTime: LocalTime
+        - workEndTime: LocalTime
+        - breakHours: double
+        --
+        + DefaultWorkRule(id, user, workStartTime, workEndTime, breakHours)
+        + update(workStartTime: LocalTime, workEndTime: LocalTime, breakHours: double): void
+        + getWorkHours(): double
+        + isOwnedBy(user: User): boolean
+        - validateTimes(): void
+        - validateBreakHours(): void
+      }
+      
+      note right of WorkRule
+        **勤務場所ルールエンティティ**
+        特定の勤務場所に関するルール
+        - 勤務場所の位置情報（GPS座標）
+        - 勤務時間（開始・終了時刻）
+        - 有効期間（メンバーシップ期間）
+        - 重複期間バリデーション
+      end note
+      
+      note right of DefaultWorkRule
+        **デフォルト勤務ルールエンティティ**
+        特定の勤務場所を持たない
+        一般的な勤務ルール
+        - 勤務時間のみ定義
+        - 有効期間制限なし
+      end note
+    }
+    
+    package "valueobjects" {
+      VALUE_OBJECT User <<ValueObject>> {
+        - userId: String
+        --
+        + User(userId: String)
+        + equals(other: Object): boolean
+        + hashCode(): int
+        + toString(): String
+      }
+      
+      VALUE_OBJECT WorkplaceLocation <<ValueObject>> {
+        - latitude: double
+        - longitude: double
+        - radiusMeters: double
+        --
+        + WorkplaceLocation(latitude, longitude, radiusMeters)
+        + isWithinRadius(locationLatitude: double, locationLongitude: double): boolean
+        + distanceTo(latitude: double, longitude: double): double
+        + equals(other: Object): boolean
+        + hashCode(): int
+        - validateCoordinates(): void
+        - validateRadius(): void
+      }
+      
+      VALUE_OBJECT WorkTime <<ValueObject>> {
+        - startTime: LocalTime
+        - endTime: LocalTime
+        - breakHours: double
+        --
+        + WorkTime(startTime, endTime, breakHours)
+        + getWorkHours(): double
+        + isValidTimeRange(): boolean
+        + equals(other: Object): boolean
+        + hashCode(): int
+        - validateTimes(): void
+        - validateBreakHours(): void
+      }
+      
+      VALUE_OBJECT MembershipPeriod <<ValueObject>> {
+        - startDate: LocalDate
+        - endDate: LocalDate
+        --
+        + MembershipPeriod(startDate, endDate)
+        + isActive(date: LocalDate): boolean
+        + overlapsWith(other: MembershipPeriod): boolean
+        + getDuration(): Period
+        + equals(other: Object): boolean
+        + hashCode(): int
+        - validatePeriod(): void
+      }
+      
+      note bottom of WorkplaceLocation
+        **勤務場所位置情報**
+        GPS座標と有効範囲を管理
+        距離計算機能を提供
+      end note
+    }
+    
+    package "repositories" {
+      REPOSITORY WorkRuleRepository <<Repository>> {
+        + save(workRule: WorkRule): WorkRule
+        + findById(id: UUID): Optional<WorkRule>
+        + findAll(): List<WorkRule>
+        + findByUser(user: User): List<WorkRule>
+        + findActiveRulesForUser(user: User, date: LocalDate): List<WorkRule>
+        + findByWorkPlaceId(workPlaceId: String): List<WorkRule>
+        + delete(id: UUID): void
+        + deleteAllByUser(user: User): void
+        + existsById(id: UUID): boolean
+        + countByUser(user: User): long
+      }
+      
+      REPOSITORY DefaultWorkRuleRepository <<Repository>> {
+        + save(rule: DefaultWorkRule): DefaultWorkRule
+        + findById(id: UUID): Optional<DefaultWorkRule>
+        + findAll(): List<DefaultWorkRule>
+        + findByUser(user: User): Optional<DefaultWorkRule>
+        + delete(id: UUID): void
+        + deleteByUser(user: User): void
+        + existsByUser(user: User): boolean
+      }
+    }
+  }
+  
+  ' ===== Domain Services Layer =====
+  package "domains.services" #F5F5F5 {
+    
+    SERVICE WorkRuleDomainService <<Service>> {
+      + validateNoOverlap(newRule: WorkRule, existingRules: List<WorkRule>): void
+      + validateUniqueDefaultRule(user: User, existingRule: Optional<DefaultWorkRule>): void
+      + resolveApplicableRule(user: User, workDate: LocalDate, locationLatitude: double, locationLongitude: double, workRules: List<WorkRule>, defaultRule: Optional<DefaultWorkRule>): Optional<WorkRuleApplication>
+      - findOverlappingRules(newRule: WorkRule, existingRules: List<WorkRule>): List<WorkRule>
+      - isWithinWorkplace(rule: WorkRule, latitude: double, longitude: double): boolean
+    }
+    
+    note right of WorkRuleDomainService
+      **勤務ルールドメインサービス**
+      - 重複期間バリデーション
+      - 適用可能ルール解決
+      - デフォルトルール一意性保証
+    end note
+  }
+  
+  ' ===== Application Services Layer =====
+  package "applications.usecases" #F0F0F0 {
+    
+    USECASE RegisterWorkRuleUseCase <<UseCase>> {
+      - workRuleRepository: WorkRuleRepository
+      - workRuleDomainService: WorkRuleDomainService
+      --
+      + execute(request: RegisterWorkRuleRequest): WorkRule
+      - validateRequest(request: RegisterWorkRuleRequest): void
+      - checkNoOverlapWithExistingRules(newRule: WorkRule, user: User): void
+    }
+    
+    USECASE FindWorkRuleByIdUseCase <<UseCase>> {
+      - workRuleRepository: WorkRuleRepository
+      --
+      + execute(id: UUID): WorkRule
+      - validateRuleExists(id: UUID): void
+    }
+    
+    USECASE FindAllWorkRulesUseCase <<UseCase>> {
+      - workRuleRepository: WorkRuleRepository
+      --
+      + execute(): List<WorkRule>
+      + execute(user: User): List<WorkRule>
+    }
+    
+    USECASE UpdateWorkRuleUseCase <<UseCase>> {
+      - workRuleRepository: WorkRuleRepository
+      - workRuleDomainService: WorkRuleDomainService
+      --
+      + execute(request: UpdateWorkRuleRequest): void
+      - validateUpdatePermission(rule: WorkRule, user: User): void
+      - checkNoOverlapAfterUpdate(updatedRule: WorkRule, user: User): void
+    }
+    
+    USECASE DeleteWorkRuleUseCase <<UseCase>> {
+      - workRuleRepository: WorkRuleRepository
+      --
+      + execute(id: UUID, user: User): void
+      - validateDeletePermission(rule: WorkRule, user: User): void
+    }
+    
+    USECASE RegisterDefaultWorkRuleUseCase <<UseCase>> {
+      - defaultWorkRuleRepository: DefaultWorkRuleRepository
+      - workRuleDomainService: WorkRuleDomainService
+      --
+      + execute(request: RegisterDefaultWorkRuleRequest): DefaultWorkRule
+      - validateRequest(request: RegisterDefaultWorkRuleRequest): void
+      - ensureUniqueDefaultRule(user: User): void
+    }
+    
+    USECASE FindAllDefaultWorkRulesUseCase <<UseCase>> {
+      - defaultWorkRuleRepository: DefaultWorkRuleRepository
+      --
+      + execute(): List<DefaultWorkRule>
+      + execute(user: User): Optional<DefaultWorkRule>
+    }
+    
+    USECASE UpdateDefaultWorkRuleUseCase <<UseCase>> {
+      - defaultWorkRuleRepository: DefaultWorkRuleRepository
+      --
+      + execute(request: UpdateDefaultWorkRuleRequest): void
+      - validateUpdatePermission(rule: DefaultWorkRule, user: User): void
+    }
+    
+    USECASE DeleteDefaultWorkRuleUseCase <<UseCase>> {
+      - defaultWorkRuleRepository: DefaultWorkRuleRepository
+      --
+      + execute(id: UUID, user: User): void
+      - validateDeletePermission(rule: DefaultWorkRule, user: User): void
+    }
+    
+    USECASE ResolveWorkRuleUseCase <<UseCase>> {
+      - workRuleRepository: WorkRuleRepository
+      - defaultWorkRuleRepository: DefaultWorkRuleRepository
+      - workRuleDomainService: WorkRuleDomainService
+      --
+      + execute(user: User, workDate: LocalDate, locationLatitude: double, locationLongitude: double): Optional<ResolvedWorkRule>
+      - getActiveWorkRules(user: User, workDate: LocalDate): List<WorkRule>
+      - getDefaultWorkRule(user: User): Optional<DefaultWorkRule>
+    }
+    
+    note bottom of ResolveWorkRuleUseCase
+      **勤務ルール解決**
+      位置情報と日付から
+      適用すべき勤務ルールを決定
+    end note
+  }
+  
+  ' ===== Interface Adapters Layer =====
+  package "others" #E8E8E8 {
+    
+    package "controllers" {
+      CONTROLLER WorkRuleController <<Controller>> {
+        - registerWorkRuleUseCase: RegisterWorkRuleUseCase
+        - findWorkRuleByIdUseCase: FindWorkRuleByIdUseCase
+        - findAllWorkRulesUseCase: FindAllWorkRulesUseCase
+        - updateWorkRuleUseCase: UpdateWorkRuleUseCase
+        - deleteWorkRuleUseCase: DeleteWorkRuleUseCase
+        - resolveWorkRuleUseCase: ResolveWorkRuleUseCase
+        --
+        + registerWorkRule(request: RegisterWorkRuleDto, auth: Authentication): ResponseEntity<WorkRuleDto>
+        + getWorkRule(id: UUID, auth: Authentication): ResponseEntity<WorkRuleDto>
+        + getAllWorkRules(auth: Authentication): ResponseEntity<List<WorkRuleDto>>
+        + updateWorkRule(id: UUID, request: UpdateWorkRuleDto, auth: Authentication): ResponseEntity<Void>
+        + deleteWorkRule(id: UUID, auth: Authentication): ResponseEntity<Void>
+        + resolveWorkRule(request: ResolveWorkRuleDto, auth: Authentication): ResponseEntity<ResolvedWorkRuleDto>
+      }
+      
+      CONTROLLER DefaultWorkRuleController <<Controller>> {
+        - registerDefaultWorkRuleUseCase: RegisterDefaultWorkRuleUseCase
+        - findAllDefaultWorkRulesUseCase: FindAllDefaultWorkRulesUseCase
+        - updateDefaultWorkRuleUseCase: UpdateDefaultWorkRuleUseCase
+        - deleteDefaultWorkRuleUseCase: DeleteDefaultWorkRuleUseCase
+        --
+        + registerDefaultWorkRule(request: RegisterDefaultWorkRuleDto, auth: Authentication): ResponseEntity<DefaultWorkRuleDto>
+        + getDefaultWorkRule(auth: Authentication): ResponseEntity<DefaultWorkRuleDto>
+        + updateDefaultWorkRule(id: UUID, request: UpdateDefaultWorkRuleDto, auth: Authentication): ResponseEntity<Void>
+        + deleteDefaultWorkRule(id: UUID, auth: Authentication): ResponseEntity<Void>
+      }
+      
+      note right of WorkRuleController
+        **RESTful API エンドポイント**
+        - POST /api/work-rules
+        - GET /api/work-rules/{id}
+        - GET /api/work-rules
+        - PUT /api/work-rules/{id}
+        - DELETE /api/work-rules/{id}
+        - POST /api/work-rules/resolve
+      end note
+    }
+    
+    package "repositories" {
+      SERVICE JpaWorkRuleRepository <<Service>> {
+        - entityManager: EntityManager
+        --
+        + save(workRule: WorkRule): WorkRule
+        + findById(id: UUID): Optional<WorkRule>
+        + findAll(): List<WorkRule>
+        + findByUser(user: User): List<WorkRule>
+        + findActiveRulesForUser(user: User, date: LocalDate): List<WorkRule>
+        + delete(id: UUID): void
+        - buildActiveRulesQuery(user: User, date: LocalDate): CriteriaQuery<WorkRule>
+      }
+      
+      SERVICE InMemoryWorkRuleRepository <<Service>> {
+        - workRules: Map<UUID, WorkRule>
+        --
+        + save(workRule: WorkRule): WorkRule
+        + findById(id: UUID): Optional<WorkRule>
+        + findAll(): List<WorkRule>
+        + findByUser(user: User): List<WorkRule>
+        + findActiveRulesForUser(user: User, date: LocalDate): List<WorkRule>
+        + delete(id: UUID): void
+        - filterActiveRules(rules: List<WorkRule>, date: LocalDate): List<WorkRule>
+      }
+      
+      SERVICE JpaDefaultWorkRuleRepository <<Service>> {
+        - entityManager: EntityManager
+        --
+        + save(rule: DefaultWorkRule): DefaultWorkRule
+        + findById(id: UUID): Optional<DefaultWorkRule>
+        + findAll(): List<DefaultWorkRule>
+        + findByUser(user: User): Optional<DefaultWorkRule>
+        + delete(id: UUID): void
+      }
+      
+      SERVICE InMemoryDefaultWorkRuleRepository <<Service>> {
+        - defaultWorkRules: Map<UUID, DefaultWorkRule>
+        --
+        + save(rule: DefaultWorkRule): DefaultWorkRule
+        + findById(id: UUID): Optional<DefaultWorkRule>
+        + findAll(): List<DefaultWorkRule>
+        + findByUser(user: User): Optional<DefaultWorkRule>
+        + delete(id: UUID): void
+      }
+    }
+    
+    package "mappers" {
+      SERVICE WorkRuleMapper <<Service>> {
+        + {static} toDto(workRule: WorkRule): WorkRuleDto
+        + {static} toDtoList(workRules: List<WorkRule>): List<WorkRuleDto>
+        + {static} toEntity(dto: RegisterWorkRuleDto, user: User): WorkRule
+      }
+      
+      SERVICE DefaultWorkRuleMapper <<Service>> {
+        + {static} toDto(rule: DefaultWorkRule): DefaultWorkRuleDto
+        + {static} toEntity(dto: RegisterDefaultWorkRuleDto, user: User): DefaultWorkRule
+      }
+    }
+  }
+  
+  ' ===== External Integration =====
+  package "integration" #F5F5F5 {
+    
+    note as IntegrationNote
+      **他ドメインとの連携**
+      
+      1. **Reports Domain連携**
+         - WorkRuleResolverService実装を提供
+         - 勤怠表生成時のルール解決
+      
+      2. **Locations Domain連携**
+         - 位置情報による勤務場所判定
+         - GPS座標を使った距離計算
+      
+      3. **Security Module連携**
+         - ユーザー認証・認可
+         - データアクセス制御
+    end note
+  }
+}
+
+' ===== Relationships =====
+
+' Entity relationships
+WorkRule --> User : owner
+WorkRule --> WorkplaceLocation : has
+WorkRule --> WorkTime : has
+WorkRule --> MembershipPeriod : has
+DefaultWorkRule --> User : owner
+DefaultWorkRule --> WorkTime : has
+
+' Value Object relationships
+WorkplaceLocation ..> "GPS Coordinates" : validates
+WorkTime ..> "Time Range" : validates
+MembershipPeriod ..> "Date Range" : validates
+
+' Domain Service relationships
+WorkRuleDomainService ..> WorkRule : validates
+WorkRuleDomainService ..> DefaultWorkRule : validates
+WorkRuleDomainService ..> MembershipPeriod : analyzes
+
+' Use Case relationships - WorkRule
+RegisterWorkRuleUseCase ..> WorkRuleRepository : uses
+RegisterWorkRuleUseCase ..> WorkRuleDomainService : uses
+FindWorkRuleByIdUseCase ..> WorkRuleRepository : uses
+FindAllWorkRulesUseCase ..> WorkRuleRepository : uses
+UpdateWorkRuleUseCase ..> WorkRuleRepository : uses
+UpdateWorkRuleUseCase ..> WorkRuleDomainService : uses
+DeleteWorkRuleUseCase ..> WorkRuleRepository : uses
+
+' Use Case relationships - DefaultWorkRule
+RegisterDefaultWorkRuleUseCase ..> DefaultWorkRuleRepository : uses
+RegisterDefaultWorkRuleUseCase ..> WorkRuleDomainService : uses
+FindAllDefaultWorkRulesUseCase ..> DefaultWorkRuleRepository : uses
+UpdateDefaultWorkRuleUseCase ..> DefaultWorkRuleRepository : uses
+DeleteDefaultWorkRuleUseCase ..> DefaultWorkRuleRepository : uses
+
+' Use Case relationships - Resolution
+ResolveWorkRuleUseCase ..> WorkRuleRepository : uses
+ResolveWorkRuleUseCase ..> DefaultWorkRuleRepository : uses
+ResolveWorkRuleUseCase ..> WorkRuleDomainService : uses
+
+' Controller relationships
+WorkRuleController ..> RegisterWorkRuleUseCase : uses
+WorkRuleController ..> FindWorkRuleByIdUseCase : uses
+WorkRuleController ..> FindAllWorkRulesUseCase : uses
+WorkRuleController ..> UpdateWorkRuleUseCase : uses
+WorkRuleController ..> DeleteWorkRuleUseCase : uses
+WorkRuleController ..> ResolveWorkRuleUseCase : uses
+
+DefaultWorkRuleController ..> RegisterDefaultWorkRuleUseCase : uses
+DefaultWorkRuleController ..> FindAllDefaultWorkRulesUseCase : uses
+DefaultWorkRuleController ..> UpdateDefaultWorkRuleUseCase : uses
+DefaultWorkRuleController ..> DeleteDefaultWorkRuleUseCase : uses
+
+' Repository implementations
+JpaWorkRuleRepository ..|> WorkRuleRepository : implements
+InMemoryWorkRuleRepository ..|> WorkRuleRepository : implements
+JpaDefaultWorkRuleRepository ..|> DefaultWorkRuleRepository : implements
+InMemoryDefaultWorkRuleRepository ..|> DefaultWorkRuleRepository : implements
+
+' Mapper relationships
+WorkRuleMapper ..> WorkRule : maps
+DefaultWorkRuleMapper ..> DefaultWorkRule : maps
+
+' Legend
+legend right
+  |= 記号 |= 意味 |
+  | <<Entity>> | エンティティ |
+  | <<ValueObject>> | バリューオブジェクト |
+  | <<Service>> | ドメインサービス |
+  | <<UseCase>> | ユースケース |
+  | <<Repository>> | リポジトリインターフェース |
+  | <<Controller>> | RESTコントローラー |
+  
+  **重要ルール:**
+  同一ユーザーで重複する期間の
+  WorkRuleは登録不可
+  DefaultWorkRuleは1ユーザー1つまで
+endlegend
+
+@enduml

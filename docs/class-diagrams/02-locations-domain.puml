@@ -1,0 +1,359 @@
+@startuml locations-domain-class-diagram
+
+!define ENTITY class
+!define VALUE_OBJECT class
+!define ENUM enum
+!define INTERFACE interface
+!define SERVICE class
+!define REPOSITORY interface
+!define CONTROLLER class
+!define USECASE class
+
+skinparam linetype ortho
+skinparam groupInheritance 2
+
+' Color scheme
+skinparam class {
+  BackgroundColor<<Entity>> #FFE6E6
+  BorderColor<<Entity>> #FF6666
+  BackgroundColor<<ValueObject>> #E6F3FF
+  BorderColor<<ValueObject>> #6699FF
+  BackgroundColor<<Enum>> #FFFACD
+  BorderColor<<Enum>> #FFD700
+  BackgroundColor<<Service>> #E6FFE6
+  BorderColor<<Service>> #66FF66
+  BackgroundColor<<Repository>> #F0F0F0
+  BorderColor<<Repository>> #808080
+  BackgroundColor<<Controller>> #FFE6F3
+  BorderColor<<Controller>> #FF66B2
+  BackgroundColor<<UseCase>> #FFF0E6
+  BorderColor<<UseCase>> #FF9966
+  BackgroundColor<<Interface>> #E6E6FA
+  BorderColor<<Interface>> #9370DB
+}
+
+title Locations Domain (位置情報管理ドメイン) - クラス図
+
+package "com.github.okanikani.kairos.locations" {
+  
+  ' ===== Domain Models Layer =====
+  package "domains.models" #FAFAFA {
+    
+    package "entities" {
+      ENTITY Location <<Entity>> {
+        - id: UUID
+        - latitude: double
+        - longitude: double
+        - recordedAt: LocalDateTime
+        - user: User
+        --
+        + Location(id, latitude, longitude, recordedAt, user)
+        + update(latitude: double, longitude: double, recordedAt: LocalDateTime): void
+        + isOwnedBy(user: User): boolean
+        + getCoordinates(): Coordinates
+        + distanceTo(other: Location): double
+        - validateLatitude(latitude: double): void
+        - validateLongitude(longitude: double): void
+      }
+      
+      note right of Location
+        **位置情報エンティティ**
+        GPS座標と記録時刻を管理
+        - latitude: 緯度 (-90.0 to 90.0)
+        - longitude: 経度 (-180.0 to 180.0)
+        - recordedAt: 記録日時
+        - user: 記録者
+        
+        **重要制約:**
+        位置情報は勤怠表作成目的でのみ使用
+        高度な位置分析機能は対象外
+      end note
+    }
+    
+    package "valueobjects" {
+      VALUE_OBJECT User <<ValueObject>> {
+        - userId: String
+        --
+        + User(userId: String)
+        + equals(other: Object): boolean
+        + hashCode(): int
+        + toString(): String
+      }
+      
+      VALUE_OBJECT Coordinates <<ValueObject>> {
+        - latitude: double
+        - longitude: double
+        --
+        + Coordinates(latitude: double, longitude: double)
+        + distanceTo(other: Coordinates): double
+        + isValid(): boolean
+        + equals(other: Object): boolean
+        + hashCode(): int
+      }
+      
+      VALUE_OBJECT LocationSearchCriteria <<ValueObject>> {
+        - user: User
+        - startDateTime: LocalDateTime
+        - endDateTime: LocalDateTime
+        - boundingBox: BoundingBox
+        --
+        + LocationSearchCriteria(...)
+        + hasDateRange(): boolean
+        + hasBoundingBox(): boolean
+        + isValid(): boolean
+      }
+      
+      VALUE_OBJECT BoundingBox <<ValueObject>> {
+        - northEast: Coordinates
+        - southWest: Coordinates
+        --
+        + BoundingBox(northEast: Coordinates, southWest: Coordinates)
+        + contains(coordinates: Coordinates): boolean
+        + isValid(): boolean
+      }
+      
+      note bottom of Coordinates
+        **座標バリューオブジェクト**
+        GPS座標の値を表現
+        距離計算機能を含む
+      end note
+    }
+    
+    package "repositories" {
+      REPOSITORY LocationRepository <<Repository>> {
+        + save(location: Location): Location
+        + findById(id: UUID): Optional<Location>
+        + findAll(user: User): List<Location>
+        + findByUserAndDateRange(user: User, start: LocalDateTime, end: LocalDateTime): List<Location>
+        + delete(id: UUID): void
+        + deleteAll(user: User): void
+        + search(criteria: LocationSearchCriteria): List<Location>
+        + searchWithPagination(criteria: LocationSearchCriteria, pageable: Pageable): Page<Location>
+        + countByUser(user: User): long
+        + existsById(id: UUID): boolean
+      }
+    }
+  }
+  
+  ' ===== Application Services Layer =====
+  package "applications.usecases" #F0F0F0 {
+    
+    USECASE RegisterLocationUseCase <<UseCase>> {
+      - locationRepository: LocationRepository
+      --
+      + execute(request: RegisterLocationRequest): Location
+      - validateRequest(request: RegisterLocationRequest): void
+      - createLocation(request: RegisterLocationRequest): Location
+    }
+    
+    USECASE FindLocationByIdUseCase <<UseCase>> {
+      - locationRepository: LocationRepository
+      --
+      + execute(id: UUID): Location
+      - validateLocationExists(id: UUID): void
+    }
+    
+    USECASE FindAllLocationsUseCase <<UseCase>> {
+      - locationRepository: LocationRepository
+      --
+      + execute(user: User): List<Location>
+      + execute(user: User, startDate: LocalDateTime, endDate: LocalDateTime): List<Location>
+    }
+    
+    USECASE UpdateLocationUseCase <<UseCase>> {
+      - locationRepository: LocationRepository
+      --
+      + execute(request: UpdateLocationRequest): void
+      - validateUpdatePermission(location: Location, user: User): void
+      - validateRequest(request: UpdateLocationRequest): void
+    }
+    
+    USECASE DeleteLocationUseCase <<UseCase>> {
+      - locationRepository: LocationRepository
+      --
+      + execute(id: UUID, user: User): void
+      - validateDeletePermission(location: Location, user: User): void
+    }
+    
+    USECASE SearchLocationsUseCase <<UseCase>> {
+      - locationRepository: LocationRepository
+      --
+      + execute(criteria: LocationSearchCriteria): List<Location>
+      - validateCriteria(criteria: LocationSearchCriteria): void
+    }
+    
+    USECASE PageableSearchLocationsUseCase <<UseCase>> {
+      - locationRepository: LocationRepository
+      --
+      + execute(criteria: LocationSearchCriteria, pageable: Pageable): Page<Location>
+      - validateCriteria(criteria: LocationSearchCriteria): void
+      - validatePageable(pageable: Pageable): void
+    }
+    
+    USECASE DeleteAllUserLocationsUseCase <<UseCase>> {
+      - locationRepository: LocationRepository
+      --
+      + execute(user: User): void
+      - confirmDeletion(user: User): void
+    }
+    
+    note bottom of SearchLocationsUseCase
+      **位置情報検索機能**
+      日時範囲、境界ボックス等での
+      位置情報フィルタリング
+      ※勤怠表作成支援目的のみ
+    end note
+  }
+  
+  ' ===== Interface Adapters Layer =====
+  package "others" #E8E8E8 {
+    
+    package "controllers" {
+      CONTROLLER LocationController <<Controller>> {
+        - registerLocationUseCase: RegisterLocationUseCase
+        - findLocationByIdUseCase: FindLocationByIdUseCase
+        - findAllLocationsUseCase: FindAllLocationsUseCase
+        - updateLocationUseCase: UpdateLocationUseCase
+        - deleteLocationUseCase: DeleteLocationUseCase
+        - searchLocationsUseCase: SearchLocationsUseCase
+        - pageableSearchLocationsUseCase: PageableSearchLocationsUseCase
+        --
+        + registerLocation(request: RegisterLocationDto, auth: Authentication): ResponseEntity<LocationDto>
+        + getLocation(id: UUID, auth: Authentication): ResponseEntity<LocationDto>
+        + getAllLocations(auth: Authentication): ResponseEntity<List<LocationDto>>
+        + getLocationsByDateRange(start: LocalDateTime, end: LocalDateTime, auth: Authentication): ResponseEntity<List<LocationDto>>
+        + updateLocation(id: UUID, request: UpdateLocationDto, auth: Authentication): ResponseEntity<Void>
+        + deleteLocation(id: UUID, auth: Authentication): ResponseEntity<Void>
+        + searchLocations(criteria: LocationSearchDto, auth: Authentication): ResponseEntity<List<LocationDto>>
+        + searchLocationsWithPagination(criteria: LocationSearchDto, pageable: Pageable, auth: Authentication): ResponseEntity<Page<LocationDto>>
+      }
+      
+      note right of LocationController
+        **RESTful API エンドポイント**
+        - POST /api/locations
+        - GET /api/locations/{id}
+        - GET /api/locations
+        - PUT /api/locations/{id}
+        - DELETE /api/locations/{id}
+        - POST /api/locations/search
+      end note
+    }
+    
+    package "repositories" {
+      SERVICE JpaLocationRepository <<Service>> {
+        - entityManager: EntityManager
+        --
+        + save(location: Location): Location
+        + findById(id: UUID): Optional<Location>
+        + findAll(user: User): List<Location>
+        + findByUserAndDateRange(user: User, start: LocalDateTime, end: LocalDateTime): List<Location>
+        + delete(id: UUID): void
+        + search(criteria: LocationSearchCriteria): List<Location>
+        + searchWithPagination(criteria: LocationSearchCriteria, pageable: Pageable): Page<Location>
+        - buildSearchQuery(criteria: LocationSearchCriteria): CriteriaQuery<Location>
+        - applyDateRangeFilter(query: CriteriaQuery, criteria: LocationSearchCriteria): void
+        - applyBoundingBoxFilter(query: CriteriaQuery, criteria: LocationSearchCriteria): void
+      }
+      
+      SERVICE InMemoryLocationRepository <<Service>> {
+        - locations: Map<UUID, Location>
+        --
+        + save(location: Location): Location
+        + findById(id: UUID): Optional<Location>
+        + findAll(user: User): List<Location>
+        + findByUserAndDateRange(user: User, start: LocalDateTime, end: LocalDateTime): List<Location>
+        + delete(id: UUID): void
+        + search(criteria: LocationSearchCriteria): List<Location>
+        - filterByDateRange(locations: List<Location>, start: LocalDateTime, end: LocalDateTime): List<Location>
+        - filterByBoundingBox(locations: List<Location>, boundingBox: BoundingBox): List<Location>
+      }
+    }
+    
+    package "mappers" {
+      SERVICE LocationMapper <<Service>> {
+        + {static} toDto(location: Location): LocationDto
+        + {static} toDtoList(locations: List<Location>): List<LocationDto>
+        + {static} toEntity(dto: RegisterLocationDto, user: User): Location
+        + {static} toCriteria(dto: LocationSearchDto, user: User): LocationSearchCriteria
+      }
+    }
+  }
+  
+  ' ===== External Integration =====
+  package "integration" #F5F5F5 {
+    
+    note as IntegrationNote
+      **他ドメインとの連携**
+      
+      1. **Reports Domain連携**
+         - LocationService実装を提供
+         - 勤怠表生成時の位置データ提供
+      
+      2. **Rules Domain連携**
+         - 勤務場所との距離計算
+         - 位置ベースルール適用支援
+      
+      3. **Security Module連携**
+         - ユーザー認証・認可
+         - データアクセス制御
+    end note
+  }
+}
+
+' ===== Relationships =====
+
+' Entity relationships
+Location --> User : owner
+Location --> Coordinates : has
+
+' Value Object relationships
+LocationSearchCriteria --> User : user
+LocationSearchCriteria --> BoundingBox : boundingBox
+BoundingBox --> Coordinates : northEast
+BoundingBox --> Coordinates : southWest
+
+' Use Case relationships
+RegisterLocationUseCase ..> LocationRepository : uses
+RegisterLocationUseCase ..> Location : creates
+FindLocationByIdUseCase ..> LocationRepository : uses
+FindAllLocationsUseCase ..> LocationRepository : uses
+UpdateLocationUseCase ..> LocationRepository : uses
+DeleteLocationUseCase ..> LocationRepository : uses
+SearchLocationsUseCase ..> LocationRepository : uses
+SearchLocationsUseCase ..> LocationSearchCriteria : uses
+PageableSearchLocationsUseCase ..> LocationRepository : uses
+DeleteAllUserLocationsUseCase ..> LocationRepository : uses
+
+' Controller relationships
+LocationController ..> RegisterLocationUseCase : uses
+LocationController ..> FindLocationByIdUseCase : uses
+LocationController ..> FindAllLocationsUseCase : uses
+LocationController ..> UpdateLocationUseCase : uses
+LocationController ..> DeleteLocationUseCase : uses
+LocationController ..> SearchLocationsUseCase : uses
+LocationController ..> PageableSearchLocationsUseCase : uses
+
+' Repository implementations
+JpaLocationRepository ..|> LocationRepository : implements
+InMemoryLocationRepository ..|> LocationRepository : implements
+
+' Mapper relationships
+LocationMapper ..> Location : maps
+LocationMapper ..> LocationSearchCriteria : creates
+
+' Legend
+legend right
+  |= 記号 |= 意味 |
+  | <<Entity>> | エンティティ |
+  | <<ValueObject>> | バリューオブジェクト |
+  | <<Service>> | ドメインサービス |
+  | <<UseCase>> | ユースケース |
+  | <<Repository>> | リポジトリインターフェース |
+  | <<Controller>> | RESTコントローラー |
+  
+  **制約事項:**
+  位置情報は勤怠表作成目的でのみ使用
+  高度な位置分析・マッピング機能は対象外
+endlegend
+
+@enduml

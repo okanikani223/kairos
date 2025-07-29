@@ -1,0 +1,388 @@
+@startuml reports-domain-class-diagram
+
+!define ENTITY class
+!define VALUE_OBJECT class
+!define ENUM enum
+!define INTERFACE interface
+!define SERVICE class
+!define REPOSITORY interface
+!define CONTROLLER class
+!define USECASE class
+
+skinparam linetype ortho
+skinparam groupInheritance 2
+
+' Color scheme
+skinparam class {
+  BackgroundColor<<Entity>> #FFE6E6
+  BorderColor<<Entity>> #FF6666
+  BackgroundColor<<ValueObject>> #E6F3FF
+  BorderColor<<ValueObject>> #6699FF
+  BackgroundColor<<Enum>> #FFFACD
+  BorderColor<<Enum>> #FFD700
+  BackgroundColor<<Service>> #E6FFE6
+  BorderColor<<Service>> #66FF66
+  BackgroundColor<<Repository>> #F0F0F0
+  BorderColor<<Repository>> #808080
+  BackgroundColor<<Controller>> #FFE6F3
+  BorderColor<<Controller>> #FF66B2
+  BackgroundColor<<UseCase>> #FFF0E6
+  BorderColor<<UseCase>> #FF9966
+  BackgroundColor<<Interface>> #E6E6FA
+  BorderColor<<Interface>> #9370DB
+}
+
+title Reports Domain (勤怠表管理ドメイン) - クラス図
+
+package "com.github.okanikani.kairos.reports" {
+  
+  ' ===== Domain Models Layer =====
+  package "domains.models" #FAFAFA {
+    
+    package "entities" {
+      ENTITY Report <<Entity>> {
+        - yearMonth: YearMonth
+        - owner: User
+        - status: ReportStatus
+        - workDays: int
+        - summary: Summary
+        --
+        + Report(yearMonth, owner, status, workDays, summary)
+        + changeStatus(newStatus: ReportStatus): void
+        + update(workDays: int, summary: Summary): void
+        + isOwnedBy(user: User): boolean
+        + canBeEditedBy(user: User): boolean
+      }
+      
+      note right of Report
+        **勤怠表エンティティ**
+        月次の勤怠表を表現する中核エンティティ
+        - yearMonth: 対象年月
+        - owner: 所有者
+        - status: 承認状態
+        - workDays: 勤務日数
+        - summary: 集計情報
+      end note
+    }
+    
+    package "valueobjects" {
+      VALUE_OBJECT Detail <<ValueObject>> {
+        - workDate: LocalDate
+        - isHoliday: boolean
+        - leaveType: LeaveType
+        - startTime: LocalTime
+        - endTime: LocalTime
+        - breakHours: double
+        - overtimeHours: double
+        - lateNightHours: double
+        - holidayWorkHours: double
+        - note: String
+        --
+        + Detail(...)
+        + calculateWorkHours(): double
+        + isWorkDay(): boolean
+        + hasLeave(): boolean
+      }
+      
+      VALUE_OBJECT Summary <<ValueObject>> {
+        - workDays: double
+        - paidLeave: double
+        - compensatoryLeave: double
+        - specialLeave: double
+        - absenteeism: double
+        - lateCount: int
+        - earlyLeaveCount: int
+        - totalWorkHours: double
+        - totalOvertimeHours: double
+        - totalLateNightHours: double
+        - totalHolidayWorkHours: double
+        --
+        + Summary(...)
+        + getTotalLeaveDays(): double
+        + getTotalAttendanceDays(): double
+      }
+      
+      VALUE_OBJECT User <<ValueObject>> {
+        - userId: String
+        --
+        + User(userId: String)
+        + equals(other: Object): boolean
+        + hashCode(): int
+      }
+      
+      VALUE_OBJECT WorkTime <<ValueObject>> {
+        - time: LocalTime
+        - roundingSetting: RoundingSetting
+        --
+        + WorkTime(time, roundingSetting)
+        + getRoundedTime(): LocalTime
+        + toMinutes(): int
+      }
+      
+      note bottom of Detail
+        **勤務詳細バリューオブジェクト**
+        1日分の勤務情報を表現
+        - 出退勤時刻
+        - 休暇種別
+        - 各種勤務時間
+      end note
+    }
+    
+    package "constants" {
+      ENUM LeaveType <<Enum>> {
+        PAID_LEAVE
+        COMPENSATORY_LEAVE
+        SPECIAL_LEAVE
+        ABSENTEEISM
+        AM_LEAVE
+        PM_LEAVE
+        --
+        + getDisplayName(): String
+        + isFullDayLeave(): boolean
+        + isHalfDayLeave(): boolean
+      }
+      
+      ENUM ReportStatus <<Enum>> {
+        DRAFT
+        SUBMITTED
+        APPROVED
+        REJECTED
+        --
+        + canTransitionTo(status: ReportStatus): boolean
+        + isEditable(): boolean
+        + isFinal(): boolean
+      }
+    }
+    
+    package "repositories" {
+      REPOSITORY ReportRepository <<Repository>> {
+        + save(report: Report): Report
+        + find(yearMonth: YearMonth, owner: User): Optional<Report>
+        + findAll(owner: User): List<Report>
+        + delete(yearMonth: YearMonth, owner: User): void
+        + existsByYearMonthAndOwner(yearMonth: YearMonth, owner: User): boolean
+      }
+    }
+  }
+  
+  ' ===== Domain Services Layer =====
+  package "domains.services" #F5F5F5 {
+    
+    INTERFACE LocationService <<Interface>> {
+      + getLocationRecordTimes(yearMonth: YearMonth, user: User): List<LocalDateTime>
+    }
+    
+    INTERFACE WorkRuleResolverService <<Interface>> {
+      + resolveWorkRule(user: User, workDate: LocalDate, location: Optional<LocationInfo>): ResolvedWorkRule
+    }
+    
+    SERVICE ReportPeriodCalculator <<Service>> {
+      + calculatePeriod(yearMonth: YearMonth, calculationStartDay: int): Period
+      + getWorkDatesInPeriod(period: Period): List<LocalDate>
+      + isWeekend(date: LocalDate): boolean
+    }
+    
+    SERVICE SummaryFactory <<Service>> {
+      + create(details: List<Detail>): Summary
+      - calculateWorkDays(details: List<Detail>): double
+      - calculateLeaveByType(details: List<Detail>, type: LeaveType): double
+      - calculateTotalHours(details: List<Detail>): double
+    }
+    
+    INTERFACE RoundingSetting <<Interface>> {
+      + round(time: LocalTime): LocalTime
+      + getRoundingUnit(): int
+    }
+    
+    SERVICE MinuteBasedRoundingSetting <<Service>> {
+      - roundingUnit: int
+      --
+      + MinuteBasedRoundingSetting(roundingUnit: int)
+      + round(time: LocalTime): LocalTime
+      + getRoundingUnit(): int
+    }
+    
+    note right of LocationService
+      **Anti-Corruption Layer**
+      Locations ドメインへのインターフェース
+      勤怠表ドメインから位置情報を
+      取得するための抽象化層
+    end note
+    
+    note right of WorkRuleResolverService
+      **Anti-Corruption Layer**
+      Rules ドメインへのインターフェース
+      勤務ルールを解決するための
+      抽象化層
+    end note
+  }
+  
+  ' ===== Application Services Layer =====
+  package "applications.usecases" #F0F0F0 {
+    
+    USECASE RegisterReportUseCase <<UseCase>> {
+      - reportRepository: ReportRepository
+      --
+      + execute(request: RegisterReportRequest): void
+      - validateRequest(request: RegisterReportRequest): void
+      - checkDuplicateReport(yearMonth: YearMonth, user: User): void
+    }
+    
+    USECASE FindReportUseCase <<UseCase>> {
+      - reportRepository: ReportRepository
+      --
+      + execute(yearMonth: YearMonth, user: User): Report
+      - validateYearMonth(yearMonth: YearMonth): void
+    }
+    
+    USECASE UpdateReportUseCase <<UseCase>> {
+      - reportRepository: ReportRepository
+      --
+      + execute(request: UpdateReportRequest): void
+      - validateUpdatePermission(report: Report, user: User): void
+      - validateStatus(report: Report): void
+    }
+    
+    USECASE DeleteReportUseCase <<UseCase>> {
+      - reportRepository: ReportRepository
+      --
+      + execute(yearMonth: YearMonth, user: User): void
+      - validateDeletePermission(report: Report, user: User): void
+    }
+    
+    USECASE GenerateReportFromLocationUseCase <<UseCase>> {
+      - reportRepository: ReportRepository
+      - locationService: LocationService
+      - workRuleResolverService: WorkRuleResolverService
+      - reportPeriodCalculator: ReportPeriodCalculator
+      - summaryFactory: SummaryFactory
+      --
+      + execute(request: GenerateReportRequest): void
+      - generateDetails(dates: List<LocalDate>, locationTimes: List<LocalDateTime>, user: User): List<Detail>
+      - createDetailFromLocation(date: LocalDate, dayLocations: List<LocalDateTime>, rule: ResolvedWorkRule): Detail
+    }
+    
+    note bottom of GenerateReportFromLocationUseCase
+      **位置情報からの勤怠表生成**
+      位置情報データと勤務ルールを
+      組み合わせて勤怠表を自動生成
+    end note
+  }
+  
+  ' ===== Interface Adapters Layer =====
+  package "others" #E8E8E8 {
+    
+    package "controllers" {
+      CONTROLLER ReportController <<Controller>> {
+        - registerReportUseCase: RegisterReportUseCase
+        - findReportUseCase: FindReportUseCase
+        - updateReportUseCase: UpdateReportUseCase
+        - deleteReportUseCase: DeleteReportUseCase
+        - generateReportFromLocationUseCase: GenerateReportFromLocationUseCase
+        --
+        + registerReport(request: RegisterReportDto, auth: Authentication): ResponseEntity<Void>
+        + getReport(year: int, month: int, auth: Authentication): ResponseEntity<ReportDto>
+        + updateReport(year: int, month: int, request: UpdateReportDto, auth: Authentication): ResponseEntity<Void>
+        + deleteReport(year: int, month: int, auth: Authentication): ResponseEntity<Void>
+        + generateReport(request: GenerateReportDto, auth: Authentication): ResponseEntity<Void>
+      }
+    }
+    
+    package "repositories" {
+      SERVICE JpaReportRepository <<Service>> {
+        - entityManager: EntityManager
+        --
+        + save(report: Report): Report
+        + find(yearMonth: YearMonth, owner: User): Optional<Report>
+        + findAll(owner: User): List<Report>
+        + delete(yearMonth: YearMonth, owner: User): void
+      }
+      
+      SERVICE InMemoryReportRepository <<Service>> {
+        - reports: Map<String, Report>
+        --
+        + save(report: Report): Report
+        + find(yearMonth: YearMonth, owner: User): Optional<Report>
+        + findAll(owner: User): List<Report>
+        + delete(yearMonth: YearMonth, owner: User): void
+      }
+    }
+    
+    package "services" {
+      SERVICE LocationServiceImpl <<Service>> {
+        - locationRepository: LocationRepository
+        --
+        + getLocationRecordTimes(yearMonth: YearMonth, user: User): List<LocalDateTime>
+      }
+      
+      SERVICE WorkRuleResolverServiceImpl <<Service>> {
+        - workRuleRepository: WorkRuleRepository
+        - defaultWorkRuleRepository: DefaultWorkRuleRepository
+        --
+        + resolveWorkRule(user: User, workDate: LocalDate, location: Optional<LocationInfo>): ResolvedWorkRule
+      }
+    }
+  }
+}
+
+' ===== Relationships =====
+
+' Entity relationships
+Report --> Summary : has
+Report --> User : owner
+Report --> ReportStatus : status
+
+' Value Object relationships
+Detail --> LeaveType : leaveType
+WorkTime --> RoundingSetting : uses
+Summary ..> Detail : "created from"
+
+' Service relationships
+MinuteBasedRoundingSetting ..|> RoundingSetting : implements
+SummaryFactory ..> Summary : creates
+SummaryFactory ..> Detail : uses
+ReportPeriodCalculator ..> "Period" : creates
+
+' Use Case relationships
+RegisterReportUseCase ..> ReportRepository : uses
+RegisterReportUseCase ..> Report : creates
+FindReportUseCase ..> ReportRepository : uses
+UpdateReportUseCase ..> ReportRepository : uses
+DeleteReportUseCase ..> ReportRepository : uses
+
+GenerateReportFromLocationUseCase ..> ReportRepository : uses
+GenerateReportFromLocationUseCase ..> LocationService : uses
+GenerateReportFromLocationUseCase ..> WorkRuleResolverService : uses
+GenerateReportFromLocationUseCase ..> ReportPeriodCalculator : uses
+GenerateReportFromLocationUseCase ..> SummaryFactory : uses
+GenerateReportFromLocationUseCase ..> Report : creates
+
+' Controller relationships
+ReportController ..> RegisterReportUseCase : uses
+ReportController ..> FindReportUseCase : uses
+ReportController ..> UpdateReportUseCase : uses
+ReportController ..> DeleteReportUseCase : uses
+ReportController ..> GenerateReportFromLocationUseCase : uses
+
+' Repository implementations
+JpaReportRepository ..|> ReportRepository : implements
+InMemoryReportRepository ..|> ReportRepository : implements
+
+' Service implementations
+LocationServiceImpl ..|> LocationService : implements
+WorkRuleResolverServiceImpl ..|> WorkRuleResolverService : implements
+
+' Legend
+legend right
+  |= 記号 |= 意味 |
+  | <<Entity>> | エンティティ |
+  | <<ValueObject>> | バリューオブジェクト |
+  | <<Enum>> | 列挙型 |
+  | <<Service>> | ドメインサービス |
+  | <<UseCase>> | ユースケース |
+  | <<Repository>> | リポジトリインターフェース |
+  | <<Controller>> | RESTコントローラー |
+  | <<Interface>> | インターフェース |
+endlegend
+
+@enduml

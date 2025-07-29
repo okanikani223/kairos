@@ -1,0 +1,519 @@
+@startuml users-domain-class-diagram
+
+!define ENTITY class
+!define VALUE_OBJECT class
+!define ENUM enum
+!define INTERFACE interface
+!define SERVICE class
+!define REPOSITORY interface
+!define CONTROLLER class
+!define USECASE class
+
+skinparam linetype ortho
+skinparam groupInheritance 2
+
+' Color scheme
+skinparam class {
+  BackgroundColor<<Entity>> #FFE6E6
+  BorderColor<<Entity>> #FF6666
+  BackgroundColor<<ValueObject>> #E6F3FF
+  BorderColor<<ValueObject>> #6699FF
+  BackgroundColor<<Enum>> #FFFACD
+  BorderColor<<Enum>> #FFD700
+  BackgroundColor<<Service>> #E6FFE6
+  BorderColor<<Service>> #66FF66
+  BackgroundColor<<Repository>> #F0F0F0
+  BorderColor<<Repository>> #808080
+  BackgroundColor<<Controller>> #FFE6F3
+  BorderColor<<Controller>> #FF66B2
+  BackgroundColor<<UseCase>> #FFF0E6
+  BorderColor<<UseCase>> #FF9966
+  BackgroundColor<<Interface>> #E6E6FA
+  BorderColor<<Interface>> #9370DB
+}
+
+title Users Domain (ユーザー管理ドメイン) - クラス図
+
+package "com.github.okanikani.kairos.users" {
+  
+  ' ===== Domain Models Layer =====
+  package "domains.models" #FAFAFA {
+    
+    package "entities" {
+      ENTITY User <<Entity>> {
+        - id: UUID
+        - username: String
+        - password: String
+        - email: String
+        - role: Role
+        - createdAt: LocalDateTime
+        - updatedAt: LocalDateTime
+        - isActive: boolean
+        --
+        + User(id, username, password, email, role)
+        + updateProfile(email: String): void
+        + changePassword(newPassword: String): void
+        + activate(): void
+        + deactivate(): void
+        + hasRole(role: Role): boolean
+        + isAdmin(): boolean
+        + isActiveUser(): boolean
+        + getUserInfo(): UserInfo
+        - validateUsername(username: String): void
+        - validateEmail(email: String): void
+        - validatePassword(password: String): void
+      }
+      
+      note right of User
+        **ユーザーエンティティ**
+        システムのユーザー情報を管理
+        - username: ログイン用ユーザー名（一意）
+        - password: ハッシュ化パスワード
+        - email: メールアドレス
+        - role: ユーザー権限
+        - isActive: アカウント有効性
+        
+        **制約:**
+        - ユーザー名は一意
+        - メールアドレスは一意
+        - パスワードはハッシュ化して保存
+      end note
+    }
+    
+    package "valueobjects" {
+      VALUE_OBJECT UserInfo <<ValueObject>> {
+        - userId: String
+        - username: String
+        - email: String
+        - role: Role
+        - isActive: boolean
+        --
+        + UserInfo(userId, username, email, role, isActive)
+        + hasPermission(permission: Permission): boolean
+        + equals(other: Object): boolean
+        + hashCode(): int
+      }
+      
+      VALUE_OBJECT Email <<ValueObject>> {
+        - address: String
+        --
+        + Email(address: String)
+        + isValid(): boolean
+        + getDomain(): String
+        + getLocalPart(): String
+        + equals(other: Object): boolean
+        + hashCode(): int
+        - validateFormat(address: String): void
+      }
+      
+      VALUE_OBJECT Username <<ValueObject>> {
+        - value: String
+        --
+        + Username(value: String)
+        + isValid(): boolean
+        + length(): int
+        + equals(other: Object): boolean
+        + hashCode(): int
+        - validateFormat(username: String): void
+        - validateLength(username: String): void
+      }
+      
+      VALUE_OBJECT Password <<ValueObject>> {
+        - hashedValue: String
+        --
+        + Password(plainPassword: String, passwordService: PasswordService)
+        + Password(hashedValue: String)
+        + matches(plainPassword: String, passwordService: PasswordService): boolean
+        + isStrong(): boolean
+        + equals(other: Object): boolean
+        + hashCode(): int
+        - validateStrength(password: String): void
+      }
+      
+      note bottom of Password
+        **パスワードバリューオブジェクト**
+        パスワードのハッシュ化と
+        強度チェックを管理
+        平文パスワードは保持しない
+      end note
+    }
+    
+    package "constants" {
+      ENUM Role <<Enum>> {
+        USER
+        ADMIN
+        MANAGER
+        --
+        + getDisplayName(): String
+        + hasPermission(permission: Permission): boolean
+        + isHigherThan(other: Role): boolean
+        + getPermissions(): Set<Permission>
+      }
+      
+      ENUM Permission <<Enum>> {
+        READ_OWN_DATA
+        WRITE_OWN_DATA
+        READ_ALL_DATA
+        WRITE_ALL_DATA
+        MANAGE_USERS
+        SYSTEM_ADMIN
+        --
+        + getDisplayName(): String
+        + isSystemLevel(): boolean
+      }
+      
+      note right of Role
+        **権限ロール**
+        - USER: 一般ユーザー（自分のデータのみ）
+        - ADMIN: 管理者（全データ管理可能）
+        - MANAGER: マネージャー（チーム管理）
+      end note
+    }
+    
+    package "repositories" {
+      REPOSITORY UserRepository <<Repository>> {
+        + save(user: User): User
+        + findById(id: UUID): Optional<User>
+        + findByUsername(username: String): Optional<User>
+        + findByEmail(email: String): Optional<User>
+        + findAll(): List<User>
+        + findAllActive(): List<User>
+        + findByRole(role: Role): List<User>
+        + delete(id: UUID): void
+        + existsByUsername(username: String): boolean
+        + existsByEmail(email: String): boolean
+        + countAll(): long
+        + countByRole(role: Role): long
+      }
+    }
+  }
+  
+  ' ===== Domain Services Layer =====
+  package "domains.services" #F5F5F5 {
+    
+    SERVICE PasswordService <<Service>> {
+      - passwordEncoder: PasswordEncoder
+      --
+      + hashPassword(plainPassword: String): String
+      + verifyPassword(plainPassword: String, hashedPassword: String): boolean
+      + isStrongPassword(password: String): boolean
+      + generateSalt(): String
+      - checkPasswordComplexity(password: String): boolean
+      - checkPasswordLength(password: String): boolean
+    }
+    
+    SERVICE UserValidationService <<Service>> {
+      - userRepository: UserRepository
+      --
+      + validateUniqueUsername(username: String): void
+      + validateUniqueEmail(email: String): void
+      + validateUsernameFormat(username: String): void
+      + validateEmailFormat(email: String): void
+      + validatePasswordStrength(password: String): void
+      + validateUserUpdate(user: User, updateInfo: UserUpdateInfo): void
+    }
+    
+    SERVICE UserDomainService <<Service>> {
+      - userRepository: UserRepository
+      - passwordService: PasswordService
+      - userValidationService: UserValidationService
+      --
+      + createUser(username: String, password: String, email: String, role: Role): User
+      + authenticateUser(username: String, password: String): Optional<User>
+      + changeUserPassword(user: User, oldPassword: String, newPassword: String): void
+      + activateUser(user: User): void
+      + deactivateUser(user: User): void
+      + promoteUser(user: User, newRole: Role): void
+    }
+    
+    note right of UserDomainService
+      **ユーザードメインサービス**
+      ユーザー作成、認証、パスワード変更など
+      複雑なビジネスロジックを管理
+    end note
+  }
+  
+  ' ===== Application Services Layer =====
+  package "applications.usecases" #F0F0F0 {
+    
+    USECASE RegisterUserUseCase <<UseCase>> {
+      - userRepository: UserRepository
+      - userDomainService: UserDomainService
+      --
+      + execute(request: RegisterUserRequest): User
+      - validateRequest(request: RegisterUserRequest): void
+      - createUser(request: RegisterUserRequest): User
+      - sendWelcomeNotification(user: User): void
+    }
+    
+    USECASE AuthenticationUseCase <<UseCase>> {
+      - userRepository: UserRepository
+      - userDomainService: UserDomainService
+      --
+      + execute(username: String, password: String): Optional<UserInfo>
+      + execute(request: AuthenticationRequest): Optional<UserInfo>
+      - validateCredentials(username: String, password: String): void
+      - createUserSession(user: User): UserInfo
+    }
+    
+    USECASE FindUserUseCase <<UseCase>> {
+      - userRepository: UserRepository
+      --
+      + execute(id: UUID): User
+      + execute(username: String): Optional<User>
+      + execute(email: String): Optional<User>
+      - validateUserExists(id: UUID): void
+    }
+    
+    USECASE UpdateUserUseCase <<UseCase>> {
+      - userRepository: UserRepository
+      - userDomainService: UserDomainService
+      --
+      + execute(request: UpdateUserRequest): void
+      - validateUpdatePermission(user: User, requestingUser: User): void
+      - validateRequest(request: UpdateUserRequest): void
+      - updateUser(user: User, request: UpdateUserRequest): void
+    }
+    
+    USECASE ChangePasswordUseCase <<UseCase>> {
+      - userRepository: UserRepository
+      - userDomainService: UserDomainService
+      --
+      + execute(request: ChangePasswordRequest): void
+      - validatePasswordChangePermission(user: User, requestingUser: User): void
+      - validateRequest(request: ChangePasswordRequest): void
+      - changePassword(user: User, request: ChangePasswordRequest): void
+    }
+    
+    USECASE DeleteUserUseCase <<UseCase>> {
+      - userRepository: UserRepository
+      --
+      + execute(id: UUID, requestingUser: User): void
+      - validateDeletePermission(user: User, requestingUser: User): void
+      - softDeleteUser(user: User): void
+    }
+    
+    USECASE FindAllUsersUseCase <<UseCase>> {
+      - userRepository: UserRepository
+      --
+      + execute(): List<User>
+      + execute(role: Role): List<User>
+      + execute(isActive: boolean): List<User>
+      + execute(pageRequest: PageRequest): Page<User>
+    }
+    
+    USECASE ActivateUserUseCase <<UseCase>> {
+      - userRepository: UserRepository
+      - userDomainService: UserDomainService
+      --
+      + execute(id: UUID, requestingUser: User): void
+      - validateActivationPermission(user: User, requestingUser: User): void
+    }
+    
+    USECASE DeactivateUserUseCase <<UseCase>> {
+      - userRepository: UserRepository
+      - userDomainService: UserDomainService
+      --
+      + execute(id: UUID, requestingUser: User): void
+      - validateDeactivationPermission(user: User, requestingUser: User): void
+    }
+  }
+  
+  ' ===== Interface Adapters Layer =====
+  package "others" #E8E8E8 {
+    
+    package "controllers" {
+      CONTROLLER UserController <<Controller>> {
+        - registerUserUseCase: RegisterUserUseCase
+        - findUserUseCase: FindUserUseCase
+        - updateUserUseCase: UpdateUserUseCase
+        - deleteUserUseCase: DeleteUserUseCase
+        - findAllUsersUseCase: FindAllUsersUseCase
+        - activateUserUseCase: ActivateUserUseCase
+        - deactivateUserUseCase: DeactivateUserUseCase
+        - changePasswordUseCase: ChangePasswordUseCase
+        --
+        + registerUser(request: RegisterUserDto): ResponseEntity<UserDto>
+        + getUser(id: UUID, auth: Authentication): ResponseEntity<UserDto>
+        + getUserProfile(auth: Authentication): ResponseEntity<UserDto>
+        + getAllUsers(auth: Authentication): ResponseEntity<List<UserDto>>
+        + updateUser(id: UUID, request: UpdateUserDto, auth: Authentication): ResponseEntity<Void>
+        + deleteUser(id: UUID, auth: Authentication): ResponseEntity<Void>
+        + activateUser(id: UUID, auth: Authentication): ResponseEntity<Void>
+        + deactivateUser(id: UUID, auth: Authentication): ResponseEntity<Void>
+        + changePassword(request: ChangePasswordDto, auth: Authentication): ResponseEntity<Void>
+      }
+      
+      note right of UserController
+        **RESTful API エンドポイント**
+        - POST /api/users (registration)
+        - GET /api/users/{id}
+        - GET /api/users/profile
+        - GET /api/users
+        - PUT /api/users/{id}
+        - DELETE /api/users/{id}
+        - POST /api/users/{id}/activate
+        - POST /api/users/{id}/deactivate
+        - POST /api/users/change-password
+      end note
+    }
+    
+    package "repositories" {
+      SERVICE JpaUserRepository <<Service>> {
+        - entityManager: EntityManager
+        --
+        + save(user: User): User
+        + findById(id: UUID): Optional<User>
+        + findByUsername(username: String): Optional<User>
+        + findByEmail(email: String): Optional<User>
+        + findAll(): List<User>
+        + findAllActive(): List<User>
+        + findByRole(role: Role): List<User>
+        + delete(id: UUID): void
+        + existsByUsername(username: String): boolean
+        + existsByEmail(email: String): boolean
+        - buildUserQuery(criteria: UserSearchCriteria): CriteriaQuery<User>
+      }
+      
+      SERVICE InMemoryUserRepository <<Service>> {
+        - users: Map<UUID, User>
+        - usernameIndex: Map<String, UUID>
+        - emailIndex: Map<String, UUID>
+        --
+        + save(user: User): User
+        + findById(id: UUID): Optional<User>
+        + findByUsername(username: String): Optional<User>
+        + findByEmail(email: String): Optional<User>
+        + findAll(): List<User>
+        + delete(id: UUID): void
+        - updateIndexes(user: User): void
+        - removeFromIndexes(user: User): void
+      }
+    }
+    
+    package "mappers" {
+      SERVICE UserMapper <<Service>> {
+        + {static} toDto(user: User): UserDto
+        + {static} toDtoList(users: List<User>): List<UserDto>
+        + {static} toEntity(dto: RegisterUserDto): User
+        + {static} toUserInfo(user: User): UserInfo
+        + {static} toUserInfoList(users: List<User>): List<UserInfo>
+      }
+    }
+    
+    package "validators" {
+      SERVICE UserRequestValidator <<Service>> {
+        + validateRegisterRequest(request: RegisterUserDto): ValidationResult
+        + validateUpdateRequest(request: UpdateUserDto): ValidationResult
+        + validateChangePasswordRequest(request: ChangePasswordDto): ValidationResult
+        - validateUsername(username: String): List<String>
+        - validateEmail(email: String): List<String>
+        - validatePassword(password: String): List<String>
+      }
+    }
+  }
+  
+  ' ===== External Integration =====
+  package "integration" #F5F5F5 {
+    
+    note as IntegrationNote
+      **他ドメインとの連携**
+      
+      1. **Security Module連携**
+         - JWT認証トークン生成
+         - Spring Security UserDetails提供
+         - 認証・認可処理
+      
+      2. **全ドメイン連携**
+         - 各ドメインのUserバリューオブジェクト
+         - ユーザー識別子の統一管理
+      
+      3. **外部システム連携**
+         - メール送信サービス
+         - 監査ログシステム
+         - 権限管理システム
+    end note
+  }
+}
+
+' ===== Relationships =====
+
+' Entity relationships
+User --> Role : has
+User --> Email : has
+User --> Username : has
+User --> Password : has
+UserInfo --> Role : has
+
+' Value Object relationships
+Password ..> PasswordService : uses
+Role --> Permission : "has many"
+
+' Domain Service relationships
+UserDomainService ..> UserRepository : uses
+UserDomainService ..> PasswordService : uses
+UserDomainService ..> UserValidationService : uses
+UserValidationService ..> UserRepository : uses
+PasswordService ..> "BCrypt" : uses
+
+' Use Case relationships
+RegisterUserUseCase ..> UserRepository : uses
+RegisterUserUseCase ..> UserDomainService : uses
+RegisterUserUseCase ..> User : creates
+
+AuthenticationUseCase ..> UserRepository : uses
+AuthenticationUseCase ..> UserDomainService : uses
+AuthenticationUseCase ..> UserInfo : creates
+
+FindUserUseCase ..> UserRepository : uses
+UpdateUserUseCase ..> UserRepository : uses
+UpdateUserUseCase ..> UserDomainService : uses
+ChangePasswordUseCase ..> UserRepository : uses
+ChangePasswordUseCase ..> UserDomainService : uses
+DeleteUserUseCase ..> UserRepository : uses
+FindAllUsersUseCase ..> UserRepository : uses
+ActivateUserUseCase ..> UserRepository : uses
+ActivateUserUseCase ..> UserDomainService : uses
+DeactivateUserUseCase ..> UserRepository : uses
+DeactivateUserUseCase ..> UserDomainService : uses
+
+' Controller relationships
+UserController ..> RegisterUserUseCase : uses
+UserController ..> FindUserUseCase : uses
+UserController ..> UpdateUserUseCase : uses
+UserController ..> DeleteUserUseCase : uses
+UserController ..> FindAllUsersUseCase : uses
+UserController ..> ActivateUserUseCase : uses
+UserController ..> DeactivateUserUseCase : uses
+UserController ..> ChangePasswordUseCase : uses
+
+' Repository implementations
+JpaUserRepository ..|> UserRepository : implements
+InMemoryUserRepository ..|> UserRepository : implements
+
+' Mapper relationships
+UserMapper ..> User : maps
+UserMapper ..> UserInfo : creates
+
+' Validator relationships
+UserRequestValidator ..> "Validation Rules" : applies
+
+' Legend
+legend right
+  |= 記号 |= 意味 |
+  | <<Entity>> | エンティティ |
+  | <<ValueObject>> | バリューオブジェクト |
+  | <<Enum>> | 列挙型 |
+  | <<Service>> | ドメインサービス |
+  | <<UseCase>> | ユースケース |
+  | <<Repository>> | リポジトリインターフェース |
+  | <<Controller>> | RESTコントローラー |
+  
+  **セキュリティ原則:**
+  - パスワードは必ずハッシュ化
+  - ユーザー名・メールアドレスは一意
+  - 権限ベースアクセス制御
+  - ソフトデリート（論理削除）
+endlegend
+
+@enduml

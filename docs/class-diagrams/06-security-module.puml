@@ -1,0 +1,448 @@
+@startuml security-module-class-diagram
+
+!define ENTITY class
+!define VALUE_OBJECT class
+!define ENUM enum
+!define INTERFACE interface
+!define SERVICE class
+!define REPOSITORY interface
+!define CONTROLLER class
+!define USECASE class
+!define CONFIG class
+!define FILTER class
+
+skinparam linetype ortho
+skinparam groupInheritance 2
+
+' Color scheme
+skinparam class {
+  BackgroundColor<<Entity>> #FFE6E6
+  BorderColor<<Entity>> #FF6666
+  BackgroundColor<<ValueObject>> #E6F3FF
+  BorderColor<<ValueObject>> #6699FF
+  BackgroundColor<<Enum>> #FFFACD
+  BorderColor<<Enum>> #FFD700
+  BackgroundColor<<Service>> #E6FFE6
+  BorderColor<<Service>> #66FF66
+  BackgroundColor<<Config>> #F0E6FF
+  BorderColor<<Config>> #9966FF
+  BackgroundColor<<Filter>> #FFE6CC
+  BorderColor<<Filter>> #FF9900
+  BackgroundColor<<Controller>> #FFE6F3
+  BorderColor<<Controller>> #FF66B2
+  BackgroundColor<<UseCase>> #FFF0E6
+  BorderColor<<UseCase>> #FF9966
+  BackgroundColor<<Interface>> #E6E6FA
+  BorderColor<<Interface>> #9370DB
+}
+
+title Security Module (セキュリティモジュール) - クラス図
+
+package "com.github.okanikani.kairos.security" {
+  
+  ' ===== Security Configuration =====
+  package "configuration" #FAFAFA {
+    
+    CONFIG SecurityConfiguration <<Config>> {
+      - jwtAuthenticationFilter: JwtAuthenticationFilter
+      - customUserDetailsService: CustomUserDetailsService
+      - passwordEncoder: PasswordEncoder
+      --
+      + @Bean securityFilterChain(HttpSecurity): SecurityFilterChain
+      + @Bean passwordEncoder(): PasswordEncoder
+      + @Bean authenticationManager(AuthenticationConfiguration): AuthenticationManager
+      + @Bean corsConfigurationSource(): CorsConfigurationSource
+      - configureHttpSecurity(HttpSecurity): void
+      - configureSessionManagement(HttpSecurity): void
+      - configureExceptionHandling(HttpSecurity): void
+    }
+    
+    CONFIG JwtConfiguration <<Config>> {
+      + @Value jwtSecret: String
+      + @Value jwtExpiration: long
+      + @Value jwtIssuer: String
+      --
+      + getSecretKey(): SecretKey
+      + getExpirationTime(): Duration
+      + getIssuer(): String
+    }
+    
+    note right of SecurityConfiguration
+      **Spring Security設定**
+      - JWT認証フィルター設定
+      - CORS設定
+      - セッション管理設定（ステートレス）
+      - パスワードエンコーダー設定
+      - 認証管理設定
+      
+      **エンドポイント認証設定:**
+      - /api/auth/** : 認証不要
+      - その他全て : JWT認証必須
+    end note
+  }
+  
+  ' ===== JWT Services =====
+  package "jwt" #F5F5F5 {
+    
+    SERVICE JwtService <<Service>> {
+      - secretKey: SecretKey
+      - jwtExpiration: long
+      - jwtIssuer: String
+      --
+      + generateToken(userId: String): String
+      + generateToken(userId: String, additionalClaims: Map<String, Object>): String
+      + extractUserId(token: String): String
+      + extractClaim<T>(token: String, claimsResolver: Function<Claims, T>): T
+      + isTokenValid(token: String): boolean
+      + isTokenValid(token: String, userId: String): boolean
+      + isTokenExpired(token: String): boolean
+      + getExpirationDate(token: String): Date
+      + refreshToken(token: String): String
+      - extractAllClaims(token: String): Claims
+      - createToken(claims: Map<String, Object>, userId: String): String
+      - buildToken(claims: Map<String, Object>, userId: String, expiration: long): String
+    }
+    
+    VALUE_OBJECT JwtToken <<ValueObject>> {
+      - token: String
+      - issuedAt: Instant
+      - expiresAt: Instant
+      - userId: String
+      --
+      + JwtToken(token, issuedAt, expiresAt, userId)
+      + isExpired(): boolean
+      + isValid(): boolean
+      + getTimeToExpiration(): Duration
+      + equals(other: Object): boolean
+      + hashCode(): int
+    }
+    
+    SERVICE JwtTokenBlacklistService <<Service>> {
+      - blacklistedTokens: Set<String>
+      - tokenExpiration: Map<String, Instant>
+      --
+      + blacklistToken(token: String): void
+      + isTokenBlacklisted(token: String): boolean
+      + cleanupExpiredTokens(): void
+      + getBlacklistedTokenCount(): int
+      - isTokenExpired(token: String): boolean
+    }
+    
+    note right of JwtService
+      **JWT トークンサービス**
+      - トークン生成・検証
+      - クレーム抽出
+      - 有効期限チェック
+      - リフレッシュトークン生成
+      
+      **トークン構造:**
+      - Header: アルゴリズム情報
+      - Payload: ユーザーID、有効期限等
+      - Signature: 署名検証
+    end note
+  }
+  
+  ' ===== Authentication Filter =====
+  package "filters" #E8E8E8 {
+    
+    FILTER JwtAuthenticationFilter <<Filter>> {
+      - jwtService: JwtService
+      - userDetailsService: UserDetailsService
+      - jwtTokenBlacklistService: JwtTokenBlacklistService
+      --
+      + doFilterInternal(request: HttpServletRequest, response: HttpServletResponse, filterChain: FilterChain): void
+      - extractTokenFromRequest(request: HttpServletRequest): String
+      - authenticateUser(token: String): void
+      - setAuthenticationContext(userDetails: UserDetails, request: HttpServletRequest): void
+      - shouldNotFilter(request: HttpServletRequest): boolean
+      - isPublicEndpoint(requestPath: String): boolean
+    }
+    
+    note right of JwtAuthenticationFilter
+      **JWT認証フィルター**
+      リクエストからJWTトークンを抽出し
+      認証処理を実行
+      
+      **処理フロー:**
+      1. Authorizationヘッダーからトークン抽出
+      2. トークン検証
+      3. ユーザー情報取得
+      4. SecurityContext設定
+    end note
+  }
+  
+  ' ===== User Details Service =====
+  package "userdetails" #F0F0F0 {
+    
+    SERVICE CustomUserDetailsService <<Service>> {
+      - userRepository: UserRepository
+      --
+      + loadUserByUsername(username: String): UserDetails
+      - mapUserToUserDetails(user: User): CustomUserPrincipal
+      - validateUserAccount(user: User): void
+    }
+    
+    SERVICE CustomUserPrincipal <<Service>> {
+      - user: User
+      --
+      + CustomUserPrincipal(user: User)
+      + getAuthorities(): Collection<? extends GrantedAuthority>
+      + getPassword(): String
+      + getUsername(): String
+      + isAccountNonExpired(): boolean
+      + isAccountNonLocked(): boolean
+      + isCredentialsNonExpired(): boolean
+      + isEnabled(): boolean
+      + getUser(): User
+      + hasRole(role: String): boolean
+      + hasPermission(permission: String): boolean
+    }
+    
+    note right of CustomUserPrincipal
+      **カスタムユーザープリンシパル**
+      Spring SecurityのUserDetails実装
+      - ユーザー権限管理
+      - アカウント状態管理
+      - 認証情報提供
+    end note
+  }
+  
+  ' ===== Authentication Controller =====
+  package "controllers" #FFE6F3 {
+    
+    CONTROLLER AuthController <<Controller>> {
+      - authenticationUseCase: AuthenticationUseCase
+      - jwtService: JwtService
+      - authenticationManager: AuthenticationManager
+      --
+      + login(request: LoginRequest): ResponseEntity<LoginResponse>
+      + refreshToken(request: RefreshTokenRequest): ResponseEntity<RefreshTokenResponse>
+      + logout(request: HttpServletRequest): ResponseEntity<Void>
+      + validateToken(request: ValidateTokenRequest): ResponseEntity<TokenValidationResponse>
+      - authenticate(username: String, password: String): void
+      - generateTokenResponse(user: User): LoginResponse
+      - extractTokenFromRequest(request: HttpServletRequest): String
+    }
+    
+    note right of AuthController
+      **認証エンドポイント**
+      - POST /api/auth/login
+      - POST /api/auth/refresh
+      - POST /api/auth/logout
+      - POST /api/auth/validate
+      
+      **レスポンス例:**
+      ```json
+      {
+        "token": "eyJhbGciOiJIUzI1NiIs...",
+        "expiresIn": 86400,
+        "tokenType": "Bearer"
+      }
+      ```
+    end note
+  }
+  
+  ' ===== DTOs =====
+  package "dto" #E6F3FF {
+    
+    VALUE_OBJECT LoginRequest <<ValueObject>> {
+      - username: String
+      - password: String
+      --
+      + LoginRequest(username, password)
+      + isValid(): boolean
+    }
+    
+    VALUE_OBJECT LoginResponse <<ValueObject>> {
+      - token: String
+      - tokenType: String
+      - expiresIn: long
+      - userId: String
+      - username: String
+      - role: String
+      --
+      + LoginResponse(...)
+    }
+    
+    VALUE_OBJECT RefreshTokenRequest <<ValueObject>> {
+      - refreshToken: String
+      --
+      + RefreshTokenRequest(refreshToken)
+    }
+    
+    VALUE_OBJECT RefreshTokenResponse <<ValueObject>> {
+      - token: String
+      - expiresIn: long
+      --
+      + RefreshTokenResponse(token, expiresIn)
+    }
+    
+    VALUE_OBJECT TokenValidationResponse <<ValueObject>> {
+      - isValid: boolean
+      - userId: String
+      - expiresAt: Instant
+      --
+      + TokenValidationResponse(...)
+    }
+  }
+  
+  ' ===== Security Utilities =====
+  package "utils" #F5F5F5 {
+    
+    SERVICE SecurityUtils <<Service>> {
+      + {static} getCurrentUserId(): String
+      + {static} getCurrentUser(): Optional<User>
+      + {static} getCurrentUserPrincipal(): Optional<CustomUserPrincipal>
+      + {static} hasRole(role: String): boolean
+      + {static} hasPermission(permission: String): boolean
+      + {static} isAuthenticated(): boolean
+      + {static} isAnonymous(): boolean
+      - {static} getAuthentication(): Optional<Authentication>
+    }
+    
+    SERVICE PasswordUtils <<Service>> {
+      + {static} generateRandomPassword(length: int): String
+      + {static} validatePasswordStrength(password: String): PasswordStrengthResult
+      + {static} isCommonPassword(password: String): boolean
+      + {static} estimatePasswordStrength(password: String): PasswordStrength
+      - {static} checkPasswordComplexity(password: String): ComplexityScore
+    }
+    
+    ENUM PasswordStrength <<Enum>> {
+      WEAK
+      FAIR
+      GOOD
+      STRONG
+      --
+      + getScore(): int
+      + getDisplayName(): String
+    }
+    
+    note right of SecurityUtils
+      **セキュリティユーティリティ**
+      - 現在のユーザー情報取得
+      - 権限チェック機能
+      - 認証状態確認
+      - 静的メソッドで簡単アクセス
+    end note
+  }
+  
+  ' ===== Exception Handling =====
+  package "exceptions" #FFE6E6 {
+    
+    class JwtException {
+      + JwtException(message: String)
+      + JwtException(message: String, cause: Throwable)
+    }
+    
+    class InvalidTokenException {
+      + InvalidTokenException(message: String)
+    }
+    
+    class TokenExpiredException {
+      + TokenExpiredException(message: String)
+    }
+    
+    class AuthenticationFailedException {
+      + AuthenticationFailedException(message: String)
+    }
+    
+    SERVICE SecurityExceptionHandler <<Service>> {
+      + handleJwtException(ex: JwtException): ResponseEntity<ErrorResponse>
+      + handleAuthenticationException(ex: AuthenticationFailedException): ResponseEntity<ErrorResponse>
+      + handleAccessDeniedException(ex: AccessDeniedException): ResponseEntity<ErrorResponse>
+      + handleInvalidTokenException(ex: InvalidTokenException): ResponseEntity<ErrorResponse>
+    }
+  }
+  
+  ' ===== External Integration =====
+  package "integration" #F5F5F5 {
+    
+    note as IntegrationNote
+      **他モジュールとの連携**
+      
+      1. **Users Domain連携**
+         - ユーザー認証処理
+         - ユーザー情報取得
+         - 権限情報取得
+      
+      2. **全ドメイン連携**
+         - 認証フィルターによる保護
+         - ユーザーID抽出
+         - 権限ベースアクセス制御
+      
+      3. **Spring Security連携**
+         - SecurityFilterChain設定
+         - AuthenticationManager設定
+         - UserDetailsService実装
+      
+      4. **外部システム連携**
+         - 監査ログ出力
+         - セキュリティイベント通知
+    end note
+  }
+}
+
+' ===== Relationships =====
+
+' Configuration relationships
+SecurityConfiguration ..> JwtAuthenticationFilter : configures
+SecurityConfiguration ..> CustomUserDetailsService : uses
+SecurityConfiguration ..> "PasswordEncoder" : creates
+JwtConfiguration ..> JwtService : provides config
+
+' JWT Service relationships
+JwtService ..> JwtToken : creates
+JwtService ..> JwtConfiguration : uses
+JwtTokenBlacklistService ..> JwtToken : manages
+
+' Filter relationships
+JwtAuthenticationFilter ..> JwtService : uses
+JwtAuthenticationFilter ..> CustomUserDetailsService : uses
+JwtAuthenticationFilter ..> JwtTokenBlacklistService : uses
+
+' UserDetails relationships
+CustomUserDetailsService ..> CustomUserPrincipal : creates
+CustomUserDetailsService ..> "UserRepository" : uses
+CustomUserPrincipal ..> "User" : wraps
+
+' Controller relationships
+AuthController ..> JwtService : uses
+AuthController ..> "AuthenticationUseCase" : uses
+AuthController ..> LoginResponse : creates
+AuthController ..> LoginRequest : uses
+
+' DTO relationships
+LoginResponse ..> JwtToken : contains
+RefreshTokenResponse ..> JwtToken : contains
+TokenValidationResponse ..> JwtToken : validates
+
+' Utility relationships
+SecurityUtils ..> CustomUserPrincipal : extracts
+PasswordUtils ..> PasswordStrength : evaluates
+
+' Exception relationships
+InvalidTokenException --|> JwtException
+TokenExpiredException --|> JwtException
+SecurityExceptionHandler ..> JwtException : handles
+SecurityExceptionHandler ..> AuthenticationFailedException : handles
+
+' Legend
+legend right
+  |= 記号 |= 意味 |
+  | <<Config>> | Spring設定クラス |
+  | <<Service>> | サービスクラス |
+  | <<Filter>> | サーブレットフィルター |
+  | <<Controller>> | RESTコントローラー |
+  | <<ValueObject>> | データ転送オブジェクト |
+  | <<Enum>> | 列挙型 |
+  
+  **セキュリティ原則:**
+  - JWT署名検証必須
+  - トークンブラックリスト管理
+  - ステートレス認証
+  - 権限ベースアクセス制御
+  - パスワード強度チェック
+endlegend
+
+@enduml
