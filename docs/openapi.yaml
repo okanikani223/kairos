@@ -707,6 +707,75 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
+  /api/default-work-rules/{id}:
+    get:
+      tags:
+        - Default Work Rules
+      summary: 特定デフォルト勤務ルール取得
+      description: 指定したIDのデフォルト勤務ルールを取得します
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: デフォルト勤務ルールID
+      responses:
+        '200':
+          description: デフォルト勤務ルール取得成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DefaultWorkRuleResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    put:
+      tags:
+        - Default Work Rules
+      summary: デフォルト勤務ルール更新
+      description: 既存のデフォルト勤務ルールを更新します
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: デフォルト勤務ルールID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateDefaultWorkRuleRequest'
+      responses:
+        '200':
+          description: デフォルト勤務ルール更新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DefaultWorkRuleResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
   # Report Creation Rules endpoints
   /api/report-creation-rules:
     post:
@@ -1381,6 +1450,10 @@ components:
           description: 規定休憩終了時刻
           nullable: true
           example: "13:00:00"
+
+    UpdateDefaultWorkRuleRequest:
+      allOf:
+        - $ref: '#/components/schemas/RegisterDefaultWorkRuleRequest'
 
     DefaultWorkRuleResponse:
       type: object
