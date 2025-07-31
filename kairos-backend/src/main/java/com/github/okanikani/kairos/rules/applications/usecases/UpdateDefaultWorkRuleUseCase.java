@@ -42,10 +42,9 @@ public class UpdateDefaultWorkRuleUseCase {
             throw new SecurityException("このデフォルト勤務ルールを更新する権限がありません");
         }
         
-        // 更新されたルールを作成（IDは削除してから新規保存するため、nullを設定）
+        // 更新されたルールを作成
         User user = new User(userId);
         DefaultWorkRule updatedRule = new DefaultWorkRule(
-                null,  // 新規保存するためIDはnull
                 request.workPlaceId(),
                 request.latitude(),
                 request.longitude(),
