@@ -20,9 +20,6 @@
 
 ### Default Work Rules
 - **POST** `/api/default-work-rules` - Register new default work rule
-- **GET** `/api/default-work-rules` - Get all default work rules for the authenticated user
-- **GET** `/api/default-work-rules/{id}` - Get specific default work rule by ID
-- **PUT** `/api/default-work-rules/{id}` - Update existing default work rule
 
 ### Report Creation Rules
 - **POST** `/api/report-creation-rules` - Register new report creation rule
