@@ -1,17 +1,38 @@
-@startuml
+@startuml Kairosユースケース
 left to right direction
 
-actor User
-actor System
+actor "利用者" as User
+actor "定期実行プロセス" as AutoProcess 
 
-rectangle "勤怠管理アプリ" {
-    User --> (ログイン／ログアウト)
-    User --> (出勤打刻)
-    User --> (退勤打刻)
-    User --> (勤怠一覧の閲覧)
-    User --> (勤怠詳細の閲覧)
-    User --> (勤怠修正)
-    System --> (勤怠表の自動作成)
+rectangle "Kairos(勤怠管理システム)" {
+    package "認証機能" {
+        (ログイン/ログアウト) as LoginLogout
+    }
+    package "勤怠機能" {
+          (勤怠表一覧の閲覧) as ViewReport
+          (勤怠詳細の閲覧) as ViewReportDetail
+          (勤怠表修正) as EditReport
+          (勤怠表登録) as RegisterReport
+          (勤怠表自動作成) as AutoCreateReport
+    }
+    package "打刻機能" {
+        (位置情報登録) as RegisterLocations
+    }
+    package "管理機能" {
+        (勤怠ルール管理) as ManageWorlRules
+        (勤怠表自動生成ルール管理) as ManageReportCreationRules
+    }
 }
+
+User --> LoginLogout
+User --> ViewReport
+User --> ViewReportDetail
+User --> EditReport
+User --> RegisterReport
+User --> ManageWorlRules
+EditReport .> AutoCreateReport : include
+RegisterReport .> AutoCreateReport : include
+User --> ManageReportCreationRules
+AutoProcess --> RegisterLocations
 
 @enduml
