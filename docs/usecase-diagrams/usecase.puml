@@ -2,7 +2,8 @@
 left to right direction
 
 actor "利用者" as User
-actor "定期実行プロセス" as AutoProcess 
+actor "定期実行プロセス" as AutoProcess
+note top of AutoProcess : 端末やスマホで実行されるプロセス
 
 rectangle "Kairos(勤怠管理システム)" {
     package "認証機能" {
