@@ -7,11 +7,12 @@ note top of AutoProcess : 端末やスマホで実行されるプロセス
 
 rectangle "Kairos(勤怠管理システム)" {
     package "認証機能" {
-        (ログイン/ログアウト) as LoginLogout
+        (ログイン) as Login
+        (ログアウト) as Logout
     }
     package "勤怠機能" {
-          (勤怠表一覧の閲覧) as ViewReport
-          (勤怠詳細の閲覧) as ViewReportDetail
+          (勤怠表一覧の閲覧) as ViewReportList
+          (勤怠表の閲覧) as ViewReport
           (勤怠表修正) as EditReport
           (勤怠表登録) as RegisterReport
           (勤怠表自動作成) as AutoCreateReport
@@ -25,9 +26,10 @@ rectangle "Kairos(勤怠管理システム)" {
     }
 }
 
-User --> LoginLogout
+User --> Login
+User --> Logout
+User --> ViewReportList
 User --> ViewReport
-User --> ViewReportDetail
 User --> EditReport
 User --> RegisterReport
 User --> ManageWorlRules
