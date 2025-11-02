@@ -1,0 +1,17 @@
+@startuml
+left to right direction
+
+actor User
+actor System
+
+rectangle "勤怠管理アプリ" {
+    User --> (ログイン／ログアウト)
+    User --> (出勤打刻)
+    User --> (退勤打刻)
+    User --> (勤怠一覧の閲覧)
+    User --> (勤怠詳細の閲覧)
+    User --> (勤怠修正)
+    System --> (勤怠表の自動作成)
+}
+
+@enduml
