@@ -1,0 +1,40 @@
+@startuml Kairos画面遷移
+title Kairos画面遷移
+left to right direction
+
+state "ログイン" as LoginView {
+    LoginView : entry / 初期表示
+    LoginView : login / ログイン
+    LoginView -> LoginView : ログイン失敗
+}
+state "メニュー" as MenuDialog {
+    MenuDialog : logout / ログアウト
+    MenuDialog : settings / 設定
+}
+state "設定" as SettingsView {
+    SettingsView : entry / 初期表示
+    SettingsView : workRule / 勤怠設定
+    SettingsView : autoCreate / 勤怠表自動作成設定
+}
+state "勤怠表一覧" as ReportListView {
+    ReportListView : entry / 初期表示
+    ReportListView : menu / メニュー表示
+    ReportListView : detail / 勤怠年月選択
+}
+state "勤怠表" as ReportView {
+    ReportView : entry / 初期表示
+    ReportView : menu / メニュー表示
+    ReportView : editRow / 勤怠編集
+    ReportView : register / 登録
+
+    ReportView -> ReportView : 勤怠編集
+}
+
+[*] --> LoginView
+LoginView --> ReportListView : ログイン成功
+ReportListView --> MenuDialog : メニュー表示
+ReportListView --> ReportView : 勤怠年月選択
+ReportView --> MenuDialog : メニュー表示
+MenuDialog --> LoginView : ログアウト
+MenuDialog --> SettingsView : 設定
+@enduml
