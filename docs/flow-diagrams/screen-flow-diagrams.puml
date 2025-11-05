@@ -1,40 +1,56 @@
 @startuml Kairos画面遷移
 title Kairos画面遷移
-left to right direction
 
 state "ログイン" as LoginView {
     LoginView : entry / 初期表示
     LoginView : login / ログイン
     LoginView -> LoginView : ログイン失敗
 }
-state "メニュー" as MenuDialog {
-    MenuDialog : logout / ログアウト
-    MenuDialog : settings / 設定
-}
 state "設定" as SettingsView {
     SettingsView : entry / 初期表示
-    SettingsView : workRule / 勤怠設定
-    SettingsView : autoCreate / 勤怠表自動作成設定
+    SettingsView : workRuleSettings / 勤怠設定
+    SettingsView : autoCreateSettings / 勤怠表自動作成設定
 }
-state "勤怠表一覧" as ReportListView {
-    ReportListView : entry / 初期表示
-    ReportListView : menu / メニュー表示
-    ReportListView : detail / 勤怠年月選択
-}
-state "勤怠表" as ReportView {
-    ReportView : entry / 初期表示
-    ReportView : menu / メニュー表示
-    ReportView : editRow / 勤怠編集
-    ReportView : register / 登録
+state "勤怠表一覧画面" as ReportListView {
+    state "勤怠表一覧" as ReportListView_Normal {
+        ReportListView_Normal : entry / 初期表示
+        ReportListView_Normal : OpenMenu / メニュー表示
+        ReportListView_Normal : OpenReport / 勤怠年月選択
+    }
+    state "メニュー" as ReportListView_Menu {
+        ReportListView_Menu : logout / ログアウト
+        ReportListView_Menu : OpenSettings / 設定
+        ReportListView_Menu : CloseMenu / メニュー閉じる
+    }
 
-    ReportView -> ReportView : 勤怠編集
+    [*] --> ReportListView_Normal : 初期表示
+    ReportListView_Normal --> ReportListView_Menu : メニュー表示
+    ReportListView_Menu --> ReportListView_Normal : メニュー閉じる
+}
+state "勤怠表画面" as ReportView {
+    state "勤怠表" as ReportView_Normal {
+        ReportView_Normal : entry / 初期表示
+        ReportView_Normal : OpenMenu / メニュー表示
+        ReportView_Normal : editRow / 勤怠編集
+        ReportView_Normal : saveReport / 保存
+    }
+    state "メニュー" as ReportView_Menu {
+        ReportView_Menu : logout / ログアウト
+        ReportView_Menu : OpenSettings / 設定
+        ReportView_Menu : CloseMenu / メニュー閉じる
+    }
+
+    [*] --> ReportView_Normal : 初期表示
+    ReportView_Normal --> ReportView_Menu : メニュー表示
+    ReportView_Menu --> ReportView_Normal : メニュー閉じる
+    ReportView_Normal --> ReportView_Normal : 勤怠編集\n保存
 }
 
-[*] --> LoginView
+[*] -r-> LoginView : アクセス
 LoginView --> ReportListView : ログイン成功
-ReportListView --> MenuDialog : メニュー表示
-ReportListView --> ReportView : 勤怠年月選択
-ReportView --> MenuDialog : メニュー表示
-MenuDialog --> LoginView : ログアウト
-MenuDialog --> SettingsView : 設定
+ReportListView_Normal --> ReportView : 勤怠年月選択
+ReportListView_Menu --> LoginView : ログアウト
+ReportListView_Menu --> SettingsView : 設定
+ReportView_Menu --> SettingsView : 設定
+ReportView_Menu --> LoginView : ログアウト
 @enduml
