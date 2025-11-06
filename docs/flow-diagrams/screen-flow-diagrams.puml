@@ -2,18 +2,18 @@
 title Kairos画面遷移
 
 state "ログイン" as LoginView {
-    LoginView : entry / 初期表示
-    LoginView : login / ログイン
+    LoginView : Entryntry / 初期表示
+    LoginView : Login / ログイン
     LoginView -> LoginView : ログイン失敗
 }
 state "設定" as SettingsView {
-    SettingsView : entry / 初期表示
-    SettingsView : workRuleSettings / 勤怠設定
-    SettingsView : autoCreateSettings / 勤怠表自動作成設定
+    SettingsView : Entryntry / 初期表示
+    SettingsView : OpenWorkRuleSettings / 勤怠設定
+    SettingsView : OpenAutoCreateSettings / 勤怠表自動作成設定
 }
 state "勤怠表一覧画面" as ReportListView {
     state "勤怠表一覧" as ReportListView_Normal {
-        ReportListView_Normal : entry / 初期表示
+        ReportListView_Normal : Entryntry / 初期表示
         ReportListView_Normal : OpenMenu / メニュー表示
         ReportListView_Normal : OpenReport / 勤怠年月選択
     }
@@ -29,13 +29,13 @@ state "勤怠表一覧画面" as ReportListView {
 }
 state "勤怠表画面" as ReportView {
     state "勤怠表" as ReportView_Normal {
-        ReportView_Normal : entry / 初期表示
+        ReportView_Normal : Entryntry / 初期表示
         ReportView_Normal : OpenMenu / メニュー表示
-        ReportView_Normal : editRow / 勤怠編集
-        ReportView_Normal : saveReport / 保存
+        ReportView_Normal : EditRow / 勤怠編集
+        ReportView_Normal : SaveReport / 保存
     }
     state "メニュー" as ReportView_Menu {
-        ReportView_Menu : logout / ログアウト
+        ReportView_Menu : Logout / ログアウト
         ReportView_Menu : OpenSettings / 設定
         ReportView_Menu : CloseMenu / メニュー閉じる
     }
